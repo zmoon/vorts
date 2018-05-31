@@ -1,0 +1,6 @@
+
+*.pyc
+ps*.txt
+ps*.png
+.DS_Store
+
