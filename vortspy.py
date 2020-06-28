@@ -136,7 +136,7 @@ class model_py():
     """Model in Python."""
     
     def __init__(self, G, xi, yi, 
-                 dt=0.1, nt=1000, int_scheme_name='RK4', 
+                 dt=0.1, nt=1000, int_scheme_name='RK4_3', 
                  adapt_tstep=False):
         """Create model with given settings."""
 
@@ -467,11 +467,9 @@ def RK4_2_step(state0: List[Tuple], dt: float):
     
     
     def calc_xtend(x, y):
-        """ """
         
         xarr, yarr = np.meshgrid(x, y)
         
-#            xdiff = xarr - xarr.T
         ydiff = yarr - yarr.T
         
         lsqd = calc_lsqd(xarr, yarr)
@@ -480,39 +478,60 @@ def RK4_2_step(state0: List[Tuple], dt: float):
 
     
     def calc_ytend(x, y):
-        """ """
         
         xarr, yarr = np.meshgrid(x, y)
 
         xdiff = xarr - xarr.T
-#            ydiff = yarr - yarr.T
         
         lsqd = calc_lsqd(xarr, yarr)
         
         return 1/(2*np.pi) * np.sum(G * xdiff / lsqd, axis=0)  
 
 
+    def calc_tend(x, y):
+        """Calculate both x- and y-tend."""
+        # a more-optimized calculation trying to reduce mem usage / repetition
+        # but still is slower than RK4_3 (at least for nt=2000, 3 vortons)
+        # (seems to overtake RK4_3 in performance as increase N (vortons))
+        
+        xarr, yarr = np.meshgrid(x, y)
+
+        xdiff = xarr - xarr.T
+        ydiff = yarr - yarr.T
+        
+        lsqd = calc_lsqd(xarr, yarr)
+        
+        return (
+            -1/(2*np.pi) * np.sum(G.T * ydiff / lsqd, axis=1),  # x-tend
+            1/(2*np.pi) * np.sum(G * xdiff / lsqd, axis=0)  # y-tend
+        )
+
+
     # do that RK4
         
     x1 = x0
     y1 = y0
-    k1x = calc_xtend(x1, y1)
-    k1y = calc_ytend(x1, y1)
+    # k1x = calc_xtend(x1, y1)
+    # k1y = calc_ytend(x1, y1)
+    k1x, k1y = calc_tend(x1, y1)
                     
     x2 = x0 + dt/2*k1x
     y2 = y0 + dt/2*k1y
-    k2x = calc_xtend(x2, y2)
-    k2y = calc_ytend(x2, y2)
+    # k2x = calc_xtend(x2, y2)
+    # k2y = calc_ytend(x2, y2)
+    k2x, k2y = calc_tend(x2, y2)
 
     x3 = x0 + dt/2*k2x
     y3 = y0 + dt/2*k2y
-    k3x = calc_xtend(x3, y3)
-    k3y = calc_ytend(x3, y3)
+    # k3x = calc_xtend(x3, y3)
+    # k3y = calc_ytend(x3, y3)
+    k3x, k3y = calc_tend(x3, y3)
     
     x4 = x0 + dt/1*k3x
     y4 = y0 + dt/1*k3y
-    k4x = calc_xtend(x4, y4)
-    k4y = calc_ytend(x4, y4)
+    # k4x = calc_xtend(x4, y4)
+    # k4y = calc_ytend(x4, y4)
+    k4x, k4y = calc_tend(x3, y3)
     
     xnews = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x) 
     ynews = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
