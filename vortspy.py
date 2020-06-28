@@ -12,6 +12,7 @@ classes to run Python and Fortran versions of the N-vortex model
 from glob import glob
 import os
 import subprocess
+import warnings
 
 #import matplotlib.pyplot as plt
 import numpy as np
@@ -40,7 +41,9 @@ class Vorton():
             self.yhist = y
             
             if self.xhist.size != nt+1:
-                print 'Fortran model output should be size {:d} but is {:d}'.format(nt+1, self.xhist.size)
+                warnings.warn(
+                    f"Fortran model output should be size {nt+1:d} but is {self.xhist.size:d}"
+                )
 
 
 
@@ -219,7 +222,7 @@ class model_py():
                 dt = self.dt
                 while C_relerr > self.C_err_reltol and dt >= self.dt_min:
                     
-#                    print 'tstep: {:d}, dt: {:.1e}'.format(self.l, dt)
+                    # print(f"tstep: {self.l:d}, dt: {dt:.1e}")
                     
                     state0 = zip(Gs, x_lm1s, y_lm1s)  # positions before taking this step
                                         
@@ -244,7 +247,7 @@ class model_py():
                     C_relerr = np.abs((C_l - C_lm1) / C_lm1)
                 
                 
-#                print 'tstep: {:d}, min dt used: {:.1e}'.format(self.l, dt)
+                print(f"tstep: {self.l:d}, min dt used: {dt:.1e}")
 
             
             else:
