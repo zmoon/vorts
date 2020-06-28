@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Run Python and Fortran versions of the N-vortex model
 """
@@ -163,8 +162,8 @@ class model_py():
         
         # create vortons
         self.vortons = []
-        for i, G in enumerate(G):
-            self.vortons.append(Vorton(G, xi[i], yi[i], nt))
+        for Gxy in zip(self.G_vals, self.xi_vals, self.yi_vals):
+            self.vortons.append(Vorton(*Gxy, nt))
             
         self.l = 0  # time step index
         
