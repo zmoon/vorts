@@ -3,9 +3,16 @@
 # this is an ifort version
 # extension .f03 is not supported so I linked the source files to a .f extension
 #
-FC=ifort
-CFLAGS=-O3 -fast -free
+
+# settings for gfortran
+FC=gfortran 
+CFLAGS=-O2
 LFLAGS=
+
+# settings for ifort
+# FC=ifort
+# CFLAGS=-O3 -fast -free
+# LFLAGS=
 
 
 # create executable
