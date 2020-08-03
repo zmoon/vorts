@@ -1,12 +1,12 @@
 #
 #
-# this is an ifort version
-# extension .f03 is not supported so I linked the source files to a .f extension
+# note
+# * extension .f03 is not supported so I linked the source files to a .f extension
 #
 
 # settings for gfortran
-FC=gfortran 
-CFLAGS=-O2
+FC=gfortran
+CFLAGS=-O2 -ffree-form
 LFLAGS=
 
 # settings for ifort
