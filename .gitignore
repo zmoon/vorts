@@ -8,3 +8,4 @@ ps*.txt
 ps*.png
 !/examples/ps*.png
 .DS_Store
+.vscode
