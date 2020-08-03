@@ -1,14 +1,14 @@
 # vortex-model
 
-Integrate a system of *N* point vortices. 
+Integrate a system of *N* point vortices.
 
 Created for the PSU class METEO 523 – Modeling the climate system.
 
 ## Equations
 
 <div align="center">
-<img src="N-vortex_evolution_equations.png" 
-    alt="N-vortex system of equations in 2 dimensions." 
+<img src="N-vortex_evolution_equations.png"
+    alt="N-vortex system of equations in 2 dimensions."
     width=300>
 </div>
 
@@ -25,6 +25,6 @@ Also includes tool for making Poincare plots, given a sufficiently long run with
 
 ## TODO:
 
-* [ ] Add the Poincare output as an option to the Fortran code 
+* [ ] Add the Poincare output as an option to the Fortran code
 * [ ] Convert the two test scripts to a Jupyter Notebook for example
 * [ ] Write Python interface to the Fortran version as practice?
