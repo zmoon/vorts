@@ -13,7 +13,7 @@ import vortspy as vpy
 
 
 
-#%% create 
+#%% create
 
 #G = np.ones(2)
 #G = [1, 5]
@@ -48,12 +48,11 @@ for i, v in enumerate(m.vortons):
 
     x = v.xhist
     y = v.yhist
-    
+
     f1a1.plot(x, y, color=colors[i], lw=0.5, alpha=0.5)
     f1a1.plot(x[0], y[0], 'o', color=colors[i])
-    
+
     f1a1.set_xlabel('x')
     f1a1.set_ylabel('y')
-    
-    f1a1.axis('equal')
 
+    f1a1.axis('equal')

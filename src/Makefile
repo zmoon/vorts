@@ -29,5 +29,3 @@ main.o:./main.f m_vorts.o
 
 clean:
 	rm -f -r *.o *.mod ../bin/vorts.exe ../bin/vorts
-
-
