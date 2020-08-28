@@ -1,10 +1,9 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
-Created on Wed Mar 21 13:32:15 2018
-
-@author: zmoon
+Kind of testbed for making sure the options work...
 """
+import sys
+sys.path.append("../")
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,6 +31,7 @@ yi = [-0.5, 1, 0, 0, 0]
 m = vorts.model_py(
     G, xi, yi,
     dt=0.1, nt=2000,
+    # int_scheme_name="not-a-scheme",
     # int_scheme_name='FT_2',
     # int_scheme_name="RK4_2",
     # int_scheme_name="RK4_3",

@@ -41,7 +41,7 @@ class model_f:
         int_scheme_name='RK4',
         #
         write_vortons=True,
-        write_traces=True,
+        write_tracers=False,
         write_ps=False,
     ):
         """Initialize and create inputs for the Fortran model."""
@@ -58,7 +58,7 @@ class model_f:
 
         # sim settings
         self.dt = dt
-        self.nt = nt
+        self.nt = int(nt)
         self.int_scheme_name = int_scheme_name  # {'FT', 'RK4'}
 
         # executing the model
@@ -74,7 +74,7 @@ class model_f:
         self.vortons = []
         self.tracers = []
         self.write_vortons = write_vortons
-        self.write_tracers = write_traces
+        self.write_tracers = write_tracers
         self.write_ps = write_ps
 
         self.create_inputs()
@@ -109,8 +109,6 @@ class model_f:
 
     def run(self):
         """Invoke the Fortran model's executable and load the results."""
-
-        #os.system(vorts_exe)
         # exe_abs = str(self.vorts_exe_path)
         exe_rel = str(self.vorts_exe_path.relative_to(FORT_BASE_DIR))
         cmd = exe_rel
@@ -124,9 +122,6 @@ class model_f:
         os.chdir(cwd)
         # ^ hack for now, but could instead pass FORT_BASE_DIR into the Fortran program
         #   using vorts_sim_in.txt
-
-        # except Exception as e:
-        #     print(e)
 
         self.load_results()
 
