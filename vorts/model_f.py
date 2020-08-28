@@ -4,6 +4,7 @@ Python driver for the Fortran version.
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 import numpy as np
 
@@ -13,6 +14,14 @@ from .vortons import Vorton
 FORT_BASE_DIR = Path(__file__).parent / "f" #.absolute()
 # ^ the one that `bin`, `in`, `out`, `src` are in
 assert (FORT_BASE_DIR / "src").exists()  # make sure that this is the right spot
+
+
+def fort_bool(b: bool):
+    if b:
+        return ".true."
+    else:
+        return ".false."
+
 
 class model_f:
     """Thin wrapper for functionality of the Fortran model in `src/`.
@@ -29,7 +38,11 @@ class model_f:
         yit=None,         
         dt=0.1, 
         nt=1000, 
-        int_scheme_name='RK4'
+        int_scheme_name='RK4',
+        #
+        write_vortons=True,
+        write_traces=True,
+        write_ps=False,
     ):
         """Initialize and create inputs for the Fortran model."""
         # vorton IC arrays
@@ -60,6 +73,9 @@ class model_f:
         # output data
         self.vortons = []
         self.tracers = []
+        self.write_vortons = write_vortons
+        self.write_tracers = write_traces
+        self.write_ps = write_ps
 
         self.create_inputs()
 
@@ -79,20 +95,40 @@ class model_f:
         np.savetxt(FORT_BASE_DIR / 'in/tracers_in.txt', mat,
                    delimiter=' ', fmt='%.3f', header='xi, yi')
 
-        mat = [self.dt, self.nt, self.int_scheme_name]
+        mat = [
+            self.dt, 
+            self.nt, 
+            self.int_scheme_name,
+            fort_bool(self.write_vortons),
+            fort_bool(self.write_tracers),
+            fort_bool(self.write_ps),
+        ]
         np.savetxt(FORT_BASE_DIR / 'in/vorts_sim_in.txt', mat,
                    delimiter=' ', fmt='%s')
 
 
     def run(self):
-        """Invoke the Fortran model's executable."""
-
-        os.system('rm ./out/*')
+        """Invoke the Fortran model's executable and load the results."""
 
         #os.system(vorts_exe)
-        self.oe = subprocess.check_output(self.vorts_exe_path, stderr=subprocess.STDOUT)
+        # exe_abs = str(self.vorts_exe_path)
+        exe_rel = str(self.vorts_exe_path.relative_to(FORT_BASE_DIR))
+        cmd = exe_rel
 
-        #self.load_results()
+        # try:
+        cwd = os.getcwd()
+        os.chdir(FORT_BASE_DIR)
+        os.system('rm ./out/*')
+        # print(cmd)
+        self.oe = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        os.chdir(cwd)
+        # ^ hack for now, but could instead pass FORT_BASE_DIR into the Fortran program
+        #   using vorts_sim_in.txt
+
+        # except Exception as e:
+        #     print(e)
+
+        self.load_results()
 
 
     def load_results(self):
@@ -102,16 +138,22 @@ class model_f:
 
         #> version for new output files follows
 
-        vortons_file = FORT_BASE_DIR / 'out/vortons.csv'
-        data = np.genfromtxt(vortons_file, delimiter=',', skip_header=1, skip_footer=sf)
+        if self.write_vortons:
+            vortons_file = FORT_BASE_DIR / 'out/vortons.csv'
+            data = np.genfromtxt(vortons_file, delimiter=',', skip_header=1, skip_footer=sf)
+            self.vortons = []
+            for i in range(0, data.shape[0]-1, 2):
+                ihalf = int(i/2)
+                self.vortons.append(Vorton(self.G_vals[ihalf], data[i,:], data[i+1,:], self.nt))
 
-        self.vortons = []
-        for i in range(0, data.shape[0]-1, 2):
-            self.vortons.append(Vorton(self.G_vals[i/2], data[i,:], data[i+1,:], self.nt))
+        if self.write_tracers:
+            tracers_file = FORT_BASE_DIR / 'out/tracers.csv'
+            data = np.genfromtxt(tracers_file, delimiter=',', skip_header=1, skip_footer=sf)
+            self.tracers = []
+            for i in range(0, data.shape[0]-1, 2):
+                self.tracers.append(Vorton(0, data[i,:], data[i+1,:], self.nt))
 
-        tracers_file = FORT_BASE_DIR / 'out/tracers.csv'
-        data = np.genfromtxt(tracers_file, delimiter=',', skip_header=1, skip_footer=sf)
-
-        self.tracers = []
-        for i in range(0, data.shape[0]-1, 2):
-            self.tracers.append(Vorton(0, data[i,:], data[i+1,:], self.nt))
+        if self.write_ps:
+            ps_file = FORT_BASE_DIR / "out/ps.txt"
+            data = np.genfromtxt(ps_file, skip_header=1, skip_footer=sf)
+            self.ps = data

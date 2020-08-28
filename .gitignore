@@ -1,7 +1,8 @@
 
 # built Fortran files
-src/*.o
-src/*.mod
+vorts/f/src/*.o
+vorts/f/src/*.mod
+vorts/f/src/hello_world.exe
 
 *.pyc
 ps*.txt
