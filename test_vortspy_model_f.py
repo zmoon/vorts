@@ -9,7 +9,7 @@ Created on Wed Mar 21 13:32:15 2018
 import matplotlib.pyplot as plt
 import numpy as np
 
-import vortspy as vpy
+import vorts
 
 plt.close('all')
 
