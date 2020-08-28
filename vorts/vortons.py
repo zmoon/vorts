@@ -31,4 +31,3 @@ class Vorton():
                 warnings.warn(
                     f"Fortran model output should be size {nt+1:d} but is {self.xhist.size:d}"
                 )
-

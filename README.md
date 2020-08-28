@@ -25,6 +25,6 @@ Also includes tool for making Poincare plots, given a sufficiently long run with
 
 ## TODO:
 
-* [ ] Add the Poincare output as an option to the Fortran code
-* [ ] Convert the two test scripts to a Jupyter Notebook for example
+* [x] Add the Poincare output as an option to the Fortran code
+* [ ] Convert the two test scripts to a Jupyter Notebook (Jupytext) for example
 * [ ] Write Python interface to the Fortran version as practice?

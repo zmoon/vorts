@@ -21,18 +21,18 @@ class model_py:  # TODO: model base class?
     _scipy_methods = SCIPY_METHODS
 
     def __init__(
-        self, 
-        G, 
-        xi, 
+        self,
+        G,
+        xi,
         yi,
         *,
-        dt=0.1, 
-        nt=1000, 
+        dt=0.1,
+        nt=1000,
         int_scheme_name='RK4_3',
         **int_scheme_kwargs,
     ):
         """Create model with given settings.
-        
+
         **int_scheme_kwargs
             see signatures of `integrate_manual` and `integrate_scipy`
         """

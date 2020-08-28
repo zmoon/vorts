@@ -30,14 +30,14 @@ class model_f:
     """
 
     def __init__(
-        self, 
-        G, 
-        xi, 
+        self,
+        G,
+        xi,
         yi,
-        xit=None, 
-        yit=None,         
-        dt=0.1, 
-        nt=1000, 
+        xit=None,
+        yit=None,
+        dt=0.1,
+        nt=1000,
         int_scheme_name='RK4',
         #
         write_vortons=True,
@@ -96,8 +96,8 @@ class model_f:
                    delimiter=' ', fmt='%.3f', header='xi, yi')
 
         mat = [
-            self.dt, 
-            self.nt, 
+            self.dt,
+            self.nt,
             self.int_scheme_name,
             fort_bool(self.write_vortons),
             fort_bool(self.write_tracers),
