@@ -19,6 +19,7 @@ class model_py:  # TODO: model base class?
     """Model in Python."""
     _manual_steppers = MANUAL_STEPPERS
     _scipy_methods = SCIPY_METHODS
+    _allowed_int_scheme_names = list(_manual_steppers) + list(_scipy_methods)
 
     def __init__(
         self,
@@ -44,11 +45,11 @@ class model_py:  # TODO: model base class?
 
         # sim settings
         self.dt = float(dt)
-        self.nt = nt
+        self.nt = int(nt)
         self.int_scheme_name = int_scheme_name
         self.int_scheme_kwargs = int_scheme_kwargs
 
-        self._allowed_int_scheme_names = list(self._manual_steppers) + list(self._scipy_methods)
+        # check `int_scheme_name`
         if self.int_scheme_name not in self._allowed_int_scheme_names:
             raise ValueError(
                 f"{self.int_scheme_name!r} is not one of the allowed options for `int_scheme_name`:\n"
