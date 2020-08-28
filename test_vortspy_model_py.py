@@ -9,7 +9,7 @@ Created on Wed Mar 21 13:32:15 2018
 import matplotlib.pyplot as plt
 import numpy as np
 
-import vortspy as vpy
+import vorts
 
 
 
@@ -29,13 +29,13 @@ xi = [-0.3, 0, 0.3, 0.5, 0.1]
 yi = [-0.5, 1, 0, 0, 0]
 
 
-m = vpy.model_py(
+m = vorts.model_py(
     G, xi, yi,
     dt=0.1, nt=2000,
     # int_scheme_name='FT_2',
     # int_scheme_name="RK4_2",
     # int_scheme_name="RK4_3",
-    int_scheme_name='scipy_DOP853',
+    # int_scheme_name='scipy_DOP853',
     # adapt_tstep=False,
     # adapt_tstep=True,
 )
