@@ -23,7 +23,7 @@ def integrate_scipy(
     **options,
 ):
     """Integrate using `scipy.integrate.solve_ivp`.
-    
+
     **options
         passed through to `solve_ivp`
     """
@@ -68,12 +68,12 @@ def integrate_scipy(
     y0 = np.concatenate((x0s, y0s))
 
     res = solve_ivp(
-        fun, 
-        t_span=t_span, 
+        fun,
+        t_span=t_span,
         y0=y0,
         t_eval=t_eval,
         #
-        method=method, 
+        method=method,
         vectorized=True,  # not sure what impact this has...
         args=(Gs,),  # additional arguments after `t, y` used in fun, jac, etc.
         max_step=max_step,

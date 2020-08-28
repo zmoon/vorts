@@ -21,4 +21,4 @@ In order to run from Python on Windows, MinGW tools have to be on your PATH.
 On Debian-like distros, `gfortran` can be obtained using `apt`.
 
 On Linux or Mac, [Homebrew](https://brew.sh/) can be used to (potentially) obtain more recent versions of GNU Fortran
-by installing the GNU compiler collection formula: `brew install gcc` (see [formulae](https://formulae.brew.sh/formula/gcc)). 
+by installing the GNU compiler collection formula: `brew install gcc` (see [formulae](https://formulae.brew.sh/formula/gcc)).
