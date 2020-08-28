@@ -1,222 +1,15 @@
 """
-Run Python and Fortran versions of the N-vortex model
+Integration routines and time steppers in Python.
+
+In addition to the sub-par handwritten RK and FT schemes,
+SciPy RK routines (which are written in Python as well) are also available.
 """
-
-from glob import glob
-import os
-import subprocess
 from typing import List, Tuple
-import warnings
 
-#import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
-
-class Vorton():
-    def __init__(self, G, x, y, nt):
-        """Create vorton.
-
-        x, y inputs can be either a single point (IC)
-        or an array
-        so that same class can be used for catching/organizing the Fortran model output
-        """
-#        self.x = xi
-#        self.y = yi
-        self.G = G
-
-        try:
-            self.xhist = np.zeros(nt+1)
-            self.yhist = np.zeros(nt+1)
-            self.xhist[0] = x
-            self.yhist[0] = y
-
-        except ValueError:  # ValueError: setting array with seq; TypeError: ints and floats have no len()
-            self.xhist = x
-            self.yhist = y
-
-            if self.xhist.size != nt+1:
-                warnings.warn(
-                    f"Fortran model output should be size {nt+1:d} but is {self.xhist.size:d}"
-                )
-
-
-
-class model_f():
-    """Thin wrapper for functionality of the Fortran model in `src/`.
-
-    In this implementation we communicate with the Fortran program via text files.
-    """
-
-    def __init__(self, G, xi, yi,
-                 xit=[], yit=[],
-                 dt=0.1, nt=1000, int_scheme_name='RK4'):
-        """ """
-
-        # vorton IC arrays
-        self.G_vals = np.array(G)
-        self.xi_vals = np.array(xi)
-        self.yi_vals = np.array(yi)
-
-        # tracer initial positions
-        self.xit_vals = np.array(xit)
-        self.yit_vals = np.array(yit)
-
-        # sim settings
-        self.dt = dt
-        self.nt = nt
-        self.int_scheme_name = int_scheme_name  # {'FT', 'RK4'}
-
-        # executing the model
-        self.vorts_exe_path = './bin/vorts.exe'
-        self.oe = ''  # standard output and error
-
-        # output data
-        self.vortons = []
-        self.tracers = []
-
-        self.create_inputs()
-
-
-    def create_inputs(self):
-        """
-        Create input files for the Fotran model
-          describing the initial condition
-          and the simulation settings.
-        """
-
-        mat = np.vstack((self.G_vals, self.xi_vals, self.yi_vals)).T
-        np.savetxt('./in/vorts_in.txt', mat,
-                   delimiter=' ', fmt='%.16f', header='Gamma xi yi')
-
-        mat = np.vstack((self.xit_vals.flat, self.yit_vals.flat)).T
-        np.savetxt('./in/tracers_in.txt', mat,
-                   delimiter=' ', fmt='%.3f', header='xi, yi')
-
-        mat = [self.dt, self.nt, self.int_scheme_name]
-        np.savetxt('./in/vorts_sim_in.txt', mat,
-                   delimiter=' ', fmt='%s')
-
-
-    def run(self):
-        """Invoke the Fortran model's executable."""
-
-        os.system('rm ./out/*')
-
-        #os.system(vorts_exe)
-        self.oe = subprocess.check_output(self.vorts_exe_path, stderr=subprocess.STDOUT)
-
-        #self.load_results()
-
-
-    def load_results(self):
-        """Load results from a run of the Fortran model."""
-
-        sf = 0  # there may be blank line at end of the files?
-
-        #> version for new output files follows
-
-        vortons_file = './out/vortons.csv'
-        data = np.genfromtxt(vortons_file, delimiter=',', skip_header=1, skip_footer=sf)
-
-        self.vortons = []
-        for i in range(0, data.shape[0]-1, 2):
-            self.vortons.append(Vorton(self.G_vals[i/2], data[i,:], data[i+1,:], self.nt))
-
-        tracers_file = './out/tracers.csv'
-        data = np.genfromtxt(tracers_file, delimiter=',', skip_header=1, skip_footer=sf)
-
-        self.tracers = []
-        for i in range(0, data.shape[0]-1, 2):
-            self.tracers.append(Vorton(0, data[i,:], data[i+1,:], self.nt))
-
-
-class model_py():
-    """Model in Python."""
-
-    def __init__(
-        self, 
-        G, 
-        xi, 
-        yi,
-        *,
-        dt=0.1, 
-        nt=1000, 
-        int_scheme_name='RK4_3',
-        **int_scheme_kwargs,
-    ):
-        """Create model with given settings.
-        
-        **int_scheme_kwargs
-            see signatures of `integrate_manual` and `integrate_scipy`
-        """
-
-        # vorton IC arrays
-        self.G_vals = G
-        self.xi_vals = xi
-        self.yi_vals = yi
-
-        # sim settings
-        self.dt = float(dt)
-        self.nt = nt
-        self.int_scheme_name = int_scheme_name
-        self.int_scheme_kwargs = int_scheme_kwargs
-
-        # TODO: make module of class variable after moving steppers away
-        self.manual_steppers = {
-            'FT': FT_step,
-            'FT_2': FT_2_step,
-            'RK4': RK4_step,
-            'RK4_2': RK4_2_step,
-            'RK4_3': RK4_3_step,
-        }
-        self.scipy_methods = {  # could create this programatically
-            "scipy_RK45": "RK45",
-            "scipy_DOP853": "DOP853",
-        }
-        self._allowed_int_scheme_names = list(self.manual_steppers.keys()) + list(self.scipy_methods.keys())
-        if self.int_scheme_name not in self._allowed_int_scheme_names:
-            raise ValueError(
-                f"{self.int_scheme_name!r} is not one of the allowed options for `int_scheme_name`:\n"
-                f"{self._allowed_int_scheme_names}"
-            )
-
-        # create vortons
-        self.vortons = []
-        for Gxy in zip(self.G_vals, self.xi_vals, self.yi_vals):
-            self.vortons.append(Vorton(*Gxy, nt))
-
-        self.l = 0  # time step index
-
-        # for adaptive time stepping calculations
-        self.C_0 = calc_C(self.vortons, self.l)
-
-
-    def run(self):
-        """Integrate from 0 to end (nt*dt)."""
-
-        dt, nt = self.dt, self.nt
-        # t_eval = np.arange(dt, (nt+1)*dt, dt)
-        t_eval = np.arange(1, nt+1)*dt
-
-        if "scipy" not in self.int_scheme_name:
-            integrate_manual(
-                self.vortons,
-                self.C_0,
-                t_eval,
-                self.G_vals,
-                stepper=self.manual_steppers[self.int_scheme_name],
-                **self.int_scheme_kwargs
-            )
-        else:  # Scipy integrator
-            integrate_scipy(
-                self.vortons,
-                t_eval,
-                self.G_vals,
-                method=self.scipy_methods[self.int_scheme_name],
-                max_step=self.dt,
-                **self.int_scheme_kwargs
-            )
+from ..vortons import Vorton
 
 
 def integrate_scipy(
@@ -230,7 +23,7 @@ def integrate_scipy(
     **options,
 ):
     """Integrate using `scipy.integrate.solve_ivp`.
-    
+
     **options
         passed through to `solve_ivp`
     """
@@ -275,12 +68,12 @@ def integrate_scipy(
     y0 = np.concatenate((x0s, y0s))
 
     res = solve_ivp(
-        fun, 
-        t_span=t_span, 
+        fun,
+        t_span=t_span,
         y0=y0,
         t_eval=t_eval,
         #
-        method=method, 
+        method=method,
         vectorized=True,  # not sure what impact this has...
         args=(Gs,),  # additional arguments after `t, y` used in fun, jac, etc.
         max_step=max_step,
@@ -292,6 +85,7 @@ def integrate_scipy(
     for i, v in enumerate(vortons):
         v.xhist[1:] = res.y[i, :]
         v.yhist[1:] = res.y[i+m, :]
+
 
 
 def integrate_manual(
@@ -392,7 +186,7 @@ def calc_lsqd(x1, y1, x2, y2):
 def calc_C(vortons: List[Vorton], l: int):
     """Calculate $C$ at time $l$.
 
-    $C$ is supposed to be a conserved quantity in this system
+    $C$ is supposed to be a conserved quantity in this system.
     - Chamecki (2005) eq. 15
 
     We use deparature from $C_0$ (initial value of $C$) in the adaptive stepping
@@ -691,3 +485,19 @@ def RK4_3_step(state0: List[Tuple], dt: float):
     ynews = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
 
     return xnews, ynews
+
+
+
+# these two dicts are used by model_py to select integration method
+MANUAL_STEPPERS = {
+    'FT': FT_step,
+    'FT_2': FT_2_step,
+    'RK4': RK4_step,
+    'RK4_2': RK4_2_step,
+    'RK4_3': RK4_3_step,
+}
+
+SCIPY_METHODS = {  # could create this programatically
+    "scipy_RK45": "RK45",
+    "scipy_DOP853": "DOP853",
+}

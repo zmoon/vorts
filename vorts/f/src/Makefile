@@ -20,11 +20,11 @@ vorts: m_vorts.o main.o
 	$(FC) -o ../bin/vorts.exe $(LFLAGS) m_vorts.o main.o
 
 # dependencies
-m_vorts.o:./m_vorts.f
-	$(FC) $(CFLAGS) -c ./m_vorts.f
+m_vorts.o:./m_vorts.f03
+	$(FC) $(CFLAGS) -c ./m_vorts.f03
 
-main.o:./main.f m_vorts.o
-	$(FC) $(CFLAGS) -c ./main.f
+main.o:./main.f03 m_vorts.o
+	$(FC) $(CFLAGS) -c ./main.f03
 
 
 clean:
