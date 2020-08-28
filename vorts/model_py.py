@@ -15,7 +15,7 @@ from .py import (integrate_manual, integrate_scipy, MANUAL_STEPPERS, SCIPY_METHO
 from .vortons import Vorton
 
 
-class model_py():
+class model_py:  # TODO: model base class?
     """Model in Python."""
     _manual_steppers = MANUAL_STEPPERS
     _scipy_methods = SCIPY_METHODS

@@ -2,12 +2,17 @@
 Python driver for the Fortran version.
 """
 import os
+from pathlib import Path
 import subprocess
 
 import numpy as np
 
 from .vortons import Vorton
 
+
+FORT_BASE_DIR = Path(__file__).parent / "f" #.absolute()
+# ^ the one that `bin`, `in`, `out`, `src` are in
+assert (FORT_BASE_DIR / "src").exists()  # make sure that this is the right spot
 
 class model_f:
     """Thin wrapper for functionality of the Fortran model in `src/`.
@@ -26,8 +31,7 @@ class model_f:
         nt=1000, 
         int_scheme_name='RK4'
     ):
-        """ """
-
+        """Initialize and create inputs for the Fortran model."""
         # vorton IC arrays
         self.G_vals = np.asarray(G)
         self.xi_vals = np.asarray(xi)
@@ -45,7 +49,12 @@ class model_f:
         self.int_scheme_name = int_scheme_name  # {'FT', 'RK4'}
 
         # executing the model
-        self.vorts_exe_path = './bin/vorts.exe'
+        self.vorts_exe_path = FORT_BASE_DIR / 'bin/vorts.exe'
+        if not self.vorts_exe_path.exists():
+            raise Exception(
+                f"{self.vorts_exe_path!r} doesn't exist. "
+                "The Fortran code must first be compiled to produce this file."
+            )
         self.oe = ''  # standard output and error
 
         # output data
@@ -63,15 +72,15 @@ class model_f:
         """
 
         mat = np.vstack((self.G_vals, self.xi_vals, self.yi_vals)).T
-        np.savetxt('./in/vorts_in.txt', mat,
+        np.savetxt(FORT_BASE_DIR / 'in/vorts_in.txt', mat,
                    delimiter=' ', fmt='%.16f', header='Gamma xi yi')
 
         mat = np.vstack((self.xit_vals.flat, self.yit_vals.flat)).T
-        np.savetxt('./in/tracers_in.txt', mat,
+        np.savetxt(FORT_BASE_DIR / 'in/tracers_in.txt', mat,
                    delimiter=' ', fmt='%.3f', header='xi, yi')
 
         mat = [self.dt, self.nt, self.int_scheme_name]
-        np.savetxt('./in/vorts_sim_in.txt', mat,
+        np.savetxt(FORT_BASE_DIR / 'in/vorts_sim_in.txt', mat,
                    delimiter=' ', fmt='%s')
 
 
@@ -93,14 +102,14 @@ class model_f:
 
         #> version for new output files follows
 
-        vortons_file = './out/vortons.csv'
+        vortons_file = FORT_BASE_DIR / 'out/vortons.csv'
         data = np.genfromtxt(vortons_file, delimiter=',', skip_header=1, skip_footer=sf)
 
         self.vortons = []
         for i in range(0, data.shape[0]-1, 2):
             self.vortons.append(Vorton(self.G_vals[i/2], data[i,:], data[i+1,:], self.nt))
 
-        tracers_file = './out/tracers.csv'
+        tracers_file = FORT_BASE_DIR / 'out/tracers.csv'
         data = np.genfromtxt(tracers_file, delimiter=',', skip_header=1, skip_footer=sf)
 
         self.tracers = []
