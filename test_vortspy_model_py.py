@@ -16,19 +16,29 @@ import vortspy as vpy
 #%% create
 
 #G = np.ones(2)
-#G = [1, 5]
-#xi = [0, 0]
-#yi = [-1, 0.5]
+# G = [1, 5]
+# xi = [0, 0]
+# yi = [-1, 0.5]
 
-G = np.ones(3)
-xi = [-0.3, 0, 0.3]
-yi = [-0.5, 1, 0]
+# G = np.ones(3)
+# xi = [-0.3, 0, 0.3]
+# yi = [-0.5, 1, 0]
+
+G = [1, 1, 1, 0, 0]
+xi = [-0.3, 0, 0.3, 0.5, 0.1]
+yi = [-0.5, 1, 0, 0, 0]
 
 
-m = vpy.model_py(G, xi, yi,
-                 dt=0.1, nt=2000,
-                 int_scheme_name='FT_2',
-                 adapt_tstep=False)
+m = vpy.model_py(
+    G, xi, yi,
+    dt=0.1, nt=2000,
+    # int_scheme_name='FT_2',
+    # int_scheme_name="RK4_2",
+    # int_scheme_name="RK4_3",
+    int_scheme_name='scipy_DOP853',
+    # adapt_tstep=False,
+    # adapt_tstep=True,
+)
 
 
 
