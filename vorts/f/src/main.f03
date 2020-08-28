@@ -2,7 +2,7 @@
 ! run simulation of interactions between point vortices
 ! using module m_vorts
 !
-! loads simulation inputs and writes out the output paths
+! loads simulation inputs and writes out the output trajectories
 !
 
 program lets_do_it
@@ -21,16 +21,20 @@ program lets_do_it
 
   !> simulation variables
   real(dp) :: dt  ! simulation time step
-  integer  :: nt ! number of time steps
+  integer  :: nt  ! number of time steps
   character(len=10) :: integration_routine_name
   type(Vorton), dimension(:), allocatable :: vortons, tracers, vs_and_ts  ! arrays of vortons!
   ! pointer :: integration_routine
+  logical :: write_vortons, write_tracers, write_ps  ! boolean flags: whether to write these output files
 
   !> read in simulation info: dt and nt
   open(unit=9, file='./in/vorts_sim_in.txt')
   read(9, *) dt
   read(9, *) nt
   read(9, *) integration_routine_name
+  read(9, *) write_vortons
+  read(9, *) write_tracers
+  read(9, *) write_ps
   close(9)
 
   !> determine number of inputs so can allocate
@@ -121,93 +125,63 @@ program lets_do_it
   end do
 
   !> save the results
-  !  individual files versions
-  ! f3 = '(2(1x, f0.8))'  ! could use sci notation instead? also supposedly free-form is much faster
-  !
-  ! print *, ''
-  ! print *, 'Now writing:'
-  !
-  ! do i = 1, num_vortons+num_tracers
-  !   if ( i <= num_vortons ) then
-  !
-  !     write(vortnum, '(i0)') i
-  !     ofunit = i + 10
-  !     ofname = './out/vorton' // trim(vortnum) // '.txt'
-  !     print *, ofname
-  !     open(unit=ofunit, file=ofname)
-  !
-  !     write(ofunit, fmt='(a)') '# x y'
-  !     do j = 1, nt+1
-  !       ! write(ofunit, fmt=f3) vortons(i)%xhist(j), vortons(i)%yhist(j)
-  !       write(ofunit, fmt=f3) vs_and_ts(i)%xhist(j), vs_and_ts(i)%yhist(j)
-  !     end do
-  !     close(ofunit)
-  !
-  !   else
-  !
-  !     write(tracernum, '(i0)') i-num_vortons
-  !     ofunit = i + 10
-  !     ofname = './out/tracer' // trim(tracernum) // '.txt'
-  !     print *, ofname
-  !     open(ofunit, file=ofname)
-  !
-  !     write(ofunit, fmt='(a)') '# x y'
-  !     do j = 1, nt+1
-  !       ! write(ofunit, fmt=f3) tracers(i)%xhist(j), tracers(i)%yhist(j)
-  !       write(ofunit, fmt=f3) vs_and_ts(i)%xhist(j), vs_and_ts(i)%yhist(j)
-  !     end do
-  !     close(ofunit)
-  !
-  !   end if
-  ! end do
+  write(vortnum, '(i0)') nt+1 - 1
+  f4 = '(g0.5, ' // trim(vortnum) // '(",", g0.5))'
+  ! print *, f4
 
-  !> write all vortons to one csv file
-!  write(vortnum, '(i0)') nt+1 - 1
-!  f4 = '(g0.5, ' // trim(vortnum) // '(",", g0.5))'
-!
-!  print *, f4
-!
-!  open(unit=101, file='./out/vortons.csv')
-!  write(101, fmt=*) '# x1(1:nt); y1; x2; y2; ...'
-!
-!  open(unit=102, file='./out/tracers.csv')
-!  write(102, fmt=*) '# x1(1:nt); y1; x2; y2; ...'
-!
-!  do i = 1, num_total
-!
-!    if ( i <= num_vortons ) then
-!
-!      write(101, fmt=f4) vs_and_ts(i)%xhist
-!      write(101, fmt=f4) vs_and_ts(i)%yhist
-!
-!    else
-!
-!      write(102, fmt=f4) vs_and_ts(i)%xhist
-!      write(102, fmt=f4) vs_and_ts(i)%yhist
-!
-!    end if
-!  end do
+  open(unit=101, file='./out/vortons.csv')
+  write(101, fmt=*) '# x1(1:nt); y1; x2; y2; ...'
+
+  open(unit=102, file='./out/tracers.csv')
+  write(102, fmt=*) '# x1(1:nt); y1; x2; y2; ...'
+
+  do i = 1, num_total
+
+    if ( i <= num_vortons ) then
+
+      if ( write_vortons ) then
+        write(101, fmt=f4) vs_and_ts(i)%xhist
+        write(101, fmt=f4) vs_and_ts(i)%yhist
+      end if
+
+    else
+
+      if ( write_tracers ) then
+        write(102, fmt=f4) vs_and_ts(i)%xhist
+        write(102, fmt=f4) vs_and_ts(i)%yhist
+      end if
+
+    end if
+  end do
+
+  close(101)
+  close(102)
 
 
   !> Poincare section, using 2nd vorton (should be the one at the top, (0, 1)) as ref
   !  use free form output for speed ??
-  open(unit=103, file='./out/ps.txt')
-  write(103, fmt=*) '# x y'
+  if ( write_ps ) then
 
-  do j = 2, nt+1
+    open(unit=103, file='./out/ps.txt')
+    write(103, fmt=*) '# x y'
 
-    do i = num_vortons+1, num_total  ! looping through tracers only
+    do j = 2, nt+1
 
-      ! x[j] < xi[i]) & (x[j-1] > xi[i]) & (y[j] > 0
-      if ( vs_and_ts(2)%xhist(j) < 0. .and. vs_and_ts(2)%xhist(j-1) > 0. .and. vs_and_ts(2)%yhist(j) > 0 ) then
+      do i = num_vortons+1, num_total  ! looping through tracers only
 
-        write(103, fmt=*) vs_and_ts(i)%xhist(j), vs_and_ts(i)%yhist(j)
+        ! x[j] < xi[i]) & (x[j-1] > xi[i]) & (y[j] > 0
+        if ( vs_and_ts(2)%xhist(j) < 0. .and. vs_and_ts(2)%xhist(j-1) > 0. .and. vs_and_ts(2)%yhist(j) > 0 ) then
 
-      end if
+          write(103, fmt=*) vs_and_ts(i)%xhist(j), vs_and_ts(i)%yhist(j)
 
+        end if
+
+      end do
     end do
-  end do
 
+  end if
+
+  close(103)
 
 
 
