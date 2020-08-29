@@ -69,6 +69,8 @@ class Vortons:
         self.G = np.asarray(G)
 
         # the state matrix has shape (n_vortons, n_pos_dims) (G excluded since time-invariant)
+        x = np.asarray(x, dtype=np.float)
+        y = np.asarray(y, dtype=np.float)
         self.state_mat = np.column_stack((x, y))
 
         assert self.G.ndim == 1 and self.state_mat.shape[1] == 2
@@ -113,6 +115,7 @@ class Vortons:
         # n_vortons should be too many, so let's show all
         s_vorts = "\n".join(f"  {v}" for v in self._vortons)
         return f"Vortons(\n{s_vorts}\n)"
+        # TODO: should this call `self._update_vortons`? so as to not be out-of-date if state changes?
 
     def _update_vortons(self):
         self._vortons = [Vorton(G, x, y) for G, x, y in self.state_mat_full]
@@ -166,7 +169,13 @@ class Vortons:
         # 2nd mom
         x_cm2, y_cm2 = self.mom(2)
         s_cm2 = f"({x_cm2:.4g}, {y_cm2:.4g})"
-        ax.plot(x_cm2, y_cm2, "*", ms=13, c="0.5", label=f"mom2\n{s_cm2}")
+        ax.plot(x_cm2, y_cm2, "*", ms=13, c="0.4", label=f"mom2\n{s_cm2}")
+
+        # 3nd mom
+        # TODO: helper fn to DRY this
+        x_cm3, y_cm3 = self.mom(3)
+        s_cm3 = f"({x_cm3:.4g}, {y_cm3:.4g})"
+        ax.plot(x_cm3, y_cm3, "*", ms=13, c="0.55", label=f"mom3\n{s_cm3}")
 
         ax.set(
             title=f"$C = {self.C():.4g}$",
@@ -181,7 +190,7 @@ class Vortons:
         # return
 
 
-    def mom(self, n, *, abs_G=False, center=True):
+    def mom(self, n, *, abs_G=False, center=False):
         """Compute `n`-th moment.
 
         Parameters
@@ -214,7 +223,7 @@ class Vortons:
     def cm(self):
         """Compute center-of-mass using Gamma as mass."""
         # TODO: what impact should sign of G have on cm? mass is always pos. but G can be neg.
-        return self.mom(1, abs_G=False, center=False)
+        return self.mom(1, abs_G=True, center=False)
 
 
     def center_coords(self, inplace=False):
@@ -226,6 +235,34 @@ class Vortons:
         else:
             self.state_mat -= x_cm
 
+
+    @staticmethod
+    def regular_polygon(n, *, G=None, **kwargs):
+        """Create Vortons with positions corresponding to regular polygon.
+
+        Parameters
+        ----------
+        n : int
+            polygon order
+        G : int, array-like, optional
+            Gamma value(s) to use
+            single value or array of values
+            default: 1.0
+
+        `**kwargs` are passed on to `vortons.regular_polygon_vertices`.
+        See signature there.
+        """
+        if G is None:
+            G = 1.0  # default
+        G = np.asarray(G)
+        if G.size == 1:  # single G provided, or using the default
+            G = np.full((n,), G)  # TODO: could also the constructor to accept single G
+        if G.size != n:
+            raise ValueError(f"`G` must have size `n` or 1, but is {G.size!r}")
+
+        xy = regular_polygon_vertices(n, **kwargs).T  # x, y cols-> rows (for unpacking)
+
+        return Vortons(G, *xy)
 
 
     # TODO: indexing dunder methods
@@ -256,7 +293,7 @@ def rotmat_2d(ang_deg):
 
 
 
-def regular_polygon(n, *, c=(0, 0), r_c=1):
+def regular_polygon_vertices(n, *, c=(0, 0), r_c=1):
     """Regular polygon vertices.
 
     Parameters
@@ -271,7 +308,7 @@ def regular_polygon(n, *, c=(0, 0), r_c=1):
     c = np.asarray(c)
 
     # initial vertex
-    vert0 = np.r_[r_c, 0]
+    vert0 = np.r_[0, r_c]
 
     # rotation matrix -- left-multiplies a column position vector to give rotated position
     rotmat = rotmat_2d(360/n)
@@ -326,12 +363,12 @@ if __name__ == "__main__":
 
     plt.close("all")
 
-    # vs = Vortons([1, 1, 1], [-0.666, 0, 0.666], [-0.4, 0.8, -0.4])
-
-    vs = Vortons([1, 1, 1], [-0.666, 0, 0.666], [-0.4, 0.6, -0.4])
-
+    vs = Vortons([1, 1], [0, 1], [0, 0])
     vs.plot()
 
-    plt.figure()
-    plt.plot(*regular_polygon(7).T, "o")
-    plt.axis("equal")
+    # G sum here is 0, messing up the mom's...
+    Vortons([1, -1], [0, 1], [0, 0]).plot()
+
+    Vortons.regular_polygon(3).plot()
+
+    Vortons.regular_polygon(10, c=(1, 0), r_c=0.5).plot()
