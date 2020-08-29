@@ -181,8 +181,20 @@ class Vortons:
         # return
 
 
-    def mom(self, n, *, abs_G=False):
-        """Compute `n`-th moment."""
+    def mom(self, n, *, abs_G=False, center=True):
+        """Compute `n`-th moment.
+
+        Parameters
+        ----------
+        n : int
+            which moment
+            https://en.wikipedia.org/wiki/Moment_(mathematics)
+        abs_G : bool, optional (default False)
+            whether to take the absolute value of G values
+        center : bool, optional (default True)
+            True: evaluate moment wrt. center-of-mass
+            False: evaluate moment wrt. (0, 0)
+        """
         # seems like a moment but that might not be the correct terminology...
         G = self.G_col
         if abs_G:
@@ -191,7 +203,9 @@ class Vortons:
 
         x = self.state_mat  # x, y (columns)
 
-        x_mom = (G * x**n).sum(axis=0) / G_tot  # sum along vortons dim, giving a position
+        c = self.cm() if center else 0
+
+        x_mom = (G * (x-c)**n).sum(axis=0) / G_tot  # sum along vortons dim, giving a position
         # ^ maybe this should be x - x_cm here...
 
         return x_mom
@@ -199,8 +213,8 @@ class Vortons:
 
     def cm(self):
         """Compute center-of-mass using Gamma as mass."""
-        # TODO: what impact should sign of G have on cm?
-        return self.mom(1, abs_G=False)
+        # TODO: what impact should sign of G have on cm? mass is always pos. but G can be neg.
+        return self.mom(1, abs_G=False, center=False)
 
 
     def center_coords(self, inplace=False):
@@ -223,6 +237,52 @@ class Vortons:
 
 
 # class Tracers(Vortons):
+
+
+
+def rotmat_2d(ang_deg):
+    """Return rotation matrix for rotation `ang_deg` in degrees.
+    For left-multiplication of a column position vector.
+
+    `scipy.spatial.transform.Rotation` can be used for 3-d.
+    """
+    ang = np.deg2rad(ang_deg)
+    c, s = np.cos(ang), np.sin(ang)
+    R = np.array([
+        [c, -s],
+        [s, c]
+    ])
+    return R
+
+
+
+def regular_polygon(n, *, c=(0, 0), r_c=1):
+    """Regular polygon vertices.
+
+    Parameters
+    ----------
+    n : int
+        order (number of sides/vertices)
+    c : 2-tuple / array-like
+        center coordinate of the inscribing circle
+    r_c : float, int
+        radius of the inscribing circle
+    """
+    c = np.asarray(c)
+
+    # initial vertex
+    vert0 = np.r_[r_c, 0]
+
+    # rotation matrix -- left-multiplies a column position vector to give rotated position
+    rotmat = rotmat_2d(360/n)
+
+    verts = np.full((n, 2), vert0, dtype=np.float)
+    # successive rotations
+    for i in range(1, n):
+        verts[i, :] = (rotmat @ verts[i-1, :][:, np.newaxis]).squeeze()
+
+    return verts + c
+
 
 
 
@@ -268,6 +328,10 @@ if __name__ == "__main__":
 
     # vs = Vortons([1, 1, 1], [-0.666, 0, 0.666], [-0.4, 0.8, -0.4])
 
-    vs = Vortons([1, -1, 1], [-0.666, 0, 0.666], [-0.4, 0.6, -0.4])
+    vs = Vortons([1, 1, 1], [-0.666, 0, 0.666], [-0.4, 0.6, -0.4])
 
     vs.plot()
+
+    plt.figure()
+    plt.plot(*regular_polygon(7).T, "o")
+    plt.axis("equal")
