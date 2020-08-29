@@ -50,6 +50,7 @@ class Vorton(NamedTuple):
     # """Tracer -- a vorton with G=0 (no power)."""
 
 
+# could exchange x,y for r at some point, to open 3-d option more easily
 class Vortons:
     """Collection of Vortons."""
     def __init__(self, G, x, y):
@@ -58,7 +59,9 @@ class Vortons:
         Parameters
         ----------
         G, x, y : array_like (n_vortons,)
-            G: Gamma (strength)
+            G: Gamma (strength of the circulation, with sign to indicate direction)
+                In fluid dynamics, circulation $\Gamma$ is the line integral of velocity
+                or flux of vorticity vectors through a surface (here the xy-plane).
             x: x position
             y: y position
 
@@ -67,6 +70,8 @@ class Vortons:
 
         # the state matrix has shape (n_vortons, n_pos_dims) (G excluded since time-invariant)
         self.state_mat = np.column_stack((x, y))
+
+        assert self.G.ndim == 1 and self.state_mat.shape[1] == 2
 
         # create initial corresponding Vorton objects
         self._update_vortons()
@@ -137,17 +142,31 @@ class Vortons:
 
 
     def plot(self):
+        """Plot the vortons.
+        (Only their current positions, which are all this container knows about.)
+        """
         import matplotlib.pyplot as plt
 
         fig, ax = plt.subplots()
 
         # plot vorton positions
-        l, = ax.plot(self.x, self.y, "o", ms=7)
+        c_Gp = "cadetblue"
+        c_Gm = "salmon"
+        G = self.G
+        Gp, Gm = G > 0, G < 0
+        x, y = self.x, self.y
+        ax.plot(x[Gp], y[Gp], "o", ms=7, c=c_Gp, label="$\Gamma > 0$")
+        ax.plot(x[Gm], y[Gm], "o", ms=7, c=c_Gm, label="$\Gamma < 0$")
 
         # plot center-of-mass
         x_cm, y_cm = self.cm()
         s_cm = f"({x_cm:.4g}, {y_cm:.4g})"
         ax.plot(x_cm, y_cm, "*", ms=13, c="gold", label=f"center-of-mass\n{s_cm}")
+
+        # 2nd mom
+        x_cm2, y_cm2 = self.mom(2)
+        s_cm2 = f"({x_cm2:.4g}, {y_cm2:.4g})"
+        ax.plot(x_cm2, y_cm2, "*", ms=13, c="0.5", label=f"mom2\n{s_cm2}")
 
         ax.set(
             title=f"$C = {self.C():.4g}$",
@@ -155,27 +174,52 @@ class Vortons:
             ylabel="$y$",
         )
         ax.set_aspect("equal", "box")
-        ax.legend()
+        fig.legend()
         ax.grid(True)
         fig.tight_layout()
 
-        return l
+        # return
+
+
+    def mom(self, n, *, abs_G=False):
+        """Compute `n`-th moment."""
+        # seems like a moment but that might not be the correct terminology...
+        G = self.G_col
+        if abs_G:
+            G = np.abs(G)
+        G_tot = G.sum()
+
+        x = self.state_mat  # x, y (columns)
+
+        x_mom = (G * x**n).sum(axis=0) / G_tot  # sum along vortons dim, giving a position
+        # ^ maybe this should be x - x_cm here...
+
+        return x_mom
 
 
     def cm(self):
         """Compute center-of-mass using Gamma as mass."""
-        G = self.G_col
-        G_tot = G.sum()
-        x = self.state_mat  # x, y (columns)
+        # TODO: what impact should sign of G have on cm?
+        return self.mom(1, abs_G=False)
 
-        # vector center-of-mass
-        x_cm = (G * x).sum(axis=0) / G_tot  # sum along vortons dim
 
-        return x_cm
+    def center_coords(self, inplace=False):
+        """Make center-of-mass (0, 0)."""
+        xy_cm = self.cm()
+        x_cm, y_cm = xy_cm
+        if not inplace:
+            return Vortons(self.G, self.x-x_cm, self.y-y_cm)
+        else:
+            self.state_mat -= x_cm
 
 
 
     # TODO: indexing dunder methods
+
+
+
+    # TODO: class method to take List[Vorton] and return a Vortons?
+
 
 
 # class Tracers(Vortons):
@@ -205,7 +249,7 @@ def init_hist(
 
     ds = xr.Dataset(
         coords={
-            "t": ("t", t, {"long_name": "non-dimensional? time"}),
+            "t": ("t", t, {"long_name": "unitless time"}),
         },
         data_vars={
             "x": (("t"), np.empty((n_t,)), {"long_name": "Vorton x position"}),
@@ -218,7 +262,12 @@ def init_hist(
 
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
 
-    vs = Vortons([1, 1, 1], [-0.666, 0, 0.666], [-0.4, 0.8, -0.4])
+    plt.close("all")
+
+    # vs = Vortons([1, 1, 1], [-0.666, 0, 0.666], [-0.4, 0.8, -0.4])
+
+    vs = Vortons([1, -1, 1], [-0.666, 0, 0.666], [-0.4, 0.6, -0.4])
 
     vs.plot()
