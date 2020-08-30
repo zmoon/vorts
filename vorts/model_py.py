@@ -64,7 +64,8 @@ class model_py:  # TODO: model base class?
     """Model in Python."""
     _manual_steppers = MANUAL_STEPPERS
     _scipy_methods = SCIPY_METHODS
-    _allowed_int_scheme_names = list(_manual_steppers) + list(_scipy_methods)
+    # _allowed_int_scheme_names = list(_manual_steppers) + list(_scipy_methods)
+    _allowed_int_scheme_names = list(_scipy_methods)
 
     def __init__(
         self,
@@ -72,7 +73,7 @@ class model_py:  # TODO: model base class?
         *,
         dt=0.1,
         nt=1000,
-        int_scheme_name='RK4_3',
+        int_scheme_name='scipy_RK45',
         **int_scheme_kwargs,
     ):
         """Create model with given settings.
