@@ -9,7 +9,7 @@ import sys
 
 import numpy as np
 
-from .plot import plot_vorton_trajectories, plot_tracer_trajectories
+from .plot import plot_vorton_trajectories, plot_tracer_trajectories, plot_ps
 from .model_py import init_hist
 from .vortons import Vortons
 
@@ -190,6 +190,9 @@ class Model_f:
 
         elif which == "tracers":
             plot_tracer_trajectories(self.hist, **kwargs)
+
+        elif which == "poincare":
+            plot_ps(self.hist, **kwargs)
 
         else:
             raise NotImplementedError(f"which={which!r}")
