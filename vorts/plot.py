@@ -26,6 +26,10 @@ def plot_vorton_trajectories(ds, **kwargs):
 
     **kwargs are passed on to `plt.subplots()`
     """
+    # select vortons
+    iv = ds.G != 0
+    ds = ds.sel(v=iv)
+
     fig, ax = plt.subplots(**kwargs)
 
     color_cycle = cycler(color=_NEW_TAB10)
@@ -45,8 +49,41 @@ def plot_vorton_trajectories(ds, **kwargs):
     ax.set(
         xlabel="$x$",
         ylabel="$y$",
+        title="Vortons",
     )
 
     ax.set_aspect("equal", "box")
 
     fig.tight_layout()
+
+
+# note much shared with vorton traj plot
+def plot_tracer_trajectories(ds, **kwargs):
+    """Plot tracer trajectories."""
+    # select tracers
+    it = ds.G == 0  # tracers boolean
+    ds = ds.sel(v=it)
+
+    fig, ax = plt.subplots(**kwargs)
+
+    nv = ds.v.size
+    for i in range(nv):
+        ts_i = ds.isel(v=i)
+        x = ts_i.x
+        y = ts_i.y
+        ax.plot(x, y, c="0.5", lw=0.5, alpha=0.5)
+
+    ax.set(
+        xlabel="$x$",
+        ylabel="$y$",
+        title="Tracers",
+    )
+
+    ax.set_aspect("equal", "box")
+
+    fig.tight_layout()
+
+
+
+# TODO
+# def plot_ps
