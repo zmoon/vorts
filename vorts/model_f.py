@@ -23,7 +23,7 @@ def fort_bool(b: bool):
         return ".false."
 
 
-class model_f:
+class Model_f:
     """Thin wrapper for functionality of the Fortran model in `src/`.
 
     In this implementation we communicate with the Fortran program via text files.

@@ -64,7 +64,7 @@ def init_hist(
     return ds
 
 
-class model_py:  # TODO: model base class?
+class Model_py:  # TODO: model base class?
     """Model in Python."""
     _manual_steppers = MANUAL_STEPPERS
     _scipy_methods = SCIPY_METHODS
