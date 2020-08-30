@@ -34,7 +34,7 @@ vs.add_tracers(100)
 
 vs.plot()  # plot initial state
 
-m = vorts.model_py(
+m = vorts.Model_py(
     vs,
     dt=0.1, nt=200,
     # int_scheme_name="not-a-scheme",

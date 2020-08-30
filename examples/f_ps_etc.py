@@ -41,7 +41,7 @@ d = 3.0  # displacement off center to select initial tracer coords from
 xit = np.random.uniform(-d, d, (n, n))
 yit = np.random.uniform(-d, d, (n, n))
 
-m = vpy.model_f(G, xi, yi,
+m = vorts.Model_f(G, xi, yi,
                 xit=xit, yit=yit,
                 dt=0.005, nt=10000000,
                 int_scheme_name='RK4')
