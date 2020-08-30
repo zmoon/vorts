@@ -30,12 +30,13 @@ yi = [-0.5, 1, 0]
 
 
 vs = vorts.Vortons(G, xi, yi)
+vs.add_tracers(100)
 
 vs.plot()  # plot initial state
 
 m = vorts.model_py(
     vs,
-    dt=0.1, nt=2000,
+    dt=0.1, nt=200,
     # int_scheme_name="not-a-scheme",
     # int_scheme_name='FT_2',
     # int_scheme_name="RK4_2",
@@ -55,4 +56,6 @@ m.run()
 
 # %% plot run results
 
-m.plot()
+m.plot()  # vortons by default
+
+m.plot("tracers")

@@ -45,7 +45,7 @@ class Vorton(NamedTuple):
     y: float
 
 
-
+# not sure if this is necessary...
 # class Tracer(Vorton):
     # """Tracer -- a vorton with G=0 (no power)."""
 
@@ -67,6 +67,7 @@ class Vortons:
 
         """
         self.G = np.asarray(G)
+        # TODO: should we check G nonzero? since tracers are treated separately
 
         # the state matrix has shape (n_vortons, n_pos_dims) (G excluded since time-invariant)
         x = np.asarray(x, dtype=np.float)
@@ -78,6 +79,7 @@ class Vortons:
 
         # create initial corresponding Vorton objects
         self._update_vortons()
+
 
 
     # these 2 don't really need to be property?
@@ -273,15 +275,28 @@ class Vortons:
         return Vortons(G, *xy)
 
 
+    def add_tracers(self, n, *, method="randu"):
+        """Add `n` passive tracers (vortons with G=0)."""
+
+        if method == "randu":
+            d = 3.0  # displacement off center to select initial tracer coords from
+            Gt = np.zeros((n,))
+            xit = np.random.uniform(-d, d, (n,))  # TODO: optional centering choice (or cm?)
+            yit = np.random.uniform(-d, d, (n,))
+
+        else:
+            raise NotImplementedError(f"method={method!r}")
+
+        xyt = np.column_stack((xit, yit))
+        self.state_mat = np.append(self.state_mat, xyt, axis=0)
+        self.G = np.append(self.G, Gt)
+
+
     # TODO: indexing dunder methods
-
-
 
     # TODO: class method to take List[Vorton] and return a Vortons?
 
 
-
-# class Tracers(Vortons):
 
 
 
@@ -336,6 +351,7 @@ if __name__ == "__main__":
     plt.close("all")
 
     vs = Vortons([1, 1], [0, 1], [0, 0])
+    vs.add_tracers(10)
     vs.plot()
 
     # G sum here is 0, messing up the mom's...

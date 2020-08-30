@@ -12,7 +12,7 @@ import warnings
 import numpy as np
 import xarray as xr
 
-from .plot import plot_vorton_trajectories
+from .plot import plot_vorton_trajectories, plot_tracer_trajectories
 from .py import (integrate_manual, integrate_scipy, MANUAL_STEPPERS, SCIPY_METHODS)
 from .vortons import Vortons
 
@@ -42,7 +42,10 @@ def init_hist(
     v = np.arange(0, n_vorton)
     nv = n_vorton
 
-    def emp():
+    def emp_v():
+        return np.empty((nv,))
+
+    def emp_tv():
         return np.empty((nt, nv))
 
     ds = xr.Dataset(
@@ -51,8 +54,9 @@ def init_hist(
             "v": ("v", v, {"long_name": "vorton num"}),
         },
         data_vars={
-            "x": (("t", "v"), emp(), {"long_name": "Vorton x position"}),
-            "y": (("t", "v"), emp(), {"long_name": "Vorton y position"}),
+            "G": (("v",), emp_v(), {"long_name": "Vorton strength $\Gamma$ (circulation)"}),
+            "x": (("t", "v"), emp_tv(), {"long_name": "Vorton x position"}),
+            "y": (("t", "v"), emp_tv(), {"long_name": "Vorton y position"}),
         },
         attrs=ds_attrs,
     )
@@ -122,7 +126,9 @@ class model_py:  # TODO: model base class?
         self.C_0 = self.vortons0.C()
 
         # initialize hist (xr.Dataset)
+        # self.hist = init_hist(G, x0, y0, self.nv, self.nt, self.dt)
         self.hist = init_hist(self.nv, self.nt, self.dt)
+        self.hist["G"].loc[:] = self.vortons0.G
         # TODO: having to set the initial values this way is a bit awkward
         t_hist = self.hist.t
         self.hist["x"].loc[dict(t=t_hist[t_hist == 0])] = self.vortons0.x
@@ -168,12 +174,19 @@ class model_py:  # TODO: model base class?
         self._has_run = True
 
 
-    def plot(self, which="vortons"):
+    def plot(self, which="vortons", **kwargs):
+        """Plot.
+
+        **kwargs passed through to the corresponding plotting function.
+        """
         if not self._has_run:
             raise Exception("The model has not yet been run.")
 
         if which == "vortons":
-            plot_vorton_trajectories(self.hist)
+            plot_vorton_trajectories(self.hist, **kwargs)
+
+        elif which == "tracers":
+            plot_tracer_trajectories(self.hist, **kwargs)
 
         else:
             raise NotImplementedError(f"which={which!r}")
