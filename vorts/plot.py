@@ -4,7 +4,7 @@ Plotting routines
 
 from cycler import cycler
 import matplotlib.pyplot as plt
-# import numpy as np
+import numpy as np
 
 
 # Tableau's newer version of tab10
@@ -20,6 +20,8 @@ _NEW_TAB10 = [
     "#9c755f",
     "#bab0ac",
 ]
+
+# TODO: PlotMethods object that could allow .plot_type(...) and ("plot_type", ...) and be attached to the Model? (like pandas/xarray)
 
 def plot_vorton_trajectories(ds, **kwargs):
     """Plot lines: one for each vorton's trajectory.
@@ -84,6 +86,69 @@ def plot_tracer_trajectories(ds, **kwargs):
     fig.tight_layout()
 
 
+def ps_data(ds, iv_ref=0, *, xtol=1e-2):
+    """From full set of data, extract data corresponding to times for the Poincare Section.
 
-# TODO
-# def plot_ps
+    We find the times when the reference vorton is in a certain place
+    or passing through a certain plane (TODO).
+
+    Parameters
+    ----------
+    iv_ref : int
+        index of the vorton to use for reference
+
+    """
+    # initial position
+    r0_ref = ds.isel(t=0, v=iv_ref)
+    x0 = r0_ref.x#.values
+    # y0 = r0_ref.y#.values
+
+    # xtol = 1e-2
+    # ytol = 1e-2
+
+    # TODO: need to be more careful. should make wrt. center-of-vort, ...
+    # cond = (np.abs(ds.x - x0) <= xtol) & (np.abs(ds.y - y0) <= ytol) & (ds.v == iv_ref)
+    # cond = (np.abs(ds.x - x0) <= xtol) & (ds.v == iv_ref)
+    cond = (np.abs(ds.x - x0) <= xtol) & (ds.y > 0) & (ds.v == iv_ref)
+    ds_ps_ref = ds.where(cond, drop=True)
+    t_ps = ds_ps_ref.t  # ps times
+
+    ds_ps = ds.sel(t=t_ps)
+
+    return ds_ps
+
+
+def plot_ps(ds, *, iv_ref=0, **kwargs):
+    """Poincare section plot.
+
+    Here using the data set of all data.
+
+    `**kwargs` are passed on to either `ps_data()` (if applicable) or `plt.subplots()`
+    """
+    # subset
+    # first take only the kwargs we want
+    # TODO: there's got to be a less awkward way to do this...
+    ps_data_kwarg_keys = ["xtol", ]  # could get using `inspect`
+    ps_data_kwargs = {k: kwargs.pop(k) for k in ps_data_kwarg_keys if k in kwargs}
+    ds = ps_data(ds, iv_ref, **ps_data_kwargs)
+
+    # select tracers
+    it = ds.G == 0
+    ds = ds.sel(v=it)
+
+    fig, ax = plt.subplots(**kwargs)
+
+    # plot all
+    x = ds.x  # (nt, nv)
+    y = ds.y
+    ax.plot(x, y, ".", c="0.35", ms=4, alpha=0.1, lw=None)
+
+    ax.set(
+        xlabel="$x$",
+        ylabel="$y$",
+        title="Poincaré map (tracers)",
+    )
+
+    ax.set_aspect("equal", "box")
+
+    fig.tight_layout()
