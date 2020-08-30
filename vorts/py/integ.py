@@ -13,11 +13,11 @@ from ..vortons import Vorton
 
 
 def integrate_scipy(
-    vortons: List[Vorton],
+    y0,
     t_eval,
-    G_vals,
+    G_col,
     *,
-    # solve_ivp kwargs
+    # `solve_ivp` kwargs
     method="RK45",
     max_step: float,
     **options,
@@ -37,11 +37,8 @@ def integrate_scipy(
     def fun(t, y, G):
         """Calculate both x- and y-tend."""
         # based on calc_tend in RK4_2_step
-        # assume columns of `y` are G, x, y
 
-        # TODO: try pulling G out instead (or pass in additional args), since it has no tend
-        # G, xpos, ypos = y.T  # rows are unpacked, so need to transpose
-
+        # unpack
         m = G.size  # number of vortons
         xpos, ypos = y[:m], y[m:]
 
@@ -61,12 +58,6 @@ def integrate_scipy(
 
     # return of fun(t, y) must have shape (n,) or (n, k)
     # but y0 must be 1-dimensional (n,)
-    Gs = np.array(G_vals)[:, np.newaxis]  # column vector (so it can be transposed)
-
-    x0s = np.array([v.xhist[0] for v in vortons])
-    y0s = np.array([v.yhist[0] for v in vortons])
-    y0 = np.concatenate((x0s, y0s))
-
     res = solve_ivp(
         fun,
         t_span=t_span,
@@ -75,16 +66,12 @@ def integrate_scipy(
         #
         method=method,
         vectorized=True,  # not sure what impact this has...
-        args=(Gs,),  # additional arguments after `t, y` used in fun, jac, etc.
+        args=(G_col,),  # additional arguments after `t, y` used in fun, jac, etc.
         max_step=max_step,
         **options,
     )
 
-    # update hists
-    m = Gs.size  # number of vortons
-    for i, v in enumerate(vortons):
-        v.xhist[1:] = res.y[i, :]
-        v.yhist[1:] = res.y[i+m, :]
+    return res.y  # return data only
 
 
 

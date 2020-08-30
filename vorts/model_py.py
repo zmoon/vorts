@@ -1,18 +1,63 @@
 """
 Driver for the Python version.
 """
-
-from glob import glob
-import os
-import subprocess
-from typing import List, Tuple
+import copy
+# from glob import glob
+# import os
+# import subprocess
+# from typing import List, Tuple
 import warnings
 
 #import matplotlib.pyplot as plt
 import numpy as np
+import xarray as xr
 
-from .py import (integrate_manual, integrate_scipy, MANUAL_STEPPERS, SCIPY_METHODS, calc_C)
-from .vortons import Vorton
+from .plot import plot_vorton_trajectories
+from .py import (integrate_manual, integrate_scipy, MANUAL_STEPPERS, SCIPY_METHODS)
+from .vortons import Vortons
+
+
+
+# model_f could use it when collecting the data
+# until the Fortran model writes nc files
+# or could be moved to a different module
+def init_hist(
+    n_vorton: int,
+    n_time: int,  # in addition to t=0
+    dt: float,
+    #
+    n_tracer=None,
+    *,
+    ds_attrs=None,
+):
+    """Create initial history `xr.Dataset`."""
+
+    # if n_tracer is not None:
+    if ds_attrs is None:
+        ds_attrs = {}
+
+    t = np.arange(0, n_time+1)*dt
+    nt = t.size
+
+    v = np.arange(0, n_vorton)
+    nv = n_vorton
+
+    def emp():
+        return np.empty((nt, nv))
+
+    ds = xr.Dataset(
+        coords={
+            "t": ("t", t, {"long_name": "unitless time"}),
+            "v": ("v", v, {"long_name": "vorton num"}),
+        },
+        data_vars={
+            "x": (("t", "v"), emp(), {"long_name": "Vorton x position"}),
+            "y": (("t", "v"), emp(), {"long_name": "Vorton y position"}),
+        },
+        attrs=ds_attrs,
+    )
+
+    return ds
 
 
 class model_py:  # TODO: model base class?
@@ -23,9 +68,7 @@ class model_py:  # TODO: model base class?
 
     def __init__(
         self,
-        G,
-        xi,
-        yi,
+        vortons: Vortons = None,
         *,
         dt=0.1,
         nt=1000,
@@ -34,18 +77,34 @@ class model_py:  # TODO: model base class?
     ):
         """Create model with given settings.
 
-        **int_scheme_kwargs
-            see signatures of `integrate_manual` and `integrate_scipy`
-        """
+        Parameters
+        ----------
+        vortons : Vortons
+            default: equilateral triangle with all G=1
 
-        # vorton IC arrays
-        self.G_vals = G
-        self.xi_vals = xi
-        self.yi_vals = yi
+        dt : float
+            time step for the output
+            for the integrators, used as the constant integration time step
+            or as the maximum integration time step
+        nt : int
+            number of time steps to run (not including t=0)
+        int_scheme_name : str
+            default: 'RK4_3' (handwritten basic RK4 stepper)
+
+        **int_scheme_kwargs
+            passed on to `integrate_manual` or `integrate_scipy`
+            see their signatures
+        """
+        # vortons
+        if vortons is None:
+            vortons = Vortons.regular_polygon(3, G=1)
+        self.vortons = vortons  # TODO: update these after the run!
+        self.vortons0 = copy.deepcopy(self.vortons)  # store initial state
 
         # sim settings
         self.dt = float(dt)
         self.nt = int(nt)
+        self.nv = self.vortons0.n
         self.int_scheme_name = int_scheme_name
         self.int_scheme_kwargs = int_scheme_kwargs
 
@@ -56,19 +115,25 @@ class model_py:  # TODO: model base class?
                 f"{self._allowed_int_scheme_names}"
             )
 
-        # create vortons
-        self.vortons = []
-        for Gxy in zip(self.G_vals, self.xi_vals, self.yi_vals):
-            self.vortons.append(Vorton(*Gxy, nt))
-
-        self.l = 0  # time step index
+        # self.l = 0  # time step index (doesn't seem to be used)
 
         # for adaptive time stepping calculations
-        self.C_0 = calc_C(self.vortons, self.l)
+        self.C_0 = self.vortons0.C()
+
+        # initialize hist (xr.Dataset)
+        self.hist = init_hist(self.nv, self.nt, self.dt)
+        # TODO: having to set the initial values this way is a bit awkward
+        t_hist = self.hist.t
+        self.hist["x"].loc[dict(t=t_hist[t_hist == 0])] = self.vortons0.x
+        self.hist["y"].loc[dict(t=t_hist[t_hist == 0])] = self.vortons0.y
+
+        self._has_run = False
 
 
     def run(self):
         """Integrate from 0 to end (nt*dt)."""
+        if self._has_run:
+            warnings.warn("The model has already been run.")
 
         dt, nt = self.dt, self.nt
         # t_eval = np.arange(dt, (nt+1)*dt, dt)
@@ -84,11 +149,30 @@ class model_py:  # TODO: model base class?
                 **self.int_scheme_kwargs
             )
         else:  # Scipy integrator
-            integrate_scipy(
-                self.vortons,
+            data = integrate_scipy(
+                self.vortons0.state_vec(),
                 t_eval,
-                self.G_vals,
+                self.vortons0.G_col,
+                #
                 method=self._scipy_methods[self.int_scheme_name],
-                max_step=self.dt,
+                max_step=dt,
                 **self.int_scheme_kwargs
             )
+            # returned data has shape (2nv, nt), where n is number of vortons and nt number of time steps
+            nv = self.nv
+            t_hist = self.hist.t
+            self.hist["x"].loc[dict(t=t_hist[t_hist > 0])] = data[:nv, :].T  # need to swap dims because t is first in hist
+            self.hist["y"].loc[dict(t=t_hist[t_hist > 0])] = data[nv:, :].T
+
+        self._has_run = True
+
+
+    def plot(self, which="vortons"):
+        if not self._has_run:
+            raise Exception("The model has not yet been run.")
+
+        if which == "vortons":
+            plot_vorton_trajectories(self.hist)
+
+        else:
+            raise NotImplementedError(f"which={which!r}")

@@ -74,6 +74,7 @@ class Vortons:
         self.state_mat = np.column_stack((x, y))
 
         assert self.G.ndim == 1 and self.state_mat.shape[1] == 2
+        assert self.G.size == self.state_mat.shape[0]  # n_vortons
 
         # create initial corresponding Vorton objects
         self._update_vortons()
@@ -81,7 +82,7 @@ class Vortons:
 
     # these 2 don't really need to be property?
     # maybe shouldn't be, to emphasize that state_mat is the real data
-    @property
+    # @property
     def state_vec(self):
         """Return flattened state matrix (G not included).
 
@@ -90,11 +91,12 @@ class Vortons:
         """
         return self.state_mat.T.flatten()
 
-    @property
+    # @property
     def state_mat_full(self):
         """Return full state matrix: G and positions."""
         return np.column_stack((self.G, self.state_mat))
 
+    # seems to return a view into self.G, so ok to be property
     @property
     def G_col(self):
         """G as a column vector."""
@@ -111,6 +113,12 @@ class Vortons:
     def y(self):
         return self.state_mat[:,1]
 
+    @property
+    def n(self):
+        """Number of vortons."""
+        # numpy.ndarray size lookups are esentially free
+        return self.G.size  # will have to change if want to allow single G at some point
+
     def __repr__(self):
         # n_vortons should be too many, so let's show all
         s_vorts = "\n".join(f"  {v}" for v in self._vortons)
@@ -118,7 +126,7 @@ class Vortons:
         # TODO: should this call `self._update_vortons`? so as to not be out-of-date if state changes?
 
     def _update_vortons(self):
-        self._vortons = [Vorton(G, x, y) for G, x, y in self.state_mat_full]
+        self._vortons = [Vorton(G, x, y) for G, x, y in self.state_mat_full()]
 
 
     def C(self):
@@ -127,7 +135,7 @@ class Vortons:
         $C$ is supposed to be a conserved quantity in this system.
         - Chamecki (2005) eq. 15
         """
-        n_vortons = self.G.size
+        n_vortons = self.n
         G = self.G
         C = 0
         for i, j in zip(*np.triu_indices(n_vortons, 1)):  # all combinations without repetition
@@ -320,42 +328,6 @@ def regular_polygon_vertices(n, *, c=(0, 0), r_c=1):
 
     return verts + c
 
-
-
-
-# should probably be in model_py
-# except that model_f could also use it when collecting the data
-# until the Fortran model writes nc files
-def init_hist(
-    n_vorton: int,
-    n_time: int,  # in addition to t=0
-    dt: float,
-    #
-    n_tracer=None,
-    *,
-    ds_attrs=None,
-):
-    """Create initial history `xr.Dataset`."""
-
-    # if n_tracer is not None:
-    if ds_attrs is None:
-        ds_attrs = {}
-
-    t = np.arange(0, n_time+1)*dt
-    n_t = t.size
-
-    ds = xr.Dataset(
-        coords={
-            "t": ("t", t, {"long_name": "unitless time"}),
-        },
-        data_vars={
-            "x": (("t"), np.empty((n_t,)), {"long_name": "Vorton x position"}),
-            "y": (("t"), np.empty((n_t,)), {"long_name": "Vorton y position"}),
-        },
-        attrs=ds_attrs,
-    )
-
-    return ds
 
 
 if __name__ == "__main__":
