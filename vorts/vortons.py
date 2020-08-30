@@ -349,12 +349,11 @@ class Vortons:
 
 
 
-
 def rotmat_2d(ang_deg):
     """Return rotation matrix for rotation `ang_deg` in degrees.
     For left-multiplication of a column position vector.
 
-    `scipy.spatial.transform.Rotation` can be used for 3-d.
+    Note: `scipy.spatial.transform.Rotation` can be used for 3-d rotations.
     """
     ang = np.deg2rad(ang_deg)
     c, s = np.cos(ang), np.sin(ang)
@@ -364,6 +363,37 @@ def rotmat_2d(ang_deg):
     ])
     return R
 
+
+def rotate_2d(x, *, ang_deg=None, rotmat=None):
+    """Rotate vector `x` by `ang_deg` degrees.
+
+    Either `ang_deg` or `rotmat` must be provided.
+
+    Parameters
+    ----------
+    x : array-like (1-d)
+        the vector to be rotated
+    ang_deg : int, float
+        degrees to rotate `x` about the origin
+        positive -> counter-clockwise
+    rotmat : array, shape (2, 2), optional
+        rotation matrix -- left-multiplies a column position vector to give rotated position
+
+    Optionally can pass `rotmat` instead to avoid computing it multiple times.
+    """
+    x = np.asarray(x)
+    if ang_deg and rotmat:
+        raise Exception("Only one of `ang_deg` and `rotmat` should be specified.")
+
+    assert x.ndim == 1  # need a true vector
+
+    if ang_deg:
+        rotmat = rotmat_2d(ang_deg)
+    else:
+        if rotmat is None:
+            raise Exception("If `ang_deg` is not provided, `rotmat` must be.")
+
+    return (rotmat @ x[:, np.newaxis]).squeeze()
 
 
 def regular_polygon_vertices(n, *, c=(0, 0), r_c=1):
@@ -389,7 +419,7 @@ def regular_polygon_vertices(n, *, c=(0, 0), r_c=1):
     verts = np.full((n, 2), vert0, dtype=np.float)
     # successive rotations
     for i in range(1, n):
-        verts[i, :] = (rotmat @ verts[i-1, :][:, np.newaxis]).squeeze()
+        verts[i, :] = rotate_2d(verts[i-1, :], rotmat=rotmat)
 
     return verts + c
 
