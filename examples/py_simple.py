@@ -40,7 +40,7 @@ m = vorts.model_py(
     # int_scheme_name='FT_2',
     # int_scheme_name="RK4_2",
     # int_scheme_name="RK4_3",
-    int_scheme_name='scipy_DOP853',
+    # int_scheme_name='scipy_DOP853',
     # adapt_tstep=False,
     # adapt_tstep=True,
 )
