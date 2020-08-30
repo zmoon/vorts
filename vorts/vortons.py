@@ -45,6 +45,9 @@ class Vorton(NamedTuple):
     y: float
 
 
+# TODO: PointVortices ABC that implements adding, has position state_mat, etc.
+#       Vortons and Tracers could both be based on it
+
 # not sure if this is necessary...
 # class Tracer(Vorton):
     # """Tracer -- a vorton with G=0 (no power)."""
