@@ -287,9 +287,12 @@ class Vortons:
         else:
             raise NotImplementedError(f"method={method!r}")
 
+        # TODO: spiral, circles, grid, randn, etc.
+
         xyt = np.column_stack((xit, yit))
         self.state_mat = np.append(self.state_mat, xyt, axis=0)
         self.G = np.append(self.G, Gt)
+
 
 
     # TODO: indexing dunder methods

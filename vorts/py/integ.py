@@ -163,6 +163,13 @@ def integrate_manual(
 
 
 
+# TODO: try numba (especially for the looping ones) (wrapping in njit could be a model option)
+
+# TODO: take advantage of the fact that tracers are only impacted by the vortons
+# (calculations involved in their tends can be reduced)
+
+# TODO: streamline calculating x/y tends together (reducing mem usage, etc.)
+
 
 def calc_lsqd(x1, y1, x2, y2):
     "Calculate intervortical distance $l^2$."
