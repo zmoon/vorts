@@ -64,7 +64,7 @@ def init_hist(
     return ds
 
 
-class Model_py:  # TODO: model base class?
+class Model_py:  # TODO: model base class? could have self.vortons, .vortons0, .run(), .plot(), etc.
     """Model in Python."""
     _manual_steppers = MANUAL_STEPPERS
     _scipy_methods = SCIPY_METHODS
@@ -128,7 +128,7 @@ class Model_py:  # TODO: model base class?
         # initialize hist (xr.Dataset)
         # self.hist = init_hist(G, x0, y0, self.nv, self.nt, self.dt)
         self.hist = init_hist(self.nv, self.nt, self.dt)
-        self.hist["G"].loc[:] = self.vortons0.G
+        self.hist["G"].loc[:] = self.vortons0.G  # G doesn't change
         # TODO: having to set the initial values this way is a bit awkward
         t_hist = self.hist.t
         self.hist["x"].loc[dict(t=t_hist[t_hist == 0])] = self.vortons0.x

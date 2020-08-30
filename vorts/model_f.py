@@ -1,6 +1,7 @@
 """
 Python driver for the Fortran version.
 """
+import copy
 import os
 from pathlib import Path
 import subprocess
@@ -8,7 +9,9 @@ import sys
 
 import numpy as np
 
-from .vortons import Vorton
+from .plot import plot_vorton_trajectories, plot_tracer_trajectories
+from .model_py import init_hist
+from .vortons import Vortons
 
 
 FORT_BASE_DIR = Path(__file__).parent / "f" #.absolute()
@@ -28,37 +31,38 @@ class Model_f:
 
     In this implementation we communicate with the Fortran program via text files.
     """
+    # _allowed_int_scheme_names = ("FT", "RK4")
 
     def __init__(
         self,
-        G,
-        xi,
-        yi,
-        xit=None,
-        yit=None,
+        vortons: Vortons = None,
+        *,
         dt=0.1,
         nt=1000,
         int_scheme_name='RK4',
         #
-        write_vortons=True,
+        write_vortons=True,  # maybe should put `flag` or something in these names
         write_tracers=False,
         write_ps=False,
     ):
         """Initialize and create inputs for the Fortran model."""
-        # vorton IC arrays
-        self.G_vals = np.asarray(G)
-        self.xi_vals = np.asarray(xi)
-        self.yi_vals = np.asarray(yi)
+        # vortons
+        # ! this part should be kept the same as in Model_py
+        if vortons is None:
+            vortons = Vortons.regular_polygon(3, G=1)
+        self.vortons = vortons
+        self.vortons0 = copy.deepcopy(self.vortons)
 
         # tracer initial positions
-        if xit is None or yit is None:
-            xit, yit = [], []
-        self.xit_vals = np.asarray(xit)
-        self.yit_vals = np.asarray(yit)
+        # if xit is None or yit is None:
+        #     xit, yit = [], []
+        # self.xit_vals = np.asarray(xit)
+        # self.yit_vals = np.asarray(yit)
 
         # sim settings
         self.dt = dt
         self.nt = int(nt)
+        self.nv = self.vortons0.n
         self.int_scheme_name = int_scheme_name  # {'FT', 'RK4'}
 
         # executing the model
@@ -70,14 +74,23 @@ class Model_f:
             )
         self.oe = ''  # standard output and error
 
-        # output data
-        self.vortons = []
-        self.tracers = []
+        # output option flags
         self.write_vortons = write_vortons
         self.write_tracers = write_tracers
         self.write_ps = write_ps
 
+        # initialize hist
+        # ! should be same as in Model_py
+        self.hist = init_hist(self.nv, self.nt, self.dt)
+        self.hist["G"].loc[:] = self.vortons0.G
+        t_hist = self.hist.t
+        self.hist["x"].loc[dict(t=t_hist[t_hist == 0])] = self.vortons0.x
+        self.hist["y"].loc[dict(t=t_hist[t_hist == 0])] = self.vortons0.y
+
+        # write the text input files to directory `vorts/f/in`
         self.create_inputs()
+
+        self._has_run = False
 
 
     def create_inputs(self):
@@ -86,15 +99,17 @@ class Model_f:
           describing the initial condition
           and the simulation settings.
         """
-
-        mat = np.vstack((self.G_vals, self.xi_vals, self.yi_vals)).T
+        # write vorton system initial state
+        mat = self.vortons0.state_mat_full()  # needs to be rows of G, xi, yi
         np.savetxt(FORT_BASE_DIR / 'in/vorts_in.txt', mat,
                    delimiter=' ', fmt='%.16f', header='Gamma xi yi')
 
-        mat = np.vstack((self.xit_vals.flat, self.yit_vals.flat)).T
-        np.savetxt(FORT_BASE_DIR / 'in/tracers_in.txt', mat,
-                   delimiter=' ', fmt='%.3f', header='xi, yi')
+        # write tracers initial state (positions only)
+        # mat = np.vstack((self.xit_vals.flat, self.yit_vals.flat)).T
+        # np.savetxt(FORT_BASE_DIR / 'in/tracers_in.txt', mat,
+        #            delimiter=' ', fmt='%.3f', header='xi, yi')
 
+        # write model options
         mat = [
             self.dt,
             self.nt,
@@ -123,6 +138,9 @@ class Model_f:
         # ^ hack for now, but could instead pass FORT_BASE_DIR into the Fortran program
         #   using vorts_sim_in.txt
 
+        self._has_run = True
+
+        # load results from the text file outputs into `self.hist` (an `xr.Dataset`)
         self.load_results()
 
 
@@ -132,23 +150,46 @@ class Model_f:
         sf = 0  # there may be blank line at end of the files?
 
         #> version for new output files follows
+        t_hist = self.hist.t
 
         if self.write_vortons:
             vortons_file = FORT_BASE_DIR / 'out/vortons.csv'
             data = np.genfromtxt(vortons_file, delimiter=',', skip_header=1, skip_footer=sf)
-            self.vortons = []
-            for i in range(0, data.shape[0]-1, 2):
-                ihalf = int(i/2)
-                self.vortons.append(Vorton(self.G_vals[ihalf], data[i,:], data[i+1,:], self.nt))
+            nrows = data.shape[0]
+            i1 = np.arange(0, nrows-1, 2)
+            i2 = np.arange(1, nrows, 2)
+            # self.hist["x"].loc[dict(t=t_hist[t_hist > 0])] = data[i1, :].T  # need to swap dims because t is first in hist
+            # self.hist["y"].loc[dict(t=t_hist[t_hist > 0])] = data[i2, :].T
+            self.hist["x"].loc[:] = data[i1, :].T  # need to swap dims because t is first in hist
+            self.hist["y"].loc[:] = data[i2, :].T
 
         if self.write_tracers:
             tracers_file = FORT_BASE_DIR / 'out/tracers.csv'
             data = np.genfromtxt(tracers_file, delimiter=',', skip_header=1, skip_footer=sf)
-            self.tracers = []
-            for i in range(0, data.shape[0]-1, 2):
-                self.tracers.append(Vorton(0, data[i,:], data[i+1,:], self.nt))
+            nrows = data.shape[0]
+            i1 = np.arange(0, nrows-1, 2)
+            i2 = np.arange(1, nrows, 2)
 
         if self.write_ps:
             ps_file = FORT_BASE_DIR / "out/ps.txt"
             data = np.genfromtxt(ps_file, skip_header=1, skip_footer=sf)
             self.ps = data
+
+
+    def plot(self, which="vortons", **kwargs):
+        """Plot.
+
+        **kwargs passed through to the corresponding plotting function.
+        """
+        # ! should be the same as in Model_py
+        if not self._has_run:
+            raise Exception("The model has not yet been run.")
+
+        if which == "vortons":
+            plot_vorton_trajectories(self.hist, **kwargs)
+
+        elif which == "tracers":
+            plot_tracer_trajectories(self.hist, **kwargs)
+
+        else:
+            raise NotImplementedError(f"which={which!r}")
