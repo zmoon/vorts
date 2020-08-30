@@ -6,32 +6,32 @@ import warnings
 import numpy as np
 import xarray as xr
 
-class Vorton0:
-    def __init__(self, G, x, y, nt):
-        """Create vorton.
+# class Vorton0:
+#     def __init__(self, G, x, y, nt):
+#         """Create vorton.
 
-        x, y inputs can be either a single point (IC)
-        or an array
-        so that same class can be used for catching/organizing the Fortran model output
-        """
-#        self.x = xi
-#        self.y = yi
-        self.G = G
+#         x, y inputs can be either a single point (IC)
+#         or an array
+#         so that same class can be used for catching/organizing the Fortran model output
+#         """
+# #        self.x = xi
+# #        self.y = yi
+#         self.G = G
 
-        try:
-            self.xhist = np.zeros(nt+1)
-            self.yhist = np.zeros(nt+1)
-            self.xhist[0] = x
-            self.yhist[0] = y
+#         try:
+#             self.xhist = np.zeros(nt+1)
+#             self.yhist = np.zeros(nt+1)
+#             self.xhist[0] = x
+#             self.yhist[0] = y
 
-        except ValueError:  # ValueError: setting array with seq; TypeError: ints and floats have no len()
-            self.xhist = x
-            self.yhist = y
+#         except ValueError:  # ValueError: setting array with seq; TypeError: ints and floats have no len()
+#             self.xhist = x
+#             self.yhist = y
 
-            if self.xhist.size != nt+1:
-                warnings.warn(
-                    f"Fortran model output should be size {nt+1:d} but is {self.xhist.size:d}"
-                )
+#             if self.xhist.size != nt+1:
+#                 warnings.warn(
+#                     f"Fortran model output should be size {nt+1:d} but is {self.xhist.size:d}"
+#                 )
 
 
 # new Vorton
@@ -134,8 +134,13 @@ class Vortons:
     def C(self):
         """Calculate $C$.
 
+        $$
+        C = \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
+            \Gamma_{\alpha} \Gamma_{\beta} l_{\alpha \beta}^{2}
+        $$
+
         $C$ is supposed to be a conserved quantity in this system.
-        - Chamecki (2005) eq. 15
+        - Chamecki (2005) eq. 15, which references Aref (1979)
         """
         n_vortons = self.n
         G = self.G
@@ -152,6 +157,47 @@ class Vortons:
             C += Gi * Gj * lij_sqd
 
         return C
+
+
+    def H(self):
+        """Calculate $H$, the Hamiltonian of the system.
+
+        $$
+        H = -\frac{1}{4 \pi} \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
+            \Gamma_{\alpha} \Gamma_{\beta}
+            \ln | r_{\alpha} - r_{\beta} |
+        $$
+        """
+        nv = self.n
+        G = self.G
+        r = self.state_mat  # vorton positions
+        H = 0
+        for a, b in zip(*np.triu_indices(nv, 1)):
+            ra, rb = r[a], r[b]
+            Ga, Gb = G[a], G[b]
+            H += -1/(4*np.pi) * Ga * Gb * np.log(np.linalg.norm(ra - rb))
+
+        return H
+
+
+    def I(self):
+        """Calculate $I$, the angular impulse of the system.
+
+        $$
+        I = \sum_{\alpha = 1}^{N} \Gamma_{\alpha} | r_{\alpha} |^2
+        $$
+        """
+        G = self.G
+        # r = self.state_mat
+        x = self.x
+        y = self.y
+
+        # r_hat_sqd =
+
+        return (G * (x**2 + y**2)).sum()
+
+
+    # TODO: P and Q (coordinates of the center-of-vorticity)
 
 
     def plot(self):
@@ -230,6 +276,7 @@ class Vortons:
         return x_mom
 
 
+    # Chamecki notes suggest this should be called "center of vorticity" or "linear impulse"
     def cm(self):
         """Compute center-of-mass using Gamma as mass."""
         # TODO: what impact should sign of G have on cm? mass is always pos. but G can be neg.
