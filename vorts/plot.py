@@ -138,10 +138,12 @@ def plot_ps(ds, *, iv_ref=0, **kwargs):
 
     fig, ax = plt.subplots(**kwargs)
 
+    # TODO: plot vorton initial positions / positions at reference time?
+
     # plot all
     x = ds.x  # (nt, nv)
     y = ds.y
-    ax.plot(x, y, ".", c="0.35", ms=4, alpha=0.1, lw=None)
+    ax.plot(x, y, ".", c="0.35", ms=1, alpha=0.5, lw=None)
 
     ax.set(
         xlabel="$x$",
