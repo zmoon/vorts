@@ -203,6 +203,19 @@ class Vortons:
     # TODO: P and Q (coordinates of the center-of-vorticity)
 
 
+    # TODO: results are not right for equi tri... need to check formulas
+    def theta(self):
+        """Calculate $\theta$, the action angles??
+
+        Chamecki eq. 19
+        """
+        N = self.n
+        I = self.I()
+        H = self.H()
+
+        return (2/(N-1))**(N*(N-1)/2) * I**(N*(N-1)) * np.exp(4*np.pi*H)
+
+
     def plot(self):
         """Plot the vortons.
         (Only their current positions, which are all this container knows about.)
@@ -325,6 +338,20 @@ class Vortons:
         return Vortons(G, *xy)
 
 
+    @staticmethod
+    def isos_triangle(*, G=None, **kwargs):
+        """Create Vortons with isosceles triangle vertices.
+
+        `**kwargs` are passed on to `vortons.isos_triangle_vertices`.
+        See signature there.
+        """
+        G = _maybe_fill_G(G, 3)
+
+        xy = isos_triangle_vertices(**kwargs).T
+
+        return Vortons(G, *xy)
+
+
     def add_tracers(self, n, *, method="randu"):
         """Add `n` passive tracers (vortons with G=0)."""
 
@@ -350,6 +377,16 @@ class Vortons:
     # TODO: class method to take List[Vorton] and return a Vortons?
 
 
+def _maybe_fill_G(G, n):
+    if G is None:  # this first maybe shouldn't be here?
+        G = 1.0
+    G = np.asarray(G)
+    if G.size == 1:  # single G provided, or using the default
+        G = np.full((n,), G)  # TODO: could also the constructor to accept single G
+    if G.size != n:
+        raise ValueError(f"`G` must have size `n` or 1, but is {G.size!r}")
+
+    return G
 
 
 def rotmat_2d(ang_deg):
@@ -427,6 +464,38 @@ def regular_polygon_vertices(n, *, c=(0, 0), r_c=1):
     return verts + c
 
 
+def isos_triangle_vertices(*, theta_deg=None, Lambda=None):
+    """Isosceles triangle vertices.
+    With fixed top point (0, 1) and fixed left & right y=-0.5.
+
+    theta_deg : int, float
+        the two angles between the base and connections to the top point at (0,1)
+        72 -> Lambda_c (1/sqrt(2))
+        60 -> equi tri
+
+    Lambda : float
+        in (0, 1]
+        1 -> equi tri
+
+    """
+    if (theta_deg is not None and Lambda is not None) or (theta_deg is None and Lambda is None):
+        raise Exception("Specify either `theta_deg` or `Lambda` (not both).")
+
+    if Lambda:
+        assert Lambda > 0 and Lambda <= 1
+        theta_deg = 180 / (Lambda**2 + 2)
+
+    theta = np.deg2rad(theta_deg)
+
+    xb = 1.5/np.tan(theta)  # one half of x base
+
+    xi = [-xb,  0,  xb]
+    yi = [-0.5, 1, -0.5]
+
+    Lambda = np.sqrt( (180-2*theta_deg) / float(theta_deg) )  # Marcelo eqns 17--19
+
+    return np.column_stack((xi, yi))
+
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
@@ -443,3 +512,7 @@ if __name__ == "__main__":
     Vortons.regular_polygon(3).plot()
 
     Vortons.regular_polygon(10, c=(1, 0), r_c=0.5).plot()
+
+    Vortons.isos_triangle(theta_deg=72).plot()
+
+    Vortons.isos_triangle(Lambda=0.49).plot()
