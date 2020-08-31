@@ -41,12 +41,18 @@ m.run()
 # %% plot results
 
 m.plot()
+
 m.plot("tracers")
 
 
 # %% Poincare?
 
 m.plot("poincare")
+
 m.plot("poincare", iv_ref=1)  # this is the one with initial position (0, 1)
+
 m.plot("poincare", iv_ref=1, xtol=1e-3)
-m.plot("poincare", iv_ref=1, xtol=1e-6)
+vorts.plot.frame_only()
+
+m.plot("poincare", iv_ref=1, xtol=1e-3)
+vorts.plot.remove_frame(keep_title=False)

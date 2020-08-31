@@ -23,6 +23,8 @@ _NEW_TAB10 = [
 
 # TODO: PlotMethods object that could allow .plot_type(...) and ("plot_type", ...) and be attached to the Model? (like pandas/xarray)
 
+# TODO: should plotters return `fig, ax`, or just `ax`? or something else? xarray returns the set of matplotlib artists
+
 def plot_vorton_trajectories(ds, **kwargs):
     """Plot lines: one for each vorton's trajectory.
 
@@ -143,7 +145,7 @@ def plot_ps(ds, *, iv_ref=0, **kwargs):
     # plot all
     x = ds.x  # (nt, nv)
     y = ds.y
-    ax.plot(x, y, ".", c="0.35", ms=1, alpha=0.5, lw=None)
+    ax.plot(x, y, ".", c="0.35", ms=0.2, alpha=0.5, mew=0)
 
     ax.set(
         xlabel="$x$",
@@ -154,3 +156,43 @@ def plot_ps(ds, *, iv_ref=0, **kwargs):
     ax.set_aspect("equal", "box")
 
     fig.tight_layout()
+
+
+def frame_only(ax=None, *, keep_ax_labels=True, keep_title=True):
+    """Remove ticks and tick labels from `ax`."""
+    if ax is None:
+        ax = plt.gca()
+
+    ax.tick_params(
+        axis="both",
+        which="both",  # 'major', 'minor', or 'both'
+        bottom=False,
+        labelbottom=False,
+        left=False,
+        labelleft=False,
+        top=False,
+        labeltop=False,
+        right=False,
+        labelright=False,
+    )
+
+    if not keep_ax_labels:
+        ax.set(
+            xlabel="",
+            ylabel="",
+        )
+
+    if not keep_title:
+        ax.set_title("")
+
+
+def remove_frame(ax=None, *, keep_title=True):
+    """Remove ticks, tick labels, and frame (spines)."""
+    if ax is None:
+        ax = plt.gca()
+
+    frame_only(ax, keep_ax_labels=False, keep_title=keep_title)
+
+    ax.set(
+        frame_on=False,
+    )
