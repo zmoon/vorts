@@ -24,18 +24,16 @@ G = np.ones(3)
 xi = [-0.3, 0, 0.3]
 yi = [-0.5, 1, 0]
 
-# G = [1, 1, 1, 0, 0]
-# xi = [-0.3, 0, 0.3, 0.5, 0.1]
-# yi = [-0.5, 1, 0, 0, 0]
-
 
 vs = vorts.Vortons(G, xi, yi)
-vs.add_tracers(100)
-
 vs.plot()  # plot initial state
+
+ts = vorts.Tracers.spiral(100, c=vs.cm())
+ts.plot()
 
 m = vorts.Model_py(
     vs,
+    ts,
     dt=0.1, nt=200,
     # int_scheme_name="not-a-scheme",
     # int_scheme_name='FT_2',
