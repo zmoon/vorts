@@ -14,7 +14,7 @@ import xarray as xr
 
 from .plot import plot_vorton_trajectories, plot_tracer_trajectories
 from .py import (integrate_manual, integrate_scipy, MANUAL_STEPPERS, SCIPY_METHODS)
-from .vortons import Vortons
+from .vortons import Vortons, Tracers
 
 
 
@@ -74,6 +74,7 @@ class Model_py:  # TODO: model base class? could have self.vortons, .vortons0, .
     def __init__(
         self,
         vortons: Vortons = None,
+        tracers: Tracers = None,
         *,
         dt=0.1,
         nt=1000,
@@ -86,6 +87,9 @@ class Model_py:  # TODO: model base class? could have self.vortons, .vortons0, .
         ----------
         vortons : Vortons
             default: equilateral triangle with all G=1
+
+        tracers : Tracers (optional)
+            default: no tracers (`None`)
 
         dt : float
             time step for the output
@@ -106,10 +110,15 @@ class Model_py:  # TODO: model base class? could have self.vortons, .vortons0, .
         self.vortons = vortons  # TODO: update these after the run!
         self.vortons0 = copy.deepcopy(self.vortons)  # store initial state
 
+        # tracers (leave if None)
+        self.tracers = tracers
+        self.tracers0 = copy.deepcopy(self.tracers)
+
         # sim settings
         self.dt = float(dt)
         self.nt = int(nt)
         self.nv = self.vortons0.n
+        self.n_tracers = self.tracers0.n if self.tracers0 is not None else 0
         self.int_scheme_name = int_scheme_name
         self.int_scheme_kwargs = int_scheme_kwargs
 
@@ -126,13 +135,14 @@ class Model_py:  # TODO: model base class? could have self.vortons, .vortons0, .
         self.C_0 = self.vortons0.C()
 
         # initialize hist (xr.Dataset)
+        v0 = self.vortons0.maybe_with_tracers(self.tracers0)
         # self.hist = init_hist(G, x0, y0, self.nv, self.nt, self.dt)
-        self.hist = init_hist(self.nv, self.nt, self.dt)
-        self.hist["G"].loc[:] = self.vortons0.G  # G doesn't change
+        self.hist = init_hist(self.nv + self.n_tracers, self.nt, self.dt)
+        self.hist["G"].loc[:] = v0.G  # G doesn't change during the sim
         # TODO: having to set the initial values this way is a bit awkward
         t_hist = self.hist.t
-        self.hist["x"].loc[dict(t=t_hist[t_hist == 0])] = self.vortons0.x
-        self.hist["y"].loc[dict(t=t_hist[t_hist == 0])] = self.vortons0.y
+        self.hist["x"].loc[dict(t=t_hist[t_hist == 0])] = v0.x
+        self.hist["y"].loc[dict(t=t_hist[t_hist == 0])] = v0.y
 
         self._has_run = False
 
@@ -156,17 +166,19 @@ class Model_py:  # TODO: model base class? could have self.vortons, .vortons0, .
                 **self.int_scheme_kwargs
             )
         else:  # Scipy integrator
+            v0 = self.vortons0.maybe_with_tracers(self.tracers0)
+            y0 = v0.state_vec()
             data = integrate_scipy(
-                self.vortons0.state_vec(),
+                y0,
                 t_eval,
-                self.vortons0.G_col,
+                v0.G_col,
                 #
                 method=self._scipy_methods[self.int_scheme_name],
                 max_step=dt,
                 **self.int_scheme_kwargs
             )
             # returned data has shape (2nv, nt), where n is number of vortons and nt number of time steps
-            nv = self.nv
+            nv = v0.n
             t_hist = self.hist.t
             self.hist["x"].loc[dict(t=t_hist[t_hist > 0])] = data[:nv, :].T  # need to swap dims because t is first in hist
             self.hist["y"].loc[dict(t=t_hist[t_hist > 0])] = data[nv:, :].T

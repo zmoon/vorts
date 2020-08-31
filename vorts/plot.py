@@ -25,6 +25,8 @@ _NEW_TAB10 = [
 
 # TODO: should plotters return `fig, ax`, or just `ax`? or something else? xarray returns the set of matplotlib artists
 
+# TODO: routine to determine system rotation; plot trajectories with respect to this rotating ref frame
+
 def plot_vorton_trajectories(ds, **kwargs):
     """Plot lines: one for each vorton's trajectory.
 

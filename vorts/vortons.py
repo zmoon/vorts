@@ -1,61 +1,104 @@
 """
-Vorton class and Vortons container class (TODO).
+`Vorton` class and `Vortons` container class.
 """
+from typing import NamedTuple
 import warnings
 
 import numpy as np
 import xarray as xr
 
-# class Vorton0:
-#     def __init__(self, G, x, y, nt):
-#         """Create vorton.
 
-#         x, y inputs can be either a single point (IC)
-#         or an array
-#         so that same class can be used for catching/organizing the Fortran model output
-#         """
-# #        self.x = xi
-# #        self.y = yi
-#         self.G = G
-
-#         try:
-#             self.xhist = np.zeros(nt+1)
-#             self.yhist = np.zeros(nt+1)
-#             self.xhist[0] = x
-#             self.yhist[0] = y
-
-#         except ValueError:  # ValueError: setting array with seq; TypeError: ints and floats have no len()
-#             self.xhist = x
-#             self.yhist = y
-
-#             if self.xhist.size != nt+1:
-#                 warnings.warn(
-#                     f"Fortran model output should be size {nt+1:d} but is {self.xhist.size:d}"
-#                 )
-
-
-# new Vorton
-# doesn't know its history
-# just current state
-from typing import NamedTuple
-
+# new Vorton -- doesn't know its history, just current state
 class Vorton(NamedTuple):
     G: float
     x: float
     y: float
 
 
-# TODO: PointVortices ABC that implements adding, has position state_mat, etc.
+class Tracer(NamedTuple):
+    """Tracer -- a vorton with G=0 (no power)."""
+    x: float
+    y: float
+
+
+# TODO: PointVortices ABC that implements adding, has position state_mat, n, x, y, state_vec, etc.
 #       Vortons and Tracers could both be based on it
 
-# not sure if this is necessary...
-# class Tracer(Vorton):
-    # """Tracer -- a vorton with G=0 (no power)."""
+
+class Tracers:
+    """Collection of `Tracer`s."""
+    def __init__(self, x, y):
+        """Create tracer collection.
+
+        Parameters
+        ----------
+        x, y : array_like (n_vortons,)
+            tracer initial x and y positions
+        """
+        x = np.asarray(x, dtype=np.float)
+        y = np.asarray(y, dtype=np.float)
+
+        assert x.shape == y.shape and x.ndim == 1
+
+        self.state_mat = np.column_stack((x, y))
+
+
+    def __repr__(self):
+        # unlike Vortons, might have many tracers
+        # so don't need to show all in the repr
+        n = self.n
+        return f"Tracers(n={n})"
+
+    @property
+    def n(self):
+        return self.state_mat.shape[0]
+
+    @property
+    def x(self):
+        return self.state_mat[:,0]
+
+    @property
+    def y(self):
+        return self.state_mat[:,1]
+
+    def state_vec(self):
+        return self.state_mat.T.flatten()
+
+    @staticmethod
+    def randu(n, **kwargs):
+        xy = points_randu(n, **kwargs).T
+        return Tracers(*xy)
+
+    @staticmethod
+    def spiral(n, **kwargs):
+        xy = points_spiral(n, **kwargs).T
+        return Tracers(*xy)
+
+
+    def plot(self, *, connect=False):
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots()
+
+        x, y = self.x, self.y
+        fmt = "-o" if connect else "o"
+        ax.plot(x, y, fmt, c="0.5", ms=4, label="tracers")
+
+        ax.set(
+            xlabel="$x$",
+            ylabel="$y$",
+        )
+        ax.set_aspect("equal", "box")
+        fig.legend()
+        ax.grid(True)
+        fig.tight_layout()
+
+
 
 
 # could exchange x,y for r at some point, to open 3-d option more easily
 class Vortons:
-    """Collection of Vortons."""
+    """Collection of `Vorton`s."""
     def __init__(self, G, x, y):
         """Create vorton collection.
 
@@ -70,7 +113,11 @@ class Vortons:
 
         """
         self.G = np.asarray(G)
-        # TODO: should we check G nonzero? since tracers are treated separately
+        if np.any(self.G == 0):
+            warnings.warn(
+                "Tracers should be in a `Tracers` instance. "
+                "The ability to add them here may be removed in the future."
+            )
 
         # the state matrix has shape (n_vortons, n_pos_dims) (G excluded since time-invariant)
         x = np.asarray(x, dtype=np.float)
@@ -82,7 +129,6 @@ class Vortons:
 
         # create initial corresponding Vorton objects
         self._update_vortons()
-
 
 
     # these 2 don't really need to be property?
@@ -125,7 +171,7 @@ class Vortons:
         return self.G.size  # will have to change if want to allow single G at some point
 
     def __repr__(self):
-        # n_vortons should be too many, so let's show all
+        # n_vortons shouldn't be too many, so let's show all
         s_vorts = "\n".join(f"  {v}" for v in self._vortons)
         return f"Vortons(\n{s_vorts}\n)"
         # TODO: should this call `self._update_vortons`? so as to not be out-of-date if state changes?
@@ -352,33 +398,68 @@ class Vortons:
         return Vortons(G, *xy)
 
 
-    def add_tracers(self, n, *, method="randu"):
-        """Add `n` passive tracers (vortons with G=0)."""
+    def maybe_with_tracers(self, tracers: Tracers = None):
+        """Return new `Vortons` with the tracers.
+        (Temporary? hack to get full state_vec)
 
-        if method == "randu":
-            d = 3.0  # displacement off center to select initial tracer coords from
-            Gt = np.zeros((n,))
-            xit = np.random.uniform(-d, d, (n,))  # TODO: optional centering choice (or cm?)
-            yit = np.random.uniform(-d, d, (n,))
+        If `Tracers` is `None`, just return `self`.
+        """
+        if tracers is None:
+            return self
 
-        else:
-            raise NotImplementedError(f"method={method!r}")
+        G_v = self.G
+        xy_v = self.state_mat
+        xy_t = tracers.state_mat
+        G_t = np.zeros((tracers.n,))
 
-        # TODO: spiral, circles, grid, randn, etc.
+        G = np.append(G_v, G_t)
+        xy = np.append(xy_v, xy_t, axis=0)
 
-        xyt = np.column_stack((xit, yit))
-        self.state_mat = np.append(self.state_mat, xyt, axis=0)
-        self.G = np.append(self.G, Gt)
-
-
+        return Vortons(G, *xy.T)
 
     # TODO: indexing dunder methods
+
+    # TODO: overload addition
 
     # TODO: class method to take List[Vorton] and return a Vortons?
 
 
+
+
+def points_randn():
+    raise NotImplementedError
+
+
+def points_randu(n, *, c=(0, 0), dx=2, dy=2):
+    """Sample from 2-d uniform."""
+    c = np.asarray(c)
+    x = np.random.uniform(-dx, dx, (n,))
+    y = np.random.uniform(-dy, dy, (n,))
+    return np.column_stack((x, y)) + c
+
+
+def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
+    """Create spiral of points."""
+    c = np.asarray(c)
+
+    rad = np.linspace(rmin, rmax, n)  # radius
+
+    deg_tot = revs*360
+    rotmat = rotmat_2d(deg_tot/n)
+    rhat = np.full((n, 2), (0, 1), dtype=np.float)  # rhat: unit vectors
+    for i in range(1, n):
+        rhat[i, :] = rotate_2d(rhat[i-1, :], rotmat=rotmat)
+    # TODO: here would be simpler to do polar coords first then convert to x,y
+
+    return rad[:, np.newaxis] * rhat + c
+
+
+def points_grid():
+    raise NotImplementedError
+
+
 def _maybe_fill_G(G, n):
-    if G is None:  # this first maybe shouldn't be here?
+    if G is None:  # this first part maybe shouldn't be here? or kwarg for default G val?
         G = 1.0
     G = np.asarray(G)
     if G.size == 1:  # single G provided, or using the default
@@ -516,3 +597,9 @@ if __name__ == "__main__":
     Vortons.isos_triangle(theta_deg=72).plot()
 
     Vortons.isos_triangle(Lambda=0.49).plot()
+
+    ts = Tracers.randu(50)
+
+    Tracers.spiral(100).plot()
+
+    Tracers.spiral(200, c=(1, 0), revs=10).plot(connect=True)
