@@ -1,14 +1,16 @@
 """
 Python driver for the Fortran version.
 """
+# import copy
 import os
 from pathlib import Path
 import subprocess
-import sys
+# import sys
 
 import numpy as np
 
-from .vortons import Vorton
+from ._model import ModelBase
+from .vortons import Vortons, Tracers
 
 
 FORT_BASE_DIR = Path(__file__).parent / "f" #.absolute()
@@ -17,49 +19,66 @@ assert (FORT_BASE_DIR / "src").exists()  # make sure that this is the right spot
 
 
 def fort_bool(b: bool):
+    """Convert Python boolean to string of the Fortran form."""
     if b:
         return ".true."
     else:
         return ".false."
 
 
-class model_f:
+class Model_f(ModelBase):
     """Thin wrapper for functionality of the Fortran model in `src/`.
 
     In this implementation we communicate with the Fortran program via text files.
     """
+    # _allowed_int_scheme_names = ("FT", "RK4")
 
     def __init__(
         self,
-        G,
-        xi,
-        yi,
-        xit=None,
-        yit=None,
+        vortons: Vortons = None,
+        tracers: Tracers = None,
+        *,
         dt=0.1,
         nt=1000,
+        # above are passed to base
         int_scheme_name='RK4',
         #
-        write_vortons=True,
+        write_vortons=True,  # maybe should put `flag` or something in these names
         write_tracers=False,
         write_ps=False,
     ):
-        """Initialize and create inputs for the Fortran model."""
-        # vorton IC arrays
-        self.G_vals = np.asarray(G)
-        self.xi_vals = np.asarray(xi)
-        self.yi_vals = np.asarray(yi)
+        """Initialize and create inputs for the Fortran model.
 
-        # tracer initial positions
-        if xit is None or yit is None:
-            xit, yit = [], []
-        self.xit_vals = np.asarray(xit)
-        self.yit_vals = np.asarray(yit)
+        Parameters
+        ----------
+        vortons : Vortons
+            default: equilateral triangle with all G=1
 
-        # sim settings
-        self.dt = dt
-        self.nt = int(nt)
+        tracers : Tracers (optional)
+            default: no tracers
+
+        dt : float
+            time step for the output
+            for the integrators, `dt` is used as the constant or maximum integration time step
+            depending on the integration scheme
+        nt : int
+            number of time steps to run (not including t=0)
+
+        int_scheme_name : str
+            default: 'RK4_3' (handwritten basic RK4 stepper)
+
+
+        """
+        # call base initialization
+        super().__init__(vortons, tracers, dt=dt, nt=nt)
+
+        # other inputs
         self.int_scheme_name = int_scheme_name  # {'FT', 'RK4'}
+
+        # output option flags
+        self.f_write_out_vortons = write_vortons
+        self.f_write_out_tracers = write_tracers
+        self.f_write_out_ps = write_ps
 
         # executing the model
         self.vorts_exe_path = FORT_BASE_DIR / 'bin/vorts.exe'
@@ -68,17 +87,10 @@ class model_f:
                 f"{self.vorts_exe_path!r} doesn't exist. "
                 "The Fortran code must first be compiled to produce this file."
             )
-        self.oe = ''  # standard output and error
+        self.oe = ''  # we will store standard output and error here
 
-        # output data
-        self.vortons = []
-        self.tracers = []
-        self.write_vortons = write_vortons
-        self.write_tracers = write_tracers
-        self.write_ps = write_ps
-
+        # write the text input files to directory `vorts/f/in`
         self.create_inputs()
-
 
     def create_inputs(self):
         """
@@ -86,34 +98,36 @@ class model_f:
           describing the initial condition
           and the simulation settings.
         """
-
-        mat = np.vstack((self.G_vals, self.xi_vals, self.yi_vals)).T
+        # write vorton system initial state
+        mat = self.vortons0.state_mat_full()  # needs to be rows of G, xi, yi
         np.savetxt(FORT_BASE_DIR / 'in/vorts_in.txt', mat,
                    delimiter=' ', fmt='%.16f', header='Gamma xi yi')
 
-        mat = np.vstack((self.xit_vals.flat, self.yit_vals.flat)).T
+        # write tracers initial state (positions only)
+        mat = self.tracers0.state_mat
         np.savetxt(FORT_BASE_DIR / 'in/tracers_in.txt', mat,
-                   delimiter=' ', fmt='%.3f', header='xi, yi')
+                   delimiter=' ', fmt='%.16f', header='xi, yi')
 
+        # write model options
         mat = [
             self.dt,
             self.nt,
             self.int_scheme_name,
-            fort_bool(self.write_vortons),
-            fort_bool(self.write_tracers),
-            fort_bool(self.write_ps),
+            fort_bool(self.f_write_out_vortons),
+            fort_bool(self.f_write_out_tracers),
+            fort_bool(self.f_write_out_ps),
         ]
         np.savetxt(FORT_BASE_DIR / 'in/vorts_sim_in.txt', mat,
                    delimiter=' ', fmt='%s')
 
-
-    def run(self):
+    # implement abstract method `_run`
+    def _run(self):
         """Invoke the Fortran model's executable and load the results."""
         # exe_abs = str(self.vorts_exe_path)
         exe_rel = str(self.vorts_exe_path.relative_to(FORT_BASE_DIR))
         cmd = exe_rel
 
-        # try:
+        # invoke the Fortran model's executable
         cwd = os.getcwd()
         os.chdir(FORT_BASE_DIR)
         os.system('rm ./out/*')
@@ -123,32 +137,38 @@ class model_f:
         # ^ hack for now, but could instead pass FORT_BASE_DIR into the Fortran program
         #   using vorts_sim_in.txt
 
-        self.load_results()
+        # load results from the text file outputs into `self.hist` (an `xr.Dataset`)
+        self._load_results()
 
-
-    def load_results(self):
+    def _load_results(self):
         """Load results from a run of the Fortran model."""
-
         sf = 0  # there may be blank line at end of the files?
 
-        #> version for new output files follows
+        G = self.hist.G
+        is_t = G == 0
+        is_v = ~ is_t
 
-        if self.write_vortons:
+        if self.f_write_out_vortons:
             vortons_file = FORT_BASE_DIR / 'out/vortons.csv'
             data = np.genfromtxt(vortons_file, delimiter=',', skip_header=1, skip_footer=sf)
-            self.vortons = []
-            for i in range(0, data.shape[0]-1, 2):
-                ihalf = int(i/2)
-                self.vortons.append(Vorton(self.G_vals[ihalf], data[i,:], data[i+1,:], self.nt))
+            nrows = data.shape[0]
+            i1 = np.arange(0, nrows-1, 2)
+            i2 = np.arange(1, nrows, 2)
+            self.hist["x"].loc[dict(v=is_v)] = data[i1, :].T  # need to swap dims because t is first in hist
+            self.hist["y"].loc[dict(v=is_v)] = data[i2, :].T
 
-        if self.write_tracers:
+        if self.f_write_out_tracers:
             tracers_file = FORT_BASE_DIR / 'out/tracers.csv'
             data = np.genfromtxt(tracers_file, delimiter=',', skip_header=1, skip_footer=sf)
-            self.tracers = []
-            for i in range(0, data.shape[0]-1, 2):
-                self.tracers.append(Vorton(0, data[i,:], data[i+1,:], self.nt))
+            nrows = data.shape[0]
+            i1 = np.arange(0, nrows-1, 2)
+            i2 = np.arange(1, nrows, 2)
+            self.hist["x"].loc[dict(v=is_t)] = data[i1, :].T
+            self.hist["y"].loc[dict(v=is_t)] = data[i2, :].T
 
-        if self.write_ps:
+        # note: the ps code of the Fortran model only works for a specific case
+        # (initial equi tri with the second point having x=0 and y>0)
+        if self.f_write_out_ps:
             ps_file = FORT_BASE_DIR / "out/ps.txt"
             data = np.genfromtxt(ps_file, skip_header=1, skip_footer=sf)
             self.ps = data
