@@ -23,6 +23,7 @@ class Tracer(NamedTuple):
 
 # TODO: PointVortices ABC that implements adding, has position state_mat, n, x, y, state_vec, etc.
 #       Vortons and Tracers could both be based on it
+#       also should add xy (state_mat for both) and xy_vec (state_vec)
 
 
 class Tracers:

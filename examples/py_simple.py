@@ -15,14 +15,13 @@ plt.close("all")
 
 #%% create
 
-#G = np.ones(2)
-# G = [1, 5]
-# xi = [0, 0]
-# yi = [-1, 0.5]
+G = [1, 5]
+xi = [0, 0]
+yi = [-1, 0.5]
 
-G = np.ones(3)
-xi = [-0.3, 0, 0.3]
-yi = [-0.5, 1, 0]
+# G = np.ones(3)
+# xi = [-0.3, 0, 0.3]
+# yi = [-0.5, 1, 0]
 
 
 vs = vorts.Vortons(G, xi, yi)
@@ -34,11 +33,13 @@ ts.plot()
 m = vorts.Model_py(
     vs,
     ts,
-    dt=0.1, nt=200,
-    # int_scheme_name="not-a-scheme",
-    # int_scheme_name='FT_2',
-    # int_scheme_name="RK4_2",
-    # int_scheme_name="RK4_3",
+    dt=0.1, nt=2000,
+    # int_scheme_name="not-a-scheme",  # raises ValueError
+    # int_scheme_name="FT",
+    # int_scheme_name="FT_1b1",
+    int_scheme_name="RK4",
+    # int_scheme_name="RK4_1b1",
+    # int_scheme_name="scipy_RK45",
     # int_scheme_name='scipy_DOP853',
     # adapt_tstep=False,
     # adapt_tstep=True,

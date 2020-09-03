@@ -17,9 +17,8 @@ class Model_py(ModelBase):
     """Model in Python."""
     _manual_steppers = MANUAL_STEPPERS
     _scipy_methods = SCIPY_METHODS
-    # _allowed_int_scheme_names = list(_manual_steppers) + list(_scipy_methods)
-    _allowed_int_scheme_names = list(_scipy_methods)
-    # ^ manual steppers methods temporarily disabled
+    _allowed_int_scheme_names = list(_manual_steppers) + list(_scipy_methods)
+    # _allowed_int_scheme_names = list(_scipy_methods)  # temporarily disable manual steppers methods
 
     def __init__(
         self,
@@ -77,18 +76,32 @@ class Model_py(ModelBase):
     def _run(self):
         dt, nt = self.dt, self.nt
         # t_eval = np.arange(dt, (nt+1)*dt, dt)
-        t_eval = np.arange(1, nt+1)*dt
+        t_eval = np.arange(1, nt+1)*dt  # could start at 0?
 
+        # manual (handwritten) integrators
         if "scipy" not in self.int_scheme_name:
-            integrate_manual(
-                self.vortons,
+            v0 = self.vortons0.maybe_with_tracers(self.tracers0)
+            x0 = v0.x
+            y0 = v0.y
+            G = v0.G
+            xhist, yhist = integrate_manual(
+                G,
+                x0,
+                y0,
+                #
                 self.C_0,
                 t_eval,
-                self.G_vals,
                 stepper=self._manual_steppers[self.int_scheme_name],
                 **self.int_scheme_kwargs
             )
-        else:  # Scipy integrator
+            # returned data have shape (nv, nt)
+            nv = v0.n
+            t = self.hist.t
+            self.hist["x"].loc[dict(t=t[t > 0])] = xhist.T
+            self.hist["y"].loc[dict(t=t[t > 0])] = yhist.T
+
+        # integration using SciPy
+        else:
             v0 = self.vortons0.maybe_with_tracers(self.tracers0)
             y0 = v0.state_vec()
             G_col = v0.G_col
@@ -103,6 +116,6 @@ class Model_py(ModelBase):
             )
             # returned data has shape (2nv, nt), where n is number of vortons and nt number of time steps
             nv = v0.n
-            t_hist = self.hist.t
-            self.hist["x"].loc[dict(t=t_hist[t_hist > 0])] = data[:nv, :].T  # need to swap dims because t is first in hist
-            self.hist["y"].loc[dict(t=t_hist[t_hist > 0])] = data[nv:, :].T
+            t = self.hist.t
+            self.hist["x"].loc[dict(t=t[t > 0])] = data[:nv, :].T  # need to swap dims because t is first in hist
+            self.hist["y"].loc[dict(t=t[t > 0])] = data[nv:, :].T
