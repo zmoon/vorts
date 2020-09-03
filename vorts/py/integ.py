@@ -6,10 +6,14 @@ SciPy RK routines (which are written in Python as well) are also available.
 """
 from typing import List, Tuple
 
+import numba
 import numpy as np
 from tqdm import tqdm
 
 from ..vortons import Vorton
+
+
+_TEND_PRE = 1/(2*np.pi)
 
 
 def integrate_scipy(
@@ -74,13 +78,13 @@ def integrate_scipy(
     return res.y  # return data only
 
 
-
 def integrate_manual(
-    vortons: List[Vorton],
+    G,
+    x0,
+    y0,
     C_0: float,  # could be computed instead (so could be optional arg)
     t_eval,
-    G_vals,
-    stepper,
+    stepper,  # f(G, x, y)
     *,
     adapt_tstep=False,
     use_tqdm=True,
@@ -100,6 +104,9 @@ def integrate_manual(
     if adapt_tstep:
         use_tqdm = False  # override this for now
 
+    nt = t_eval.size  # number of integration steps
+    nv = x0.size  # number of vortons
+
     # initial previous C val is C_0
     C_lm1 = C_0
 
@@ -108,58 +115,60 @@ def integrate_manual(
     dt0 = dt_eval[0]
     # if not np.all(dt_eval == dt0):  # fails for some reason even when used np.arange
     if not np.allclose(dt_eval, dt0):
-        print(dt_eval, dt0, dt_eval==dt0)
+        # print(dt_eval, dt0, dt_eval==dt0)
         raise NotImplementedError("non-constant dt in `t_eval`")
 
     # optionally use tqdm
-    iter_l = range(1, len(t_eval)+1)
+    iter_l = range(1, nt+1)  # note starting at 1, not 0
     if use_tqdm:
         iter_l = tqdm(iter_l)
 
-    # iterate over time index `l`
-    for l in iter_l:  # hists at time l=0 are already set in Vorton class init
+    # pre-allocate return arrays
+    xhist = np.empty((nv, nt))
+    yhist = np.empty_like(xhist)
 
-        Gs = G_vals
-        x_lm1s = [v.xhist[l-1] for v in vortons]  # positions at time lm1 (the previous step)
-        y_lm1s = [v.yhist[l-1] for v in vortons]
-        state00 = list(zip(Gs, x_lm1s, y_lm1s))  # state before taking this step
-        # `list(zip(` in order to take length etc.
+    # iterate over time index `l`
+    x_lm1 = x0  # l-1 starts at 0
+    y_lm1 = y0
+    for l in iter_l:
+        # adaptive time stepping
         if adapt_tstep:
             C_relerr = 100
             dt = dt0
             while C_relerr > C_err_reltol and dt >= dt_min:
-                state0 = state00.copy()  # before sub-stepping
-                for ll in range(int(np.round(dt0/dt))):
+                # sub-steps
+                x_l = x_lm1.copy()
+                y_l = y_lm1.copy()
+                for _ in range(int(np.round(dt0/dt))):
                     # step
-                    xnews, ynews = stepper(state0, dt=dt)
-                    state0 = list(zip(Gs, xnews, ynews))  # new state0 for potential next step
+                    x_l, y_l = stepper(G, x_l, y_l, dt=dt)
 
                 # decrease dt for potential next round
                 dt /= 2
 
-                # update hists (calc_C currently uses the hists and needs this)
-                for i, v in enumerate(vortons):
-                    v.xhist[l] = xnews[i]
-                    v.yhist[l] = ynews[i]
-
                 # calculate C error
-                C_l = calc_C(vortons, l)
+                C_l = calc_C(G, x_l, y_l)
                 C_relerr = np.abs((C_l - C_lm1) / C_lm1)
 
             print(f"tstep: {l:d}, min dt used: {dt:.1e}")
 
-        else:  # no adaptive time stepping
+            # new C_lm1 for next main time step
+            C_lm1 = C_l
 
+        # no adaptive time stepping
+        else:
             # step
-            xnews, ynews = stepper(state00, dt=dt0)
+            x_l, y_l = stepper(G, x_lm1, y_lm1, dt=dt0)
 
-            # store
-            for i, v in enumerate(vortons):
-                v.xhist[l] = xnews[i]
-                v.yhist[l] = ynews[i]
+        # new lm1 terms
+        x_lm1 = x_l
+        y_lm1 = y_l
 
-        # calculate new previous C val
-        C_lm1 = calc_C(vortons, l)
+        # store
+        xhist[:, l-1] = x_lm1
+        yhist[:, l-1] = y_lm1
+
+    return xhist, yhist
 
 
 
@@ -171,13 +180,17 @@ def integrate_manual(
 # TODO: streamline calculating x/y tends together (reducing mem usage, etc.)
 
 
-def calc_lsqd(x1, y1, x2, y2):
-    "Calculate intervortical distance $l^2$."
-
+def calc_lsqd_xy(x1, y1, x2, y2):
+    """Calculate intervortical distance $l^2$."""
     return (x1-x2)**2 + (y1-y2)**2
 
 
-def calc_C(vortons: List[Vorton], l: int):
+def calc_lsqd_diff(dx, dy):
+    """Calculate intervortical distance $l^2$."""
+    return dx**2 + dy**2
+
+
+def calc_C(G, x, y):
     """Calculate $C$ at time $l$.
 
     $C$ is supposed to be a conserved quantity in this system.
@@ -186,311 +199,245 @@ def calc_C(vortons: List[Vorton], l: int):
     We use deparature from $C_0$ (initial value of $C$) in the adaptive stepping
     to see if we need to go back and step with smaller dt.
     """
+    nv = x.size  # number of vortons
 
     C = 0
-    for i, j in zip(*np.triu_indices(len(vortons), 1)):
+    for i, j in zip(*np.triu_indices(nv, 1)):
 
-        xi, yi = vortons[i].xhist[l], vortons[i].yhist[l]
-        xj, yj = vortons[j].xhist[l], vortons[j].yhist[l]
+        xi, yi = x[i], y[i]
+        xj, yj = x[j], y[j]
 
         lij_sqd = (xi-xj)**2 + (yi-yj)**2
 
-        Gi = vortons[i].G
-        Gj = vortons[j].G
+        Gi = G[i]
+        Gj = G[j]
 
         C += Gi * Gj * lij_sqd
 
     return C
 
 
-def calc_xtend(xa: float, ya: float, others: List[Tuple]):
-    """Calculate x-tend for one vorton."""
-    # note: could use matrix math instead of for-loop
+def calc_tend_vec(G, x, y):
+    """Calculate both x- and y-tend written in a vectorized way."""
+    # a more-optimized calculation trying to reduce mem usage / repetition
+    # but still is slower than RK4_3 (at least for nt=2000, 3 vortons)
+    # (seems to overtake RK4_3 in performance as increase N (vortons))
 
-    dxdt = 0
-    for Gb, xb, yb in others:
+    # note: meshgrid not allowed in numba
+    xarr, yarr = np.meshgrid(x, y)
 
-        lab_sqd = calc_lsqd(xa, ya, xb, yb)
+    dx = xarr - xarr.T
+    dy = yarr - yarr.T
 
-        if lab_sqd:
-            dxdt += -1/(2*np.pi) * Gb * (ya-yb) / lab_sqd
+    # avoid dividing by lsqd=0 by adding I
+    lsqd = calc_lsqd_diff(dx, dy) + 1e-10 * np.eye(*xarr.shape)
+    #lsqd = xdiff**2 + ydiff**2
 
-    return dxdt
+    return (
+        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1), # x-tend
+        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0) # y-tend
+    )
 
+@numba.njit
+def calc_tend_vec_premesh(G, X, Y):
+    """Calculate both x- and y-tend vectorized,
+    but must pass in x and y in meshgrid form.
+    Numba doesn't support `np.meshgrid`.
+    """
+    # with pre-calculated meshgrid so can use Numba
+    dx = X - X.T
+    dy = Y - Y.T
 
-def calc_ytend(xa: float, ya: float, others: List[Tuple]):
-    """Calculate y-tend for one vorton."""
+    # avoid dividing by lsqd=0 by adding I
+    lsqd = dx**2 + dy**2 + 1e-10 * np.eye(*X.shape)
 
-    dydt = 0
-    for Gb, xb, yb in others:
-
-        lab_sqd = calc_lsqd(xa, ya, xb, yb)
-
-        if lab_sqd:
-            dydt += 1/(2*np.pi) * Gb * (xa-xb) / lab_sqd
-
-    return dydt
-
-
-def calc_xtend_all(G0: List[float], x0: List[float], y0: List[float]):
-    """Calculate x-tend for all vortons."""
-
-    dxdt = np.zeros(x0.size)  # pre-allocate
-    G = G0
-
-    for i, y0i in enumerate(y0):
-
-        x0i = x0[i]
-
-        dxdti = 0
-        for j, y0j in enumerate(y0):
-
-            x0j = x0[j]
-            Gj = G[j]
-
-            if i == j:
-                pass
-
-            else:
-                lij = calc_lsqd(x0i, y0i, x0j, y0j)
-                dxdti += -1/(2*np.pi) * Gj * (y0i-y0j) / lij
-
-        dxdt[i] = dxdti
-
-    return dxdt
+    return (
+        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1), # x-tend
+        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0) # y-tend
+    )
 
 
-def calc_ytend_all(G0: List[float], x0: List[float], y0: List[float]):
-    """Calculate y-tend for all vortons."""
+@numba.njit
+def calc_tend(G, x, y):
+    """Calculate tendencies for each vorton (or tracer).
+    Using explicit loops intead of vector(ized) operations.
+    """
+    # pre-allocate
+    dxdt = np.zeros(x.size)
+    dydt = np.zeros_like(dxdt)
 
-    dydt = np.zeros(x0.size)
-    G = G0
+    # TODO: try filtering out tracers (`np.delete` ?) here to use in the 2nd loop
 
-    for i, y0i in enumerate(y0):
+    # calculate x and y tendencies for each i vorton
+    for i, (xi, yi) in enumerate(zip(x, y)):
+        # add up contributions
+        for j, (Gj, xj, yj) in enumerate(zip(G, x, y)):
+            # only other vortons contribute (not tracers)
+            if i != j and Gj != 0:
+                dx = xi - xj
+                dy = yi - yj
+                lij_sqd = dx**2 + dy**2
+                # add the contributions of j to i's tends
+                dxdt[i] += -_TEND_PRE * Gj * dy / lij_sqd
+                dydt[i] += _TEND_PRE * Gj * dx / lij_sqd
 
-        x0i = x0[i]
-
-        dydti = 0
-        for j, y0j in enumerate(y0):
-
-            x0j = x0[j]
-            Gj = G[j]
-
-            if i == j:
-                pass
-
-            else:
-                lij = calc_lsqd(x0i, y0i, x0j, y0j)
-                dydti += 1/(2*np.pi) * Gj * (x0i-x0j) / lij
-
-        dydt[i] = dydti
-
-    return dydt
+    return dxdt, dydt
 
 
-def FT_step(state0: List[Tuple], dt: float):
+def calc_tend_one(xi, yi, Gn, xn, yn):
+    """Calculate tendencies for one position based on others.
+    Using explicit loops intead of vector(ized) operations.
+    """
+    dxdt, dydt = 0, 0
+    for Gj, xj, yj in zip(Gn, xn, yn):
+        if Gj != 0:  # tracers don't contribute
+            dx = xi - xj
+            dy = yi - yj
+            lij_sqd = dx**2 + dy**2
+            # add contribution of j to i's tends
+            dxdt += -_TEND_PRE * Gj * dy / lij_sqd
+            dydt += _TEND_PRE * Gj * dx / lij_sqd
+
+    return dxdt, dydt
+
+
+def FT_step_1b1(G, x0, y0, dt: float):
     """Step using 1st-O forward-in-time.
 
     Calculate tendencies / integrate one vorton by one.
     This doesn't affect the result for FT, but for RK4 it does (since sub-steps are used)...
     """
     # pre-allocate
-    xnews = np.zeros(len(state0))
-    ynews = np.zeros_like(xnews)
+    nv = x0.size
+    xnew = np.zeros(nv)
+    ynew = np.zeros_like(xnew)
 
-    for i in range(len(state0)):
+    iall = np.arange(nv)
+    for i in iall:
+        # point i
+        xi, yi = x0[i], y0[i]
+        # others
+        iothers = np.delete(iall, i)  # iothers is a new array
+        Gn = G[iothers]
+        xn = x0[iothers]
+        yn = y0[iothers]
+        # calc tends
+        dxdt, dydt = calc_tend_one(xi, yi, Gn, xn, yn)
+        # increment and store
+        xnew[i] = xi + dxdt*dt
+        ynew[i] = yi + dydt*dt
 
-        _, xa, ya = state0[i]
-
-        others = state0[:i] + state0[i+1:]
-
-        dxdt = calc_xtend(xa, ya, others)
-        dydt = calc_ytend(xa, ya, others)
-
-        xnew = xa + dxdt*dt
-        ynew = ya + dydt*dt
-
-        xnews[i] = xnew
-        ynews[i] = ynew
-
-    return xnews, ynews
+    return xnew, ynew
 
 
-def FT_2_step(state0: List[Tuple], dt: float):
+def FT_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
     """Step using 1st-O forward-in-time.
 
     Calculate tendencies / integrate all vortons at once.
     """
+    # calc tends
+    dxdt, dydt = tend_fn(G, x0, y0)
+    # increment
+    xnew = x0 + dxdt*dt
+    ynew = y0 + dydt*dt
 
-    G, x0, y0 = zip(*state0)
-
-    G = np.array(G)
-    x0 = np.array(x0)
-    y0 = np.array(y0)
-
-    dxdt = calc_xtend_all(G, x0, y0)
-    dydt = calc_ytend_all(G, x0, y0)
-
-    xnews = x0 + dxdt*dt
-    ynews = y0 + dydt*dt
-
-    return xnews, ynews
+    return xnew, ynew
 
 
-def RK4_step(state0: List[Tuple], dt: float):
+def RK4_step_1b1(G, x0_all, y0_all, dt: float):
     """Step using RK4.
 
     One vorton at a time.
     **This doesn't work for RK4 since we have sub-steps where the tendencies due to
     all other vortons need to be up to date or we introduce error.**
     """
+    # pre-allocate
+    nv = x0_all.size
+    xnew = np.zeros(nv)
+    ynew = np.zeros_like(xnew)
 
-    xnews = np.zeros(len(state0))
-    ynews = np.zeros_like(xnews)
+    iall = np.arange(nv)
+    for i in iall:
+        # point i
+        x0, y0 = x0_all[i], y0_all[i]
+        # others
+        iothers = np.delete(iall, i)  # iothers is a new array
+        Gn = G[iothers]
+        xn = x0_all[iothers]
+        yn = y0_all[iothers]
 
-    for i in range(len(state0)):
-
-        _, xa, ya = state0[i]
-
-        others = state0[:i] + state0[i+1:]
-
-        x0 = xa
-        y0 = ya
-
+        # RK4
         x1 = x0
         y1 = y0
-        k1y = calc_ytend(x1, y1, others)
-        k1x = calc_xtend(x1, y1, others)
+        k1x, k1y = calc_tend_one(x1, y1, Gn, xn, yn)
 
         x2 = x0 + dt/2*k1x
         y2 = y0 + dt/2*k1y
-        k2x = calc_xtend(x2, y2, others)
-        k2y = calc_ytend(x2, y2, others)
+        k2x, k2y = calc_tend_one(x2, y2, Gn, xn, yn)
 
         x3 = x0 + dt/2*k2x
         y3 = y0 + dt/2*k2y
-        k3x = calc_xtend(x3, y3, others)
-        k3y = calc_ytend(x3, y3, others)
+        k3x, k3y = calc_tend_one(x3, y3, Gn, xn, yn)
 
         x4 = x0 + dt/1*k3x
         y4 = y0 + dt/1*k3y
-        k4x = calc_xtend(x4, y4, others)
-        k4y = calc_ytend(x4, y4, others)
+        k4x, k4y = calc_tend_one(x4, y4, Gn, xn, yn)
 
-        xnew = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
-        ynew = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
+        xnew[i] = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
+        ynew[i] = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
 
-        xnews[i] = xnew
-        ynews[i] = ynew
-
-    return xnews, ynews
+    return xnew, ynew
 
 
-def RK4_2_step(state0: List[Tuple], dt: float):
+def RK4_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
     """Step using RK4.
 
     Whole system at once -- matrix math version.
     """
-
-    G, x0, y0 = zip(*state0)
-    G = np.asarray(G)[:, np.newaxis]  # column vector (so can transpose)
-
-    # TODO: could pull these out of here and append `_mat` to names?
-    def calc_lsqd(xdiff, ydiff):
-        """Avoid dividing by lsqd=0 by adding I"""
-        return (xdiff)**2 + (ydiff)**2 + 1e-10*np.eye(len(state0))
-
-
-    def calc_tend(x, y):
-        """Calculate both x- and y-tend."""
-        # a more-optimized calculation trying to reduce mem usage / repetition
-        # but still is slower than RK4_3 (at least for nt=2000, 3 vortons)
-        # (seems to overtake RK4_3 in performance as increase N (vortons))
-
-        xarr, yarr = np.meshgrid(x, y)
-
-        xdiff = xarr - xarr.T
-        ydiff = yarr - yarr.T
-
-        lsqd = calc_lsqd(xdiff, ydiff)
-
-        return (
-            -1/(2*np.pi) * np.sum(G.T * ydiff / lsqd, axis=1),  # x-tend
-            1/(2*np.pi) * np.sum(G * xdiff / lsqd, axis=0)  # y-tend
-        )
-
-    # TODO: x, y together in matrix?
     # RK4
     x1 = x0
     y1 = y0
-    k1x, k1y = calc_tend(x1, y1)
+    k1x, k1y = tend_fn(G, x1, y1)
 
     x2 = x0 + dt/2*k1x
     y2 = y0 + dt/2*k1y
-    k2x, k2y = calc_tend(x2, y2)
+    k2x, k2y = tend_fn(G, x2, y2)
 
     x3 = x0 + dt/2*k2x
     y3 = y0 + dt/2*k2y
-    k3x, k3y = calc_tend(x3, y3)
+    k3x, k3y = tend_fn(G, x3, y3)
 
     x4 = x0 + dt/1*k3x
     y4 = y0 + dt/1*k3y
-    k4x, k4y = calc_tend(x4, y4)
+    k4x, k4y = tend_fn(G, x4, y4)
 
-    xnews = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
-    ynews = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
+    xnew = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
+    ynew = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
 
-    return xnews, ynews
-
-
-def RK4_3_step(state0: List[Tuple], dt: float):
-    """Step using RK4.
-
-    Whole system at once -- version without using matrix math (cf. RK4_2)
-    """
-
-    G, x0, y0 = zip(*state0)
-
-    x0 = np.array(x0)
-    y0 = np.array(y0)
-
-    # RK4
-    x1 = x0
-    y1 = y0
-    k1x = calc_xtend_all(G, x1, y1)
-    k1y = calc_ytend_all(G, x1, y1)
-
-    x2 = x0 + dt/2*k1x
-    y2 = y0 + dt/2*k1y
-    k2x = calc_xtend_all(G, x2, y2)
-    k2y = calc_ytend_all(G, x2, y2)
-
-    x3 = x0 + dt/2*k2x
-    y3 = y0 + dt/2*k2y
-    k3x = calc_xtend_all(G, x3, y3)
-    k3y = calc_ytend_all(G, x3, y3)
-
-    x4 = x0 + dt/1*k3x
-    y4 = y0 + dt/1*k3y
-    k4x = calc_xtend_all(G, x4, y4)
-    k4y = calc_ytend_all(G, x4, y4)
-
-    xnews = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
-    ynews = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
-
-    return xnews, ynews
+    return xnew, ynew
 
 
 
 # these two dicts are used by model_py to select integration method
 MANUAL_STEPPERS = {
     'FT': FT_step,
-    'FT_2': FT_2_step,
+    'FT_1b1': FT_step_1b1,
     'RK4': RK4_step,
-    'RK4_2': RK4_2_step,
-    'RK4_3': RK4_3_step,
+    'RK4_1b1': RK4_step_1b1,
 }
 
+# for selecting tend fn when creating model, like stepper with `int_scheme_name`
+# TODO: implement selecting these when creating model
+TEND_FNS = {
+    "double-loop": calc_tend,
+    "vec": calc_tend_vec,
+    "vec_premesh": calc_tend_vec_premesh,
+}
+
+# TODO: method of registering user custom stepper/tend fns
+
+# keys are used to select integration method when creating model
+# values are used as `method` for `scipy.integrate.solve_ivp`'s
 SCIPY_METHODS = {  # could create this programatically
     "scipy_RK45": "RK45",
     "scipy_DOP853": "DOP853",

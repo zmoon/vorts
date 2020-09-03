@@ -107,6 +107,7 @@ class ModelBase(abc.ABC):
             warnings.warn("Note that the model has already been run.")
         self._run()
         self._has_run = True
+        # TODO: with hist having been updated (presumably), update vortons?
 
     # might be better to use _plot_methods dict of name: function
     # so that certain models could extend the options

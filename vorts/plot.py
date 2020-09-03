@@ -142,7 +142,9 @@ def plot_ps(ds, *, iv_ref=0, **kwargs):
 
     fig, ax = plt.subplots(**kwargs)
 
-    # TODO: plot vorton initial positions / positions at reference time?
+    # TODO: (optionally?) plot vorton initial positions / positions at reference time?
+
+    # TODO: algo for choosing marker size and alpha (but also allow passing in)
 
     # plot all
     x = ds.x  # (nt, nv)
