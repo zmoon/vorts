@@ -105,7 +105,7 @@ class Tracers:
 class Vortons:
     """Collection of `Vorton`s."""
     def __init__(self, G, x, y):
-        """Create vorton collection.
+        r"""Create vorton collection.
 
         Parameters
         ----------
@@ -186,7 +186,7 @@ class Vortons:
 
 
     def C(self):
-        """Calculate $C$.
+        r"""Calculate $C$.
 
         $$
         C = \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
@@ -214,7 +214,7 @@ class Vortons:
 
 
     def H(self):
-        """Calculate $H$, the Hamiltonian of the system.
+        r"""Calculate $H$, the Hamiltonian of the system.
 
         $$
         H = -\frac{1}{4 \pi} \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
@@ -235,7 +235,7 @@ class Vortons:
 
 
     def I(self):
-        """Calculate $I$, the angular impulse of the system.
+        r"""Calculate $I$, the angular impulse of the system.
 
         $$
         I = \sum_{\alpha = 1}^{N} \Gamma_{\alpha} | r_{\alpha} |^2
@@ -256,7 +256,7 @@ class Vortons:
 
     # TODO: results are not right for equi tri... need to check formulas
     def theta(self):
-        """Calculate $\theta$, the action angles??
+        r"""Calculate $\theta$, the action angles??
 
         Chamecki eq. 19
         """
@@ -281,8 +281,8 @@ class Vortons:
         G = self.G
         Gp, Gm = G > 0, G < 0
         x, y = self.x, self.y
-        ax.plot(x[Gp], y[Gp], "o", ms=7, c=c_Gp, label="$\Gamma > 0$")
-        ax.plot(x[Gm], y[Gm], "o", ms=7, c=c_Gm, label="$\Gamma < 0$")
+        ax.plot(x[Gp], y[Gp], "o", ms=7, c=c_Gp, label=r"$\Gamma > 0$")
+        ax.plot(x[Gm], y[Gm], "o", ms=7, c=c_Gm, label=r"$\Gamma < 0$")
 
         # plot center-of-mass
         x_cm, y_cm = self.cm()
@@ -305,7 +305,7 @@ class Vortons:
             xlabel="$x$",
             ylabel="$y$",
         )
-        ax.set_aspect("equal", "box")
+        ax.set_aspect("equal", "datalim")
         fig.legend()
         ax.grid(True)
         fig.tight_layout()
@@ -420,9 +420,9 @@ class Vortons:
         G_t = np.zeros((tracers.n,))
 
         G = np.append(G_v, G_t)
-        xy = np.append(xy_v, xy_t, axis=0)
+        x, y = np.append(xy_v, xy_t, axis=0).T  # unpacking arrays goes by rows
 
-        return Vortons(G, *xy.T)
+        return Vortons(G, x, y)
 
     # TODO: indexing dunder methods
 
@@ -591,7 +591,6 @@ if __name__ == "__main__":
     plt.close("all")
 
     vs = Vortons([1, 1], [0, 1], [0, 0])
-    vs.add_tracers(10)
     vs.plot()
 
     # G sum here is 0, messing up the mom's...
