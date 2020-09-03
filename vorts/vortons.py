@@ -64,6 +64,11 @@ class Tracers:
     def state_vec(self):
         return self.state_mat.T.flatten()
 
+    def state_mat_full(self):
+        """Full state mat for tracers doesn't include G."""
+        warnings.warn("Note that `state_mat_full` for tracers is the same as `state_mat` (no G).")
+        return self.state_mat
+
     @staticmethod
     def randu(n, **kwargs):
         xy = points_randu(n, **kwargs).T
@@ -406,6 +411,8 @@ class Vortons:
         """
         if tracers is None:
             return self
+
+        # TODO: add option to extend existing Vortons instead of creating a new. `inplace`?
 
         G_v = self.G
         xy_v = self.state_mat
