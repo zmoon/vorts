@@ -19,16 +19,18 @@ plt.close("all")
 
 vs = vorts.Vortons([1, 1], [0, 0], [-0.5, 1])  # <-> Lambda=0 (no longer a triangle)
 
-vs.add_tracers(100)
-
 vs.plot()
 
+ts = vorts.Tracers.randu(100)
+
+ts.plot()
+
 m = vorts.Model_f(
-    vs,
+    vs, ts,
     dt=0.005, nt=2e6,
     int_scheme_name='RK4',
     write_vortons=True,  # default `True`
-    write_tracers=False,  # default `False`
+    write_tracers=True,  # default `False`
     write_ps=False,  # default `False`
 )
 

@@ -1,75 +1,25 @@
 """
 Driver for the Python version.
 """
-import copy
-# from glob import glob
-# import os
-# import subprocess
 # from typing import List, Tuple
-import warnings
+# import warnings
 
 #import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 
-from .plot import plot_vorton_trajectories, plot_tracer_trajectories
+from ._model import ModelBase
 from .py import (integrate_manual, integrate_scipy, MANUAL_STEPPERS, SCIPY_METHODS)
 from .vortons import Vortons, Tracers
 
 
-
-# model_f could use it when collecting the data
-# until the Fortran model writes nc files
-# or could be moved to a different module
-def init_hist(
-    n_vorton: int,
-    n_time: int,  # in addition to t=0
-    dt: float,
-    #
-    n_tracer=None,
-    *,
-    ds_attrs=None,
-):
-    """Create initial history `xr.Dataset`."""
-
-    # if n_tracer is not None:
-    if ds_attrs is None:
-        ds_attrs = {}
-
-    t = np.arange(0, n_time+1)*dt
-    nt = t.size
-
-    v = np.arange(0, n_vorton)
-    nv = n_vorton
-
-    def emp_v():
-        return np.empty((nv,))
-
-    def emp_tv():
-        return np.empty((nt, nv))
-
-    ds = xr.Dataset(
-        coords={
-            "t": ("t", t, {"long_name": "unitless time"}),
-            "v": ("v", v, {"long_name": "vorton num"}),
-        },
-        data_vars={
-            "G": (("v",), emp_v(), {"long_name": "Vorton strength $\Gamma$ (circulation)"}),
-            "x": (("t", "v"), emp_tv(), {"long_name": "Vorton x position"}),
-            "y": (("t", "v"), emp_tv(), {"long_name": "Vorton y position"}),
-        },
-        attrs=ds_attrs,
-    )
-
-    return ds
-
-
-class Model_py:  # TODO: model base class? could have self.vortons, .vortons0, .run(), .plot(), etc.
+class Model_py(ModelBase):
     """Model in Python."""
     _manual_steppers = MANUAL_STEPPERS
     _scipy_methods = SCIPY_METHODS
     # _allowed_int_scheme_names = list(_manual_steppers) + list(_scipy_methods)
     _allowed_int_scheme_names = list(_scipy_methods)
+    # ^ manual steppers methods temporarily disabled
 
     def __init__(
         self,
@@ -78,10 +28,11 @@ class Model_py:  # TODO: model base class? could have self.vortons, .vortons0, .
         *,
         dt=0.1,
         nt=1000,
+        # above are passed to base
         int_scheme_name='scipy_RK45',
         **int_scheme_kwargs,
     ):
-        """Create model with given settings.
+        """Create model.
 
         Parameters
         ----------
@@ -89,14 +40,15 @@ class Model_py:  # TODO: model base class? could have self.vortons, .vortons0, .
             default: equilateral triangle with all G=1
 
         tracers : Tracers (optional)
-            default: no tracers (`None`)
+            default: no tracers
 
         dt : float
             time step for the output
-            for the integrators, used as the constant integration time step
-            or as the maximum integration time step
+            for the integrators, `dt` is used as the constant or maximum integration time step
+            depending on the integration scheme
         nt : int
             number of time steps to run (not including t=0)
+
         int_scheme_name : str
             default: 'RK4_3' (handwritten basic RK4 stepper)
 
@@ -104,21 +56,10 @@ class Model_py:  # TODO: model base class? could have self.vortons, .vortons0, .
             passed on to `integrate_manual` or `integrate_scipy`
             see their signatures
         """
-        # vortons
-        if vortons is None:
-            vortons = Vortons.regular_polygon(3, G=1)
-        self.vortons = vortons  # TODO: update these after the run!
-        self.vortons0 = copy.deepcopy(self.vortons)  # store initial state
+        # call base initialization
+        super().__init__(vortons, tracers, dt=dt, nt=nt)
 
-        # tracers (leave if None)
-        self.tracers = tracers
-        self.tracers0 = copy.deepcopy(self.tracers)
-
-        # sim settings
-        self.dt = float(dt)
-        self.nt = int(nt)
-        self.nv = self.vortons0.n
-        self.n_tracers = self.tracers0.n if self.tracers0 is not None else 0
+        # other inputs
         self.int_scheme_name = int_scheme_name
         self.int_scheme_kwargs = int_scheme_kwargs
 
@@ -129,29 +70,11 @@ class Model_py:  # TODO: model base class? could have self.vortons, .vortons0, .
                 f"{self._allowed_int_scheme_names}"
             )
 
-        # self.l = 0  # time step index (doesn't seem to be used)
-
-        # for adaptive time stepping calculations
+        # calculate initial C, used for adaptive time stepping tolerance checks
         self.C_0 = self.vortons0.C()
 
-        # initialize hist (xr.Dataset)
-        v0 = self.vortons0.maybe_with_tracers(self.tracers0)
-        # self.hist = init_hist(G, x0, y0, self.nv, self.nt, self.dt)
-        self.hist = init_hist(self.nv + self.n_tracers, self.nt, self.dt)
-        self.hist["G"].loc[:] = v0.G  # G doesn't change during the sim
-        # TODO: having to set the initial values this way is a bit awkward
-        t_hist = self.hist.t
-        self.hist["x"].loc[dict(t=t_hist[t_hist == 0])] = v0.x
-        self.hist["y"].loc[dict(t=t_hist[t_hist == 0])] = v0.y
-
-        self._has_run = False
-
-
-    def run(self):
-        """Integrate from 0 to end (nt*dt)."""
-        if self._has_run:
-            warnings.warn("The model has already been run.")
-
+    # implement abstract method `_run`
+    def _run(self):
         dt, nt = self.dt, self.nt
         # t_eval = np.arange(dt, (nt+1)*dt, dt)
         t_eval = np.arange(1, nt+1)*dt
@@ -168,10 +91,11 @@ class Model_py:  # TODO: model base class? could have self.vortons, .vortons0, .
         else:  # Scipy integrator
             v0 = self.vortons0.maybe_with_tracers(self.tracers0)
             y0 = v0.state_vec()
+            G_col = v0.G_col
             data = integrate_scipy(
                 y0,
                 t_eval,
-                v0.G_col,
+                G_col,
                 #
                 method=self._scipy_methods[self.int_scheme_name],
                 max_step=dt,
@@ -182,23 +106,3 @@ class Model_py:  # TODO: model base class? could have self.vortons, .vortons0, .
             t_hist = self.hist.t
             self.hist["x"].loc[dict(t=t_hist[t_hist > 0])] = data[:nv, :].T  # need to swap dims because t is first in hist
             self.hist["y"].loc[dict(t=t_hist[t_hist > 0])] = data[nv:, :].T
-
-        self._has_run = True
-
-
-    def plot(self, which="vortons", **kwargs):
-        """Plot.
-
-        **kwargs passed through to the corresponding plotting function.
-        """
-        if not self._has_run:
-            raise Exception("The model has not yet been run.")
-
-        if which == "vortons":
-            plot_vorton_trajectories(self.hist, **kwargs)
-
-        elif which == "tracers":
-            plot_tracer_trajectories(self.hist, **kwargs)
-
-        else:
-            raise NotImplementedError(f"which={which!r}")
