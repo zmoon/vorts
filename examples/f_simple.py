@@ -6,39 +6,32 @@ import sys
 sys.path.append("../")
 
 import matplotlib.pyplot as plt
-import numpy as np
+# import numpy as np
 
 import vorts
+
+plt.close("all")
 
 
 # %% create
 
-G = np.ones(3) * 1
+# vs = vorts.Vortons.isos_triangle(G=1, Lambda=1)  # <-> equilateral triangle (theta_deg=60)
 
-theta_deg = 60  # 72 gives a Lambda near the critical 1/sqrt(2) (I think)
-theta = np.deg2rad(theta_deg)  # angle between base and connections to the top point at (0,1)
+vs = vorts.Vortons([1, 1], [0, 0], [-0.5, 1])  # <-> Lambda=0 (no longer a triangle)
 
-xb = 1.5/np.tan(theta)  # one half of x base
+vs.plot()
 
-xi = [-xb,  0,  xb]
-yi = [-0.5, 1, -0.5]
+ts = vorts.Tracers.randu(100)
 
-Lambda = np.sqrt( (180-2*theta_deg) / float(theta_deg) )  # Marcelo eqns 17--19
+ts.plot()
 
-
-n = 12  # sqrt of num tracers
-d = 3.0  # displacement off center to select initial tracer coords from
-xit = np.random.uniform(-d, d, (n, n))
-yit = np.random.uniform(-d, d, (n, n))
-
-m = vorts.model_f(
-    G, xi, yi,
-    xit=xit, yit=yit,
-    dt=0.005, nt=2e5,
+m = vorts.Model_f(
+    vs, ts,
+    dt=0.005, nt=2e6,
     int_scheme_name='RK4',
     write_vortons=True,  # default `True`
-    write_tracers=False,  # default `False`
-    write_ps=True,  # default `False`
+    write_tracers=True,  # default `False`
+    write_ps=False,  # default `False`
 )
 
 
@@ -47,23 +40,21 @@ m = vorts.model_f(
 m.run()
 
 
-# %% plot
+# %% plot results
 
-fig, ax = plt.subplots()
+m.plot()
 
-# plot tracer positions at Poincare section times
-xt, yt = m.ps.T
-ax.plot(xt, yt, ".", c="0.5", ms=4, alpha=0.5)
+m.plot("tracers")
 
-# plot vorton tracks
-colors = plt.cm.Dark2(np.linspace(0, 1, 8)[2:2+len(G)+1])
-for i, v in enumerate(m.vortons):
-    x = v.xhist
-    y = v.yhist
-    ax.plot(x, y, color=colors[i], lw=0.5, alpha=0.5)
-    ax.plot(x[0], y[0], 'o', color=colors[i])
 
-# ax.axis("equal")
-ax.set_aspect("equal", "box")
+# %% Poincare?
 
-# plt.show()
+m.plot("poincare")
+
+m.plot("poincare", iv_ref=1)  # this is the one with initial position (0, 1)
+
+m.plot("poincare", iv_ref=1, xtol=1e-3)
+vorts.plot.frame_only()
+
+m.plot("poincare", iv_ref=1, xtol=1e-3)
+vorts.plot.remove_frame(keep_title=False)
