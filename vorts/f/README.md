@@ -1,6 +1,5 @@
 
-`m_vorts` uses some [Fortran 2003 features](http://fortranwiki.org/fortran/show/Fortran+2003)
-(a bit of OOP).
+`m_vorts` uses some [Fortran 2003 features](http://fortranwiki.org/fortran/show/Fortran+2003).
 
 ## Installing
 
@@ -13,8 +12,8 @@ Compile with `gfortran -ffree-form hello_world.f -o hello_world.exe`
 ### Windows
 
 You can download [gfortran binaries for Windows](https://gcc.gnu.org/wiki/GFortranBinariesWindows),
-but in order to also have `make`, MinGW via [MSYS2](https://www.msys2.org/) might be an easier option.
-In order to run from Python on Windows, MinGW tools have to be on your PATH.
+but in order to also have `make`, MinGW via [MSYS2](https://www.msys2.org/) or [WSL](https://docs.microsoft.com/en-us/windows/wsl/about) might be an easier option.
+In order to run the MinGW-compiled executable from Python on Windows, MinGW tools have to be on your PATH.
 
 ### Linux
 
