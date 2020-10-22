@@ -4,6 +4,12 @@ vorts/f/src/*.o
 vorts/f/src/*.mod
 vorts/f/src/hello_world.exe
 
+# built docs
+html/
+
+# environments
+venv/
+
 *.pyc
 ps*.txt
 ps*.png
