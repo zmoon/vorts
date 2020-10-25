@@ -1,4 +1,4 @@
-# vortex-model
+# vorts
 
 Integrate a system of *N* point vortices.
 
