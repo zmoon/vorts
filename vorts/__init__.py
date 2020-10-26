@@ -1,5 +1,7 @@
 """
 vorts -- point vortex models
+
+.. include:: ../README.md
 """
 
 from .model_py import Model_py
