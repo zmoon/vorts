@@ -1,5 +1,15 @@
 
-Build documentation by running
+Build documentation from in here by running
+```bash
+pdoc --html ../vorts
 ```
-something...
+
+This generates the site in `./html/vorts`.
+
+Push to `gh-pages` branch on GitHub using [`gph-import`](https://github.com/c-w/ghp-import)
+```bash
+ghp-import -n -p -f ./html/vorts
+# -n  add .nojekyll
+# -p  push (to origin/gh-pages by default)
+# -f  force push
 ```
