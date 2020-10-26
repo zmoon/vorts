@@ -1,0 +1,1138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.1" />
+<title>vorts.py.integ API documentation</title>
+<meta name="description" content="Integration routines and time steppers in Python …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<!-- MathJax 3, with $..$ for inline math enabled -->
+<script>
+MathJax = {
+tex: {
+inlineMath: [['$', '$'], ['\\(', '\\)']]
+},
+svg: {
+fontCache: 'global'
+}
+};
+</script>
+<script type="text/javascript" id="MathJax-script" async
+src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>vorts.py.integ</code></h1>
+</header>
+<section id="section-intro">
+<p>Integration routines and time steppers in Python.</p>
+<p>In addition to the sub-par handwritten RK and FT schemes,
+SciPy RK routines (which are written in Python as well) are also available.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\py\integ.py#L0-L443" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Integration routines and time steppers in Python.
+
+In addition to the sub-par handwritten RK and FT schemes,
+SciPy RK routines (which are written in Python as well) are also available.
+&#34;&#34;&#34;
+from typing import List, Tuple
+
+import numba
+import numpy as np
+from tqdm import tqdm
+
+from ..vortons import Vorton
+
+
+_TEND_PRE = 1/(2*np.pi)
+
+
+def integrate_scipy(
+    y0,
+    t_eval,
+    G_col,
+    *,
+    # `solve_ivp` kwargs
+    method=&#34;RK45&#34;,
+    max_step: float,
+    **options,
+):
+    &#34;&#34;&#34;Integrate using `scipy.integrate.solve_ivp`.
+
+    **options
+        passed through to `solve_ivp`
+    &#34;&#34;&#34;
+    from scipy.integrate import solve_ivp
+
+    def calc_lsqd(xarr, yarr):
+        # avoid dividing by 0 by adding I
+        # taken from RK4_2_step
+        return (xarr - xarr.T)**2 + (yarr - yarr.T)**2 + 1e-13*np.eye(*xarr.shape)
+
+    def fun(t, y, G):
+        &#34;&#34;&#34;Calculate both x- and y-tend.&#34;&#34;&#34;
+        # based on calc_tend in RK4_2_step
+
+        # unpack
+        m = G.size  # number of vortons
+        xpos, ypos = y[:m], y[m:]
+
+        xarr, yarr = np.meshgrid(xpos, ypos)
+
+        xdiff = xarr - xarr.T
+        ydiff = yarr - yarr.T
+
+        lsqd = calc_lsqd(xarr, yarr)
+
+        return np.concatenate((
+            -1/(2*np.pi) * np.sum(G.T * ydiff / lsqd, axis=1),  # x-tend
+            1/(2*np.pi) * np.sum(G * xdiff / lsqd, axis=0)  # y-tend
+        ))
+
+    t_span = 0, t_eval[-1]
+
+    # return of fun(t, y) must have shape (n,) or (n, k)
+    # but y0 must be 1-dimensional (n,)
+    res = solve_ivp(
+        fun,
+        t_span=t_span,
+        y0=y0,
+        t_eval=t_eval,
+        #
+        method=method,
+        vectorized=True,  # not sure what impact this has...
+        args=(G_col,),  # additional arguments after `t, y` used in fun, jac, etc.
+        max_step=max_step,
+        **options,
+    )
+
+    return res.y  # return data only
+
+
+def integrate_manual(
+    G,
+    x0,
+    y0,
+    C_0: float,  # could be computed instead (so could be optional arg)
+    t_eval,
+    stepper,  # f(G, x, y)
+    *,
+    adapt_tstep=False,
+    use_tqdm=True,
+    C_err_reltol: float = 1.0e-9,
+    dt_min: float = 1.0e-4,
+
+):
+    &#34;&#34;&#34;Integration routine for use with my handwritten FT/RK4 steppers.
+
+    Optional naive adaptive time-stepping.
+
+    t_eval : array_like
+        times to store
+        not including 0, which has already been stored
+
+    &#34;&#34;&#34;
+    if adapt_tstep:
+        use_tqdm = False  # override this for now
+
+    nt = t_eval.size  # number of integration steps
+    nv = x0.size  # number of vortons
+
+    # initial previous C val is C_0
+    C_lm1 = C_0
+
+    # check for non-constant dt
+    dt_eval = np.diff(t_eval)
+    dt0 = dt_eval[0]
+    # if not np.all(dt_eval == dt0):  # fails for some reason even when used np.arange
+    if not np.allclose(dt_eval, dt0):
+        # print(dt_eval, dt0, dt_eval==dt0)
+        raise NotImplementedError(&#34;non-constant dt in `t_eval`&#34;)
+
+    # optionally use tqdm
+    iter_l = range(1, nt+1)  # note starting at 1, not 0
+    if use_tqdm:
+        iter_l = tqdm(iter_l)
+
+    # pre-allocate return arrays
+    xhist = np.empty((nv, nt))
+    yhist = np.empty_like(xhist)
+
+    # iterate over time index `l`
+    x_lm1 = x0  # l-1 starts at 0
+    y_lm1 = y0
+    for l in iter_l:
+        # adaptive time stepping
+        if adapt_tstep:
+            C_relerr = 100
+            dt = dt0
+            while C_relerr &gt; C_err_reltol and dt &gt;= dt_min:
+                # sub-steps
+                x_l = x_lm1.copy()
+                y_l = y_lm1.copy()
+                for _ in range(int(np.round(dt0/dt))):
+                    # step
+                    x_l, y_l = stepper(G, x_l, y_l, dt=dt)
+
+                # decrease dt for potential next round
+                dt /= 2
+
+                # calculate C error
+                C_l = calc_C(G, x_l, y_l)
+                C_relerr = np.abs((C_l - C_lm1) / C_lm1)
+
+            print(f&#34;tstep: {l:d}, min dt used: {dt:.1e}&#34;)
+
+            # new C_lm1 for next main time step
+            C_lm1 = C_l
+
+        # no adaptive time stepping
+        else:
+            # step
+            x_l, y_l = stepper(G, x_lm1, y_lm1, dt=dt0)
+
+        # new lm1 terms
+        x_lm1 = x_l
+        y_lm1 = y_l
+
+        # store
+        xhist[:, l-1] = x_lm1
+        yhist[:, l-1] = y_lm1
+
+    return xhist, yhist
+
+
+
+# TODO: try numba (especially for the looping ones) (wrapping in njit could be a model option)
+
+# TODO: take advantage of the fact that tracers are only impacted by the vortons
+# (calculations involved in their tends can be reduced)
+
+# TODO: streamline calculating x/y tends together (reducing mem usage, etc.)
+
+
+def calc_lsqd_xy(x1, y1, x2, y2):
+    &#34;&#34;&#34;Calculate intervortical distance $l^2$.&#34;&#34;&#34;
+    return (x1-x2)**2 + (y1-y2)**2
+
+
+def calc_lsqd_diff(dx, dy):
+    &#34;&#34;&#34;Calculate intervortical distance $l^2$.&#34;&#34;&#34;
+    return dx**2 + dy**2
+
+
+def calc_C(G, x, y):
+    &#34;&#34;&#34;Calculate $C$ at time $l$.
+
+    $C$ is supposed to be a conserved quantity in this system.
+    - Chamecki (2005) eq. 15
+
+    We use deparature from $C_0$ (initial value of $C$) in the adaptive stepping
+    to see if we need to go back and step with smaller dt.
+    &#34;&#34;&#34;
+    nv = x.size  # number of vortons
+
+    C = 0
+    for i, j in zip(*np.triu_indices(nv, 1)):
+
+        xi, yi = x[i], y[i]
+        xj, yj = x[j], y[j]
+
+        lij_sqd = (xi-xj)**2 + (yi-yj)**2
+
+        Gi = G[i]
+        Gj = G[j]
+
+        C += Gi * Gj * lij_sqd
+
+    return C
+
+
+def calc_tend_vec(G, x, y):
+    &#34;&#34;&#34;Calculate both x- and y-tend written in a vectorized way.&#34;&#34;&#34;
+    # a more-optimized calculation trying to reduce mem usage / repetition
+    # but still is slower than RK4_3 (at least for nt=2000, 3 vortons)
+    # (seems to overtake RK4_3 in performance as increase N (vortons))
+
+    # note: meshgrid not allowed in numba
+    xarr, yarr = np.meshgrid(x, y)
+
+    dx = xarr - xarr.T
+    dy = yarr - yarr.T
+
+    # avoid dividing by lsqd=0 by adding I
+    lsqd = calc_lsqd_diff(dx, dy) + 1e-10 * np.eye(*xarr.shape)
+    #lsqd = xdiff**2 + ydiff**2
+
+    return (
+        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1), # x-tend
+        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0) # y-tend
+    )
+
+@numba.njit
+def calc_tend_vec_premesh(G, X, Y):
+    &#34;&#34;&#34;Calculate both x- and y-tend vectorized,
+    but must pass in x and y in meshgrid form.
+    Numba doesn&#39;t support `np.meshgrid`.
+    &#34;&#34;&#34;
+    # with pre-calculated meshgrid so can use Numba
+    dx = X - X.T
+    dy = Y - Y.T
+
+    # avoid dividing by lsqd=0 by adding I
+    lsqd = dx**2 + dy**2 + 1e-10 * np.eye(*X.shape)
+
+    return (
+        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1), # x-tend
+        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0) # y-tend
+    )
+
+
+@numba.njit
+def calc_tend(G, x, y):
+    &#34;&#34;&#34;Calculate tendencies for each vorton (or tracer).
+    Using explicit loops intead of vector(ized) operations.
+    &#34;&#34;&#34;
+    # pre-allocate
+    dxdt = np.zeros(x.size)
+    dydt = np.zeros_like(dxdt)
+
+    # TODO: try filtering out tracers (`np.delete` ?) here to use in the 2nd loop
+
+    # calculate x and y tendencies for each i vorton
+    for i, (xi, yi) in enumerate(zip(x, y)):
+        # add up contributions
+        for j, (Gj, xj, yj) in enumerate(zip(G, x, y)):
+            # only other vortons contribute (not tracers)
+            if i != j and Gj != 0:
+                dx = xi - xj
+                dy = yi - yj
+                lij_sqd = dx**2 + dy**2
+                # add the contributions of j to i&#39;s tends
+                dxdt[i] += -_TEND_PRE * Gj * dy / lij_sqd
+                dydt[i] += _TEND_PRE * Gj * dx / lij_sqd
+
+    return dxdt, dydt
+
+
+def calc_tend_one(xi, yi, Gn, xn, yn):
+    &#34;&#34;&#34;Calculate tendencies for one position based on others.
+    Using explicit loops intead of vector(ized) operations.
+    &#34;&#34;&#34;
+    dxdt, dydt = 0, 0
+    for Gj, xj, yj in zip(Gn, xn, yn):
+        if Gj != 0:  # tracers don&#39;t contribute
+            dx = xi - xj
+            dy = yi - yj
+            lij_sqd = dx**2 + dy**2
+            # add contribution of j to i&#39;s tends
+            dxdt += -_TEND_PRE * Gj * dy / lij_sqd
+            dydt += _TEND_PRE * Gj * dx / lij_sqd
+
+    return dxdt, dydt
+
+
+def FT_step_1b1(G, x0, y0, dt: float):
+    &#34;&#34;&#34;Step using 1st-O forward-in-time.
+
+    Calculate tendencies / integrate one vorton by one.
+    This doesn&#39;t affect the result for FT, but for RK4 it does (since sub-steps are used)...
+    &#34;&#34;&#34;
+    # pre-allocate
+    nv = x0.size
+    xnew = np.zeros(nv)
+    ynew = np.zeros_like(xnew)
+
+    iall = np.arange(nv)
+    for i in iall:
+        # point i
+        xi, yi = x0[i], y0[i]
+        # others
+        iothers = np.delete(iall, i)  # iothers is a new array
+        Gn = G[iothers]
+        xn = x0[iothers]
+        yn = y0[iothers]
+        # calc tends
+        dxdt, dydt = calc_tend_one(xi, yi, Gn, xn, yn)
+        # increment and store
+        xnew[i] = xi + dxdt*dt
+        ynew[i] = yi + dydt*dt
+
+    return xnew, ynew
+
+
+def FT_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
+    &#34;&#34;&#34;Step using 1st-O forward-in-time.
+
+    Calculate tendencies / integrate all vortons at once.
+    &#34;&#34;&#34;
+    # calc tends
+    dxdt, dydt = tend_fn(G, x0, y0)
+    # increment
+    xnew = x0 + dxdt*dt
+    ynew = y0 + dydt*dt
+
+    return xnew, ynew
+
+
+def RK4_step_1b1(G, x0_all, y0_all, dt: float):
+    &#34;&#34;&#34;Step using RK4.
+
+    One vorton at a time.
+    **This doesn&#39;t work for RK4 since we have sub-steps where the tendencies due to
+    all other vortons need to be up to date or we introduce error.**
+    &#34;&#34;&#34;
+    # pre-allocate
+    nv = x0_all.size
+    xnew = np.zeros(nv)
+    ynew = np.zeros_like(xnew)
+
+    iall = np.arange(nv)
+    for i in iall:
+        # point i
+        x0, y0 = x0_all[i], y0_all[i]
+        # others
+        iothers = np.delete(iall, i)  # iothers is a new array
+        Gn = G[iothers]
+        xn = x0_all[iothers]
+        yn = y0_all[iothers]
+
+        # RK4
+        x1 = x0
+        y1 = y0
+        k1x, k1y = calc_tend_one(x1, y1, Gn, xn, yn)
+
+        x2 = x0 + dt/2*k1x
+        y2 = y0 + dt/2*k1y
+        k2x, k2y = calc_tend_one(x2, y2, Gn, xn, yn)
+
+        x3 = x0 + dt/2*k2x
+        y3 = y0 + dt/2*k2y
+        k3x, k3y = calc_tend_one(x3, y3, Gn, xn, yn)
+
+        x4 = x0 + dt/1*k3x
+        y4 = y0 + dt/1*k3y
+        k4x, k4y = calc_tend_one(x4, y4, Gn, xn, yn)
+
+        xnew[i] = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
+        ynew[i] = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
+
+    return xnew, ynew
+
+
+def RK4_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
+    &#34;&#34;&#34;Step using RK4.
+
+    Whole system at once -- matrix math version.
+    &#34;&#34;&#34;
+    # RK4
+    x1 = x0
+    y1 = y0
+    k1x, k1y = tend_fn(G, x1, y1)
+
+    x2 = x0 + dt/2*k1x
+    y2 = y0 + dt/2*k1y
+    k2x, k2y = tend_fn(G, x2, y2)
+
+    x3 = x0 + dt/2*k2x
+    y3 = y0 + dt/2*k2y
+    k3x, k3y = tend_fn(G, x3, y3)
+
+    x4 = x0 + dt/1*k3x
+    y4 = y0 + dt/1*k3y
+    k4x, k4y = tend_fn(G, x4, y4)
+
+    xnew = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
+    ynew = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
+
+    return xnew, ynew
+
+
+
+# these two dicts are used by model_py to select integration method
+MANUAL_STEPPERS = {
+    &#39;FT&#39;: FT_step,
+    &#39;FT_1b1&#39;: FT_step_1b1,
+    &#39;RK4&#39;: RK4_step,
+    &#39;RK4_1b1&#39;: RK4_step_1b1,
+}
+
+# for selecting tend fn when creating model, like stepper with `int_scheme_name`
+# TODO: implement selecting these when creating model
+TEND_FNS = {
+    &#34;double-loop&#34;: calc_tend,
+    &#34;vec&#34;: calc_tend_vec,
+    &#34;vec_premesh&#34;: calc_tend_vec_premesh,
+}
+
+# TODO: method of registering user custom stepper/tend fns
+
+# keys are used to select integration method when creating model
+# values are used as `method` for `scipy.integrate.solve_ivp`&#39;s
+SCIPY_METHODS = {  # could create this programatically
+    &#34;scipy_RK45&#34;: &#34;RK45&#34;,
+    &#34;scipy_DOP853&#34;: &#34;DOP853&#34;,
+}</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="vorts.py.integ.FT_step"><code class="name flex">
+<span>def <span class="ident">FT_step</span></span>(<span>G, x0, y0, dt: float, *, tend_fn=CPUDispatcher(&lt;function calc_tend&gt;))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Step using 1st-O forward-in-time.</p>
+<p>Calculate tendencies / integrate all vortons at once.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\py\integ.py#L333-L344" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def FT_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
+    &#34;&#34;&#34;Step using 1st-O forward-in-time.
+
+    Calculate tendencies / integrate all vortons at once.
+    &#34;&#34;&#34;
+    # calc tends
+    dxdt, dydt = tend_fn(G, x0, y0)
+    # increment
+    xnew = x0 + dxdt*dt
+    ynew = y0 + dydt*dt
+
+    return xnew, ynew</code></pre>
+</details>
+</dd>
+<dt id="vorts.py.integ.FT_step_1b1"><code class="name flex">
+<span>def <span class="ident">FT_step_1b1</span></span>(<span>G, x0, y0, dt: float)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Step using 1st-O forward-in-time.</p>
+<p>Calculate tendencies / integrate one vorton by one.
+This doesn't affect the result for FT, but for RK4 it does (since sub-steps are used)&hellip;</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\py\integ.py#L304-L330" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def FT_step_1b1(G, x0, y0, dt: float):
+    &#34;&#34;&#34;Step using 1st-O forward-in-time.
+
+    Calculate tendencies / integrate one vorton by one.
+    This doesn&#39;t affect the result for FT, but for RK4 it does (since sub-steps are used)...
+    &#34;&#34;&#34;
+    # pre-allocate
+    nv = x0.size
+    xnew = np.zeros(nv)
+    ynew = np.zeros_like(xnew)
+
+    iall = np.arange(nv)
+    for i in iall:
+        # point i
+        xi, yi = x0[i], y0[i]
+        # others
+        iothers = np.delete(iall, i)  # iothers is a new array
+        Gn = G[iothers]
+        xn = x0[iothers]
+        yn = y0[iothers]
+        # calc tends
+        dxdt, dydt = calc_tend_one(xi, yi, Gn, xn, yn)
+        # increment and store
+        xnew[i] = xi + dxdt*dt
+        ynew[i] = yi + dydt*dt
+
+    return xnew, ynew</code></pre>
+</details>
+</dd>
+<dt id="vorts.py.integ.RK4_step"><code class="name flex">
+<span>def <span class="ident">RK4_step</span></span>(<span>G, x0, y0, dt: float, *, tend_fn=CPUDispatcher(&lt;function calc_tend&gt;))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Step using RK4.</p>
+<p>Whole system at once &ndash; matrix math version.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\py\integ.py#L392-L417" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def RK4_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
+    &#34;&#34;&#34;Step using RK4.
+
+    Whole system at once -- matrix math version.
+    &#34;&#34;&#34;
+    # RK4
+    x1 = x0
+    y1 = y0
+    k1x, k1y = tend_fn(G, x1, y1)
+
+    x2 = x0 + dt/2*k1x
+    y2 = y0 + dt/2*k1y
+    k2x, k2y = tend_fn(G, x2, y2)
+
+    x3 = x0 + dt/2*k2x
+    y3 = y0 + dt/2*k2y
+    k3x, k3y = tend_fn(G, x3, y3)
+
+    x4 = x0 + dt/1*k3x
+    y4 = y0 + dt/1*k3y
+    k4x, k4y = tend_fn(G, x4, y4)
+
+    xnew = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
+    ynew = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
+
+    return xnew, ynew</code></pre>
+</details>
+</dd>
+<dt id="vorts.py.integ.RK4_step_1b1"><code class="name flex">
+<span>def <span class="ident">RK4_step_1b1</span></span>(<span>G, x0_all, y0_all, dt: float)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Step using RK4.</p>
+<p>One vorton at a time.
+<strong>This doesn't work for RK4 since we have sub-steps where the tendencies due to
+all other vortons need to be up to date or we introduce error.</strong></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\py\integ.py#L347-L389" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def RK4_step_1b1(G, x0_all, y0_all, dt: float):
+    &#34;&#34;&#34;Step using RK4.
+
+    One vorton at a time.
+    **This doesn&#39;t work for RK4 since we have sub-steps where the tendencies due to
+    all other vortons need to be up to date or we introduce error.**
+    &#34;&#34;&#34;
+    # pre-allocate
+    nv = x0_all.size
+    xnew = np.zeros(nv)
+    ynew = np.zeros_like(xnew)
+
+    iall = np.arange(nv)
+    for i in iall:
+        # point i
+        x0, y0 = x0_all[i], y0_all[i]
+        # others
+        iothers = np.delete(iall, i)  # iothers is a new array
+        Gn = G[iothers]
+        xn = x0_all[iothers]
+        yn = y0_all[iothers]
+
+        # RK4
+        x1 = x0
+        y1 = y0
+        k1x, k1y = calc_tend_one(x1, y1, Gn, xn, yn)
+
+        x2 = x0 + dt/2*k1x
+        y2 = y0 + dt/2*k1y
+        k2x, k2y = calc_tend_one(x2, y2, Gn, xn, yn)
+
+        x3 = x0 + dt/2*k2x
+        y3 = y0 + dt/2*k2y
+        k3x, k3y = calc_tend_one(x3, y3, Gn, xn, yn)
+
+        x4 = x0 + dt/1*k3x
+        y4 = y0 + dt/1*k3y
+        k4x, k4y = calc_tend_one(x4, y4, Gn, xn, yn)
+
+        xnew[i] = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
+        ynew[i] = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
+
+    return xnew, ynew</code></pre>
+</details>
+</dd>
+<dt id="vorts.py.integ.calc_C"><code class="name flex">
+<span>def <span class="ident">calc_C</span></span>(<span>G, x, y)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate $C$ at time $l$.</p>
+<p>$C$ is supposed to be a conserved quantity in this system.
+- Chamecki (2005) eq. 15</p>
+<p>We use deparature from $C_0$ (initial value of $C$) in the adaptive stepping
+to see if we need to go back and step with smaller dt.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\py\integ.py#L193-L217" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def calc_C(G, x, y):
+    &#34;&#34;&#34;Calculate $C$ at time $l$.
+
+    $C$ is supposed to be a conserved quantity in this system.
+    - Chamecki (2005) eq. 15
+
+    We use deparature from $C_0$ (initial value of $C$) in the adaptive stepping
+    to see if we need to go back and step with smaller dt.
+    &#34;&#34;&#34;
+    nv = x.size  # number of vortons
+
+    C = 0
+    for i, j in zip(*np.triu_indices(nv, 1)):
+
+        xi, yi = x[i], y[i]
+        xj, yj = x[j], y[j]
+
+        lij_sqd = (xi-xj)**2 + (yi-yj)**2
+
+        Gi = G[i]
+        Gj = G[j]
+
+        C += Gi * Gj * lij_sqd
+
+    return C</code></pre>
+</details>
+</dd>
+<dt id="vorts.py.integ.calc_lsqd_diff"><code class="name flex">
+<span>def <span class="ident">calc_lsqd_diff</span></span>(<span>dx, dy)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate intervortical distance $l^2$.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\py\integ.py#L188-L190" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def calc_lsqd_diff(dx, dy):
+    &#34;&#34;&#34;Calculate intervortical distance $l^2$.&#34;&#34;&#34;
+    return dx**2 + dy**2</code></pre>
+</details>
+</dd>
+<dt id="vorts.py.integ.calc_lsqd_xy"><code class="name flex">
+<span>def <span class="ident">calc_lsqd_xy</span></span>(<span>x1, y1, x2, y2)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate intervortical distance $l^2$.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\py\integ.py#L183-L185" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def calc_lsqd_xy(x1, y1, x2, y2):
+    &#34;&#34;&#34;Calculate intervortical distance $l^2$.&#34;&#34;&#34;
+    return (x1-x2)**2 + (y1-y2)**2</code></pre>
+</details>
+</dd>
+<dt id="vorts.py.integ.calc_tend"><code class="name flex">
+<span>def <span class="ident">calc_tend</span></span>(<span>G, x, y)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate tendencies for each vorton (or tracer).
+Using explicit loops intead of vector(ized) operations.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\py\integ.py#L260-L284" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@numba.njit
+def calc_tend(G, x, y):
+    &#34;&#34;&#34;Calculate tendencies for each vorton (or tracer).
+    Using explicit loops intead of vector(ized) operations.
+    &#34;&#34;&#34;
+    # pre-allocate
+    dxdt = np.zeros(x.size)
+    dydt = np.zeros_like(dxdt)
+
+    # TODO: try filtering out tracers (`np.delete` ?) here to use in the 2nd loop
+
+    # calculate x and y tendencies for each i vorton
+    for i, (xi, yi) in enumerate(zip(x, y)):
+        # add up contributions
+        for j, (Gj, xj, yj) in enumerate(zip(G, x, y)):
+            # only other vortons contribute (not tracers)
+            if i != j and Gj != 0:
+                dx = xi - xj
+                dy = yi - yj
+                lij_sqd = dx**2 + dy**2
+                # add the contributions of j to i&#39;s tends
+                dxdt[i] += -_TEND_PRE * Gj * dy / lij_sqd
+                dydt[i] += _TEND_PRE * Gj * dx / lij_sqd
+
+    return dxdt, dydt</code></pre>
+</details>
+</dd>
+<dt id="vorts.py.integ.calc_tend_one"><code class="name flex">
+<span>def <span class="ident">calc_tend_one</span></span>(<span>xi, yi, Gn, xn, yn)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate tendencies for one position based on others.
+Using explicit loops intead of vector(ized) operations.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\py\integ.py#L287-L301" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def calc_tend_one(xi, yi, Gn, xn, yn):
+    &#34;&#34;&#34;Calculate tendencies for one position based on others.
+    Using explicit loops intead of vector(ized) operations.
+    &#34;&#34;&#34;
+    dxdt, dydt = 0, 0
+    for Gj, xj, yj in zip(Gn, xn, yn):
+        if Gj != 0:  # tracers don&#39;t contribute
+            dx = xi - xj
+            dy = yi - yj
+            lij_sqd = dx**2 + dy**2
+            # add contribution of j to i&#39;s tends
+            dxdt += -_TEND_PRE * Gj * dy / lij_sqd
+            dydt += _TEND_PRE * Gj * dx / lij_sqd
+
+    return dxdt, dydt</code></pre>
+</details>
+</dd>
+<dt id="vorts.py.integ.calc_tend_vec"><code class="name flex">
+<span>def <span class="ident">calc_tend_vec</span></span>(<span>G, x, y)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate both x- and y-tend written in a vectorized way.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\py\integ.py#L220-L239" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def calc_tend_vec(G, x, y):
+    &#34;&#34;&#34;Calculate both x- and y-tend written in a vectorized way.&#34;&#34;&#34;
+    # a more-optimized calculation trying to reduce mem usage / repetition
+    # but still is slower than RK4_3 (at least for nt=2000, 3 vortons)
+    # (seems to overtake RK4_3 in performance as increase N (vortons))
+
+    # note: meshgrid not allowed in numba
+    xarr, yarr = np.meshgrid(x, y)
+
+    dx = xarr - xarr.T
+    dy = yarr - yarr.T
+
+    # avoid dividing by lsqd=0 by adding I
+    lsqd = calc_lsqd_diff(dx, dy) + 1e-10 * np.eye(*xarr.shape)
+    #lsqd = xdiff**2 + ydiff**2
+
+    return (
+        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1), # x-tend
+        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0) # y-tend
+    )</code></pre>
+</details>
+</dd>
+<dt id="vorts.py.integ.calc_tend_vec_premesh"><code class="name flex">
+<span>def <span class="ident">calc_tend_vec_premesh</span></span>(<span>G, X, Y)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate both x- and y-tend vectorized,
+but must pass in x and y in meshgrid form.
+Numba doesn't support <code>np.meshgrid</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\py\integ.py#L241-L257" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@numba.njit
+def calc_tend_vec_premesh(G, X, Y):
+    &#34;&#34;&#34;Calculate both x- and y-tend vectorized,
+    but must pass in x and y in meshgrid form.
+    Numba doesn&#39;t support `np.meshgrid`.
+    &#34;&#34;&#34;
+    # with pre-calculated meshgrid so can use Numba
+    dx = X - X.T
+    dy = Y - Y.T
+
+    # avoid dividing by lsqd=0 by adding I
+    lsqd = dx**2 + dy**2 + 1e-10 * np.eye(*X.shape)
+
+    return (
+        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1), # x-tend
+        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0) # y-tend
+    )</code></pre>
+</details>
+</dd>
+<dt id="vorts.py.integ.integrate_manual"><code class="name flex">
+<span>def <span class="ident">integrate_manual</span></span>(<span>G, x0, y0, C_0: float, t_eval, stepper, *, adapt_tstep=False, use_tqdm=True, C_err_reltol: float = 1e-09, dt_min: float = 0.0001)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Integration routine for use with my handwritten FT/RK4 steppers.</p>
+<p>Optional naive adaptive time-stepping.</p>
+<p>t_eval : array_like
+times to store
+not including 0, which has already been stored</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\py\integ.py#L81-L171" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def integrate_manual(
+    G,
+    x0,
+    y0,
+    C_0: float,  # could be computed instead (so could be optional arg)
+    t_eval,
+    stepper,  # f(G, x, y)
+    *,
+    adapt_tstep=False,
+    use_tqdm=True,
+    C_err_reltol: float = 1.0e-9,
+    dt_min: float = 1.0e-4,
+
+):
+    &#34;&#34;&#34;Integration routine for use with my handwritten FT/RK4 steppers.
+
+    Optional naive adaptive time-stepping.
+
+    t_eval : array_like
+        times to store
+        not including 0, which has already been stored
+
+    &#34;&#34;&#34;
+    if adapt_tstep:
+        use_tqdm = False  # override this for now
+
+    nt = t_eval.size  # number of integration steps
+    nv = x0.size  # number of vortons
+
+    # initial previous C val is C_0
+    C_lm1 = C_0
+
+    # check for non-constant dt
+    dt_eval = np.diff(t_eval)
+    dt0 = dt_eval[0]
+    # if not np.all(dt_eval == dt0):  # fails for some reason even when used np.arange
+    if not np.allclose(dt_eval, dt0):
+        # print(dt_eval, dt0, dt_eval==dt0)
+        raise NotImplementedError(&#34;non-constant dt in `t_eval`&#34;)
+
+    # optionally use tqdm
+    iter_l = range(1, nt+1)  # note starting at 1, not 0
+    if use_tqdm:
+        iter_l = tqdm(iter_l)
+
+    # pre-allocate return arrays
+    xhist = np.empty((nv, nt))
+    yhist = np.empty_like(xhist)
+
+    # iterate over time index `l`
+    x_lm1 = x0  # l-1 starts at 0
+    y_lm1 = y0
+    for l in iter_l:
+        # adaptive time stepping
+        if adapt_tstep:
+            C_relerr = 100
+            dt = dt0
+            while C_relerr &gt; C_err_reltol and dt &gt;= dt_min:
+                # sub-steps
+                x_l = x_lm1.copy()
+                y_l = y_lm1.copy()
+                for _ in range(int(np.round(dt0/dt))):
+                    # step
+                    x_l, y_l = stepper(G, x_l, y_l, dt=dt)
+
+                # decrease dt for potential next round
+                dt /= 2
+
+                # calculate C error
+                C_l = calc_C(G, x_l, y_l)
+                C_relerr = np.abs((C_l - C_lm1) / C_lm1)
+
+            print(f&#34;tstep: {l:d}, min dt used: {dt:.1e}&#34;)
+
+            # new C_lm1 for next main time step
+            C_lm1 = C_l
+
+        # no adaptive time stepping
+        else:
+            # step
+            x_l, y_l = stepper(G, x_lm1, y_lm1, dt=dt0)
+
+        # new lm1 terms
+        x_lm1 = x_l
+        y_lm1 = y_l
+
+        # store
+        xhist[:, l-1] = x_lm1
+        yhist[:, l-1] = y_lm1
+
+    return xhist, yhist</code></pre>
+</details>
+</dd>
+<dt id="vorts.py.integ.integrate_scipy"><code class="name flex">
+<span>def <span class="ident">integrate_scipy</span></span>(<span>y0, t_eval, G_col, *, method='RK45', max_step: float, **options)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Integrate using <code>scipy.integrate.solve_ivp</code>.</p>
+<p>**options
+passed through to <code>solve_ivp</code></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\py\integ.py#L19-L78" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def integrate_scipy(
+    y0,
+    t_eval,
+    G_col,
+    *,
+    # `solve_ivp` kwargs
+    method=&#34;RK45&#34;,
+    max_step: float,
+    **options,
+):
+    &#34;&#34;&#34;Integrate using `scipy.integrate.solve_ivp`.
+
+    **options
+        passed through to `solve_ivp`
+    &#34;&#34;&#34;
+    from scipy.integrate import solve_ivp
+
+    def calc_lsqd(xarr, yarr):
+        # avoid dividing by 0 by adding I
+        # taken from RK4_2_step
+        return (xarr - xarr.T)**2 + (yarr - yarr.T)**2 + 1e-13*np.eye(*xarr.shape)
+
+    def fun(t, y, G):
+        &#34;&#34;&#34;Calculate both x- and y-tend.&#34;&#34;&#34;
+        # based on calc_tend in RK4_2_step
+
+        # unpack
+        m = G.size  # number of vortons
+        xpos, ypos = y[:m], y[m:]
+
+        xarr, yarr = np.meshgrid(xpos, ypos)
+
+        xdiff = xarr - xarr.T
+        ydiff = yarr - yarr.T
+
+        lsqd = calc_lsqd(xarr, yarr)
+
+        return np.concatenate((
+            -1/(2*np.pi) * np.sum(G.T * ydiff / lsqd, axis=1),  # x-tend
+            1/(2*np.pi) * np.sum(G * xdiff / lsqd, axis=0)  # y-tend
+        ))
+
+    t_span = 0, t_eval[-1]
+
+    # return of fun(t, y) must have shape (n,) or (n, k)
+    # but y0 must be 1-dimensional (n,)
+    res = solve_ivp(
+        fun,
+        t_span=t_span,
+        y0=y0,
+        t_eval=t_eval,
+        #
+        method=method,
+        vectorized=True,  # not sure what impact this has...
+        args=(G_col,),  # additional arguments after `t, y` used in fun, jac, etc.
+        max_step=max_step,
+        **options,
+    )
+
+    return res.y  # return data only</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<h1 style="margin-top: -16px;">
+<a class="homelink" rel="home" title="vorts Home" href="https://zmoon.github.io/vorts/">
+vorts
+</a>
+</h1>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="vorts.py" href="index.html">vorts.py</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="vorts.py.integ.FT_step" href="#vorts.py.integ.FT_step">FT_step</a></code></li>
+<li><code><a title="vorts.py.integ.FT_step_1b1" href="#vorts.py.integ.FT_step_1b1">FT_step_1b1</a></code></li>
+<li><code><a title="vorts.py.integ.RK4_step" href="#vorts.py.integ.RK4_step">RK4_step</a></code></li>
+<li><code><a title="vorts.py.integ.RK4_step_1b1" href="#vorts.py.integ.RK4_step_1b1">RK4_step_1b1</a></code></li>
+<li><code><a title="vorts.py.integ.calc_C" href="#vorts.py.integ.calc_C">calc_C</a></code></li>
+<li><code><a title="vorts.py.integ.calc_lsqd_diff" href="#vorts.py.integ.calc_lsqd_diff">calc_lsqd_diff</a></code></li>
+<li><code><a title="vorts.py.integ.calc_lsqd_xy" href="#vorts.py.integ.calc_lsqd_xy">calc_lsqd_xy</a></code></li>
+<li><code><a title="vorts.py.integ.calc_tend" href="#vorts.py.integ.calc_tend">calc_tend</a></code></li>
+<li><code><a title="vorts.py.integ.calc_tend_one" href="#vorts.py.integ.calc_tend_one">calc_tend_one</a></code></li>
+<li><code><a title="vorts.py.integ.calc_tend_vec" href="#vorts.py.integ.calc_tend_vec">calc_tend_vec</a></code></li>
+<li><code><a title="vorts.py.integ.calc_tend_vec_premesh" href="#vorts.py.integ.calc_tend_vec_premesh">calc_tend_vec_premesh</a></code></li>
+<li><code><a title="vorts.py.integ.integrate_manual" href="#vorts.py.integ.integrate_manual">integrate_manual</a></code></li>
+<li><code><a title="vorts.py.integ.integrate_scipy" href="#vorts.py.integ.integrate_scipy">integrate_scipy</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<span style="color:#777777">&copy; Z. Moon 2020</span>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+</footer>
+</body>
+</html>

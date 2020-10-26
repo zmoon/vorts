@@ -1,0 +1,2193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.1" />
+<title>vorts.vortons API documentation</title>
+<meta name="description" content="`Vorton` class and `Vortons` container class." />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<!-- MathJax 3, with $..$ for inline math enabled -->
+<script>
+MathJax = {
+tex: {
+inlineMath: [['$', '$'], ['\\(', '\\)']]
+},
+svg: {
+fontCache: 'global'
+}
+};
+</script>
+<script type="text/javascript" id="MathJax-script" async
+src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>vorts.vortons</code></h1>
+</header>
+<section id="section-intro">
+<p><code><a title="vorts.vortons.Vorton" href="#vorts.vortons.Vorton">Vorton</a></code> class and <code><a title="vorts.vortons.Vortons" href="#vorts.vortons.Vortons">Vortons</a></code> container class.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L0-L611" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+`Vorton` class and `Vortons` container class.
+&#34;&#34;&#34;
+from typing import NamedTuple
+import warnings
+
+import numpy as np
+import xarray as xr
+
+
+# new Vorton -- doesn&#39;t know its history, just current state
+class Vorton(NamedTuple):
+    G: float
+    x: float
+    y: float
+
+
+class Tracer(NamedTuple):
+    &#34;&#34;&#34;Tracer -- a vorton with G=0 (no power).&#34;&#34;&#34;
+    x: float
+    y: float
+
+
+# TODO: PointVortices ABC that implements adding, has position state_mat, n, x, y, state_vec, etc.
+#       Vortons and Tracers could both be based on it
+#       also should add xy (state_mat for both) and xy_vec (state_vec)
+
+
+class Tracers:
+    &#34;&#34;&#34;Collection of `Tracer`s.&#34;&#34;&#34;
+    def __init__(self, x, y):
+        &#34;&#34;&#34;Create tracer collection.
+
+        Parameters
+        ----------
+        x, y : array_like (n_vortons,)
+            tracer initial x and y positions
+        &#34;&#34;&#34;
+        x = np.asarray(x, dtype=np.float)
+        y = np.asarray(y, dtype=np.float)
+
+        assert x.shape == y.shape and x.ndim == 1
+
+        self.state_mat = np.column_stack((x, y))
+
+
+    def __repr__(self):
+        # unlike Vortons, might have many tracers
+        # so don&#39;t need to show all in the repr
+        n = self.n
+        return f&#34;Tracers(n={n})&#34;
+
+    @property
+    def n(self):
+        return self.state_mat.shape[0]
+
+    @property
+    def x(self):
+        return self.state_mat[:,0]
+
+    @property
+    def y(self):
+        return self.state_mat[:,1]
+
+    def state_vec(self):
+        return self.state_mat.T.flatten()
+
+    def state_mat_full(self):
+        &#34;&#34;&#34;Full state mat for tracers doesn&#39;t include G.&#34;&#34;&#34;
+        warnings.warn(&#34;Note that `state_mat_full` for tracers is the same as `state_mat` (no G).&#34;)
+        return self.state_mat
+
+    @staticmethod
+    def randu(n, **kwargs):
+        xy = points_randu(n, **kwargs).T
+        return Tracers(*xy)
+
+    @staticmethod
+    def spiral(n, **kwargs):
+        xy = points_spiral(n, **kwargs).T
+        return Tracers(*xy)
+
+
+    def plot(self, *, connect=False):
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots()
+
+        x, y = self.x, self.y
+        fmt = &#34;-o&#34; if connect else &#34;o&#34;
+        ax.plot(x, y, fmt, c=&#34;0.5&#34;, ms=4, label=&#34;tracers&#34;)
+
+        ax.set(
+            xlabel=&#34;$x$&#34;,
+            ylabel=&#34;$y$&#34;,
+        )
+        ax.set_aspect(&#34;equal&#34;, &#34;box&#34;)
+        fig.legend()
+        ax.grid(True)
+        fig.tight_layout()
+
+
+
+
+# could exchange x,y for r at some point, to open 3-d option more easily
+class Vortons:
+    &#34;&#34;&#34;Collection of `Vorton`s.&#34;&#34;&#34;
+    def __init__(self, G, x, y):
+        r&#34;&#34;&#34;Create vorton collection.
+
+        Parameters
+        ----------
+        G, x, y : array_like (n_vortons,)
+            G: Gamma (strength of the circulation, with sign to indicate direction)
+                In fluid dynamics, circulation $\Gamma$ is the line integral of velocity
+                or flux of vorticity vectors through a surface (here the xy-plane).
+            x: x position
+            y: y position
+
+        &#34;&#34;&#34;
+        self.G = np.asarray(G)
+        if np.any(self.G == 0):
+            warnings.warn(
+                &#34;Tracers should be in a `Tracers` instance. &#34;
+                &#34;The ability to add them here may be removed in the future.&#34;
+            )
+
+        # the state matrix has shape (n_vortons, n_pos_dims) (G excluded since time-invariant)
+        x = np.asarray(x, dtype=np.float)
+        y = np.asarray(y, dtype=np.float)
+        self.state_mat = np.column_stack((x, y))
+
+        assert self.G.ndim == 1 and self.state_mat.shape[1] == 2
+        assert self.G.size == self.state_mat.shape[0]  # n_vortons
+
+        # create initial corresponding Vorton objects
+        self._update_vortons()
+
+
+    # these 2 don&#39;t really need to be property?
+    # maybe shouldn&#39;t be, to emphasize that state_mat is the real data
+    # @property
+    def state_vec(self):
+        &#34;&#34;&#34;Return flattened state matrix (G not included).
+
+        Needed to feed to `scipy.integrate.solve_ivp`,
+        which requires a 1-d array for the `y0` input.
+        &#34;&#34;&#34;
+        return self.state_mat.T.flatten()
+
+    # @property
+    def state_mat_full(self):
+        &#34;&#34;&#34;Return full state matrix: G and positions.&#34;&#34;&#34;
+        return np.column_stack((self.G, self.state_mat))
+
+    # seems to return a view into self.G, so ok to be property
+    @property
+    def G_col(self):
+        &#34;&#34;&#34;G as a column vector.&#34;&#34;&#34;
+        return self.G[:, np.newaxis]
+
+    @property
+    def x(self):
+        # slice indexing should give just a view into `self.state_mat`
+        # thus `self.x.base` will return the state mat
+        # i.e., `vs.x.base is vs.state_mat`
+        return self.state_mat[:,0]
+
+    @property
+    def y(self):
+        return self.state_mat[:,1]
+
+    @property
+    def n(self):
+        &#34;&#34;&#34;Number of vortons.&#34;&#34;&#34;
+        # numpy.ndarray size lookups are esentially free
+        return self.G.size  # will have to change if want to allow single G at some point
+
+    def __repr__(self):
+        # n_vortons shouldn&#39;t be too many, so let&#39;s show all
+        s_vorts = &#34;\n&#34;.join(f&#34;  {v}&#34; for v in self._vortons)
+        return f&#34;Vortons(\n{s_vorts}\n)&#34;
+        # TODO: should this call `self._update_vortons`? so as to not be out-of-date if state changes?
+
+    def _update_vortons(self):
+        self._vortons = [Vorton(G, x, y) for G, x, y in self.state_mat_full()]
+
+
+    def C(self):
+        r&#34;&#34;&#34;Calculate $C$.
+
+        $$
+        C = \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
+            \Gamma_{\alpha} \Gamma_{\beta} l_{\alpha \beta}^{2}
+        $$
+
+        $C$ is supposed to be a conserved quantity in this system.
+        - Chamecki (2005) eq. 15, which references Aref (1979)
+        &#34;&#34;&#34;
+        n_vortons = self.n
+        G = self.G
+        C = 0
+        for i, j in zip(*np.triu_indices(n_vortons, 1)):  # all combinations without repetition
+
+            xi, yi = self.x[i], self.y[i]
+            xj, yj = self.x[j], self.y[j]
+
+            lij_sqd = (xi-xj)**2 + (yi-yj)**2
+
+            Gi, Gj = G[i], G[j]
+
+            C += Gi * Gj * lij_sqd
+
+        return C
+
+
+    def H(self):
+        r&#34;&#34;&#34;Calculate $H$, the Hamiltonian of the system.
+
+        $$
+        H = -\frac{1}{4 \pi} \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
+            \Gamma_{\alpha} \Gamma_{\beta}
+            \ln | r_{\alpha} - r_{\beta} |
+        $$
+        &#34;&#34;&#34;
+        nv = self.n
+        G = self.G
+        r = self.state_mat  # vorton positions
+        H = 0
+        for a, b in zip(*np.triu_indices(nv, 1)):
+            ra, rb = r[a], r[b]
+            Ga, Gb = G[a], G[b]
+            H += -1/(4*np.pi) * Ga * Gb * np.log(np.linalg.norm(ra - rb))
+
+        return H
+
+
+    def I(self):
+        r&#34;&#34;&#34;Calculate $I$, the angular impulse of the system.
+
+        $$
+        I = \sum_{\alpha = 1}^{N} \Gamma_{\alpha} | r_{\alpha} |^2
+        $$
+        &#34;&#34;&#34;
+        G = self.G
+        # r = self.state_mat
+        x = self.x
+        y = self.y
+
+        # r_hat_sqd =
+
+        return (G * (x**2 + y**2)).sum()
+
+
+    # TODO: P and Q (coordinates of the center-of-vorticity)
+
+
+    # TODO: results are not right for equi tri... need to check formulas
+    def theta(self):
+        r&#34;&#34;&#34;Calculate $\theta$, the action angles??
+
+        Chamecki eq. 19
+        &#34;&#34;&#34;
+        N = self.n
+        I = self.I()
+        H = self.H()
+
+        return (2/(N-1))**(N*(N-1)/2) * I**(N*(N-1)) * np.exp(4*np.pi*H)
+
+
+    def plot(self):
+        &#34;&#34;&#34;Plot the vortons.
+        (Only their current positions, which are all this container knows about.)
+        &#34;&#34;&#34;
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots()
+
+        # plot vorton positions
+        c_Gp = &#34;cadetblue&#34;
+        c_Gm = &#34;salmon&#34;
+        G = self.G
+        Gp, Gm = G &gt; 0, G &lt; 0
+        x, y = self.x, self.y
+        ax.plot(x[Gp], y[Gp], &#34;o&#34;, ms=7, c=c_Gp, label=r&#34;$\Gamma &gt; 0$&#34;)
+        ax.plot(x[Gm], y[Gm], &#34;o&#34;, ms=7, c=c_Gm, label=r&#34;$\Gamma &lt; 0$&#34;)
+
+        # plot center-of-mass
+        x_cm, y_cm = self.cm()
+        s_cm = f&#34;({x_cm:.4g}, {y_cm:.4g})&#34;
+        ax.plot(x_cm, y_cm, &#34;*&#34;, ms=13, c=&#34;gold&#34;, label=f&#34;center-of-mass\n{s_cm}&#34;)
+
+        # 2nd mom
+        x_cm2, y_cm2 = self.mom(2)
+        s_cm2 = f&#34;({x_cm2:.4g}, {y_cm2:.4g})&#34;
+        ax.plot(x_cm2, y_cm2, &#34;*&#34;, ms=13, c=&#34;0.4&#34;, label=f&#34;mom2\n{s_cm2}&#34;)
+
+        # 3nd mom
+        # TODO: helper fn to DRY this
+        x_cm3, y_cm3 = self.mom(3)
+        s_cm3 = f&#34;({x_cm3:.4g}, {y_cm3:.4g})&#34;
+        ax.plot(x_cm3, y_cm3, &#34;*&#34;, ms=13, c=&#34;0.55&#34;, label=f&#34;mom3\n{s_cm3}&#34;)
+
+        ax.set(
+            title=f&#34;$C = {self.C():.4g}$&#34;,
+            xlabel=&#34;$x$&#34;,
+            ylabel=&#34;$y$&#34;,
+        )
+        ax.set_aspect(&#34;equal&#34;, &#34;datalim&#34;)
+        fig.legend()
+        ax.grid(True)
+        fig.tight_layout()
+
+        # return
+
+
+    def mom(self, n, *, abs_G=False, center=False):
+        &#34;&#34;&#34;Compute `n`-th moment.
+
+        Parameters
+        ----------
+        n : int
+            which moment
+            https://en.wikipedia.org/wiki/Moment_(mathematics)
+        abs_G : bool, optional (default False)
+            whether to take the absolute value of G values
+        center : bool, optional (default True)
+            True: evaluate moment wrt. center-of-mass
+            False: evaluate moment wrt. (0, 0)
+        &#34;&#34;&#34;
+        # seems like a moment but that might not be the correct terminology...
+        G = self.G_col
+        if abs_G:
+            G = np.abs(G)
+        G_tot = G.sum()
+
+        x = self.state_mat  # x, y (columns)
+
+        c = self.cm() if center else 0
+
+        x_mom = (G * (x-c)**n).sum(axis=0) / G_tot  # sum along vortons dim, giving a position
+        # ^ maybe this should be x - x_cm here...
+
+        return x_mom
+
+
+    # Chamecki notes suggest this should be called &#34;center of vorticity&#34; or &#34;linear impulse&#34;
+    def cm(self):
+        &#34;&#34;&#34;Compute center-of-mass using Gamma as mass.&#34;&#34;&#34;
+        # TODO: what impact should sign of G have on cm? mass is always pos. but G can be neg.
+        return self.mom(1, abs_G=True, center=False)
+
+
+    def center_coords(self, inplace=False):
+        &#34;&#34;&#34;Make center-of-mass (0, 0).&#34;&#34;&#34;
+        xy_cm = self.cm()
+        x_cm, y_cm = xy_cm
+        if not inplace:
+            return Vortons(self.G, self.x-x_cm, self.y-y_cm)
+        else:
+            self.state_mat -= x_cm
+
+
+    @staticmethod
+    def regular_polygon(n, *, G=None, **kwargs):
+        &#34;&#34;&#34;Create Vortons with positions corresponding to regular polygon.
+
+        Parameters
+        ----------
+        n : int
+            polygon order
+        G : int, array-like, optional
+            Gamma value(s) to use
+            single value or array of values
+            default: 1.0
+
+        `**kwargs` are passed on to `vortons.regular_polygon_vertices`.
+        See signature there.
+        &#34;&#34;&#34;
+        if G is None:
+            G = 1.0  # default
+        G = np.asarray(G)
+        if G.size == 1:  # single G provided, or using the default
+            G = np.full((n,), G)  # TODO: could also the constructor to accept single G
+        if G.size != n:
+            raise ValueError(f&#34;`G` must have size `n` or 1, but is {G.size!r}&#34;)
+
+        xy = regular_polygon_vertices(n, **kwargs).T  # x, y cols-&gt; rows (for unpacking)
+
+        return Vortons(G, *xy)
+
+
+    @staticmethod
+    def isos_triangle(*, G=None, **kwargs):
+        &#34;&#34;&#34;Create Vortons with isosceles triangle vertices.
+
+        `**kwargs` are passed on to `vortons.isos_triangle_vertices`.
+        See signature there.
+        &#34;&#34;&#34;
+        G = _maybe_fill_G(G, 3)
+
+        xy = isos_triangle_vertices(**kwargs).T
+
+        return Vortons(G, *xy)
+
+
+    def maybe_with_tracers(self, tracers: Tracers = None):
+        &#34;&#34;&#34;Return new `Vortons` with the tracers.
+        (Temporary? hack to get full state_vec)
+
+        If `Tracers` is `None`, just return `self`.
+        &#34;&#34;&#34;
+        if tracers is None:
+            return self
+
+        # TODO: add option to extend existing Vortons instead of creating a new. `inplace`?
+
+        G_v = self.G
+        xy_v = self.state_mat
+        xy_t = tracers.state_mat
+        G_t = np.zeros((tracers.n,))
+
+        G = np.append(G_v, G_t)
+        x, y = np.append(xy_v, xy_t, axis=0).T  # unpacking arrays goes by rows
+
+        return Vortons(G, x, y)
+
+    # TODO: indexing dunder methods
+
+    # TODO: overload addition
+
+    # TODO: class method to take List[Vorton] and return a Vortons?
+
+
+
+
+def points_randn():
+    raise NotImplementedError
+
+
+def points_randu(n, *, c=(0, 0), dx=2, dy=2):
+    &#34;&#34;&#34;Sample from 2-d uniform.&#34;&#34;&#34;
+    c = np.asarray(c)
+    x = np.random.uniform(-dx, dx, (n,))
+    y = np.random.uniform(-dy, dy, (n,))
+    return np.column_stack((x, y)) + c
+
+
+def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
+    &#34;&#34;&#34;Create spiral of points.&#34;&#34;&#34;
+    c = np.asarray(c)
+
+    rad = np.linspace(rmin, rmax, n)  # radius
+
+    deg_tot = revs*360
+    rotmat = rotmat_2d(deg_tot/n)
+    rhat = np.full((n, 2), (0, 1), dtype=np.float)  # rhat: unit vectors
+    for i in range(1, n):
+        rhat[i, :] = rotate_2d(rhat[i-1, :], rotmat=rotmat)
+    # TODO: here would be simpler to do polar coords first then convert to x,y
+
+    return rad[:, np.newaxis] * rhat + c
+
+
+def points_grid():
+    raise NotImplementedError
+
+
+def _maybe_fill_G(G, n):
+    if G is None:  # this first part maybe shouldn&#39;t be here? or kwarg for default G val?
+        G = 1.0
+    G = np.asarray(G)
+    if G.size == 1:  # single G provided, or using the default
+        G = np.full((n,), G)  # TODO: could also the constructor to accept single G
+    if G.size != n:
+        raise ValueError(f&#34;`G` must have size `n` or 1, but is {G.size!r}&#34;)
+
+    return G
+
+
+def rotmat_2d(ang_deg):
+    &#34;&#34;&#34;Return rotation matrix for rotation `ang_deg` in degrees.
+    For left-multiplication of a column position vector.
+
+    Note: `scipy.spatial.transform.Rotation` can be used for 3-d rotations.
+    &#34;&#34;&#34;
+    ang = np.deg2rad(ang_deg)
+    c, s = np.cos(ang), np.sin(ang)
+    R = np.array([
+        [c, -s],
+        [s, c]
+    ])
+    return R
+
+
+def rotate_2d(x, *, ang_deg=None, rotmat=None):
+    &#34;&#34;&#34;Rotate vector `x` by `ang_deg` degrees.
+
+    Either `ang_deg` or `rotmat` must be provided.
+
+    Parameters
+    ----------
+    x : array-like (1-d)
+        the vector to be rotated
+    ang_deg : int, float
+        degrees to rotate `x` about the origin
+        positive -&gt; counter-clockwise
+    rotmat : array, shape (2, 2), optional
+        rotation matrix -- left-multiplies a column position vector to give rotated position
+
+    Optionally can pass `rotmat` instead to avoid computing it multiple times.
+    &#34;&#34;&#34;
+    x = np.asarray(x)
+    if ang_deg and rotmat:
+        raise Exception(&#34;Only one of `ang_deg` and `rotmat` should be specified.&#34;)
+
+    assert x.ndim == 1  # need a true vector
+
+    if ang_deg:
+        rotmat = rotmat_2d(ang_deg)
+    else:
+        if rotmat is None:
+            raise Exception(&#34;If `ang_deg` is not provided, `rotmat` must be.&#34;)
+
+    return (rotmat @ x[:, np.newaxis]).squeeze()
+
+
+def regular_polygon_vertices(n, *, c=(0, 0), r_c=1):
+    &#34;&#34;&#34;Regular polygon vertices.
+
+    Parameters
+    ----------
+    n : int
+        order (number of sides/vertices)
+    c : 2-tuple / array-like
+        center coordinate of the inscribing circle
+    r_c : float, int
+        radius of the inscribing circle
+    &#34;&#34;&#34;
+    c = np.asarray(c)
+
+    # initial vertex
+    vert0 = np.r_[0, r_c]
+
+    # rotation matrix -- left-multiplies a column position vector to give rotated position
+    rotmat = rotmat_2d(360/n)
+
+    verts = np.full((n, 2), vert0, dtype=np.float)
+    # successive rotations
+    for i in range(1, n):
+        verts[i, :] = rotate_2d(verts[i-1, :], rotmat=rotmat)
+
+    return verts + c
+
+
+def isos_triangle_vertices(*, theta_deg=None, Lambda=None):
+    &#34;&#34;&#34;Isosceles triangle vertices.
+    With fixed top point (0, 1) and fixed left &amp; right y=-0.5.
+
+    theta_deg : int, float
+        the two angles between the base and connections to the top point at (0,1)
+        72 -&gt; Lambda_c (1/sqrt(2))
+        60 -&gt; equi tri
+
+    Lambda : float
+        in (0, 1]
+        1 -&gt; equi tri
+
+    &#34;&#34;&#34;
+    if (theta_deg is not None and Lambda is not None) or (theta_deg is None and Lambda is None):
+        raise Exception(&#34;Specify either `theta_deg` or `Lambda` (not both).&#34;)
+
+    if Lambda:
+        assert Lambda &gt; 0 and Lambda &lt;= 1
+        theta_deg = 180 / (Lambda**2 + 2)
+
+    theta = np.deg2rad(theta_deg)
+
+    xb = 1.5/np.tan(theta)  # one half of x base
+
+    xi = [-xb,  0,  xb]
+    yi = [-0.5, 1, -0.5]
+
+    Lambda = np.sqrt( (180-2*theta_deg) / float(theta_deg) )  # Marcelo eqns 17--19
+
+    return np.column_stack((xi, yi))
+
+
+if __name__ == &#34;__main__&#34;:
+    import matplotlib.pyplot as plt
+
+    plt.close(&#34;all&#34;)
+
+    vs = Vortons([1, 1], [0, 1], [0, 0])
+    vs.plot()
+
+    # G sum here is 0, messing up the mom&#39;s...
+    Vortons([1, -1], [0, 1], [0, 0]).plot()
+
+    Vortons.regular_polygon(3).plot()
+
+    Vortons.regular_polygon(10, c=(1, 0), r_c=0.5).plot()
+
+    Vortons.isos_triangle(theta_deg=72).plot()
+
+    Vortons.isos_triangle(Lambda=0.49).plot()
+
+    ts = Tracers.randu(50)
+
+    Tracers.spiral(100).plot()
+
+    Tracers.spiral(200, c=(1, 0), revs=10).plot(connect=True)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="vorts.vortons.isos_triangle_vertices"><code class="name flex">
+<span>def <span class="ident">isos_triangle_vertices</span></span>(<span>*, theta_deg=None, Lambda=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Isosceles triangle vertices.
+With fixed top point (0, 1) and fixed left &amp; right y=-0.5.</p>
+<p>theta_deg : int, float
+the two angles between the base and connections to the top point at (0,1)
+72 -&gt; Lambda_c (1/sqrt(2))
+60 -&gt; equi tri</p>
+<p>Lambda : float
+in (0, 1]
+1 -&gt; equi tri</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L556-L586" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def isos_triangle_vertices(*, theta_deg=None, Lambda=None):
+    &#34;&#34;&#34;Isosceles triangle vertices.
+    With fixed top point (0, 1) and fixed left &amp; right y=-0.5.
+
+    theta_deg : int, float
+        the two angles between the base and connections to the top point at (0,1)
+        72 -&gt; Lambda_c (1/sqrt(2))
+        60 -&gt; equi tri
+
+    Lambda : float
+        in (0, 1]
+        1 -&gt; equi tri
+
+    &#34;&#34;&#34;
+    if (theta_deg is not None and Lambda is not None) or (theta_deg is None and Lambda is None):
+        raise Exception(&#34;Specify either `theta_deg` or `Lambda` (not both).&#34;)
+
+    if Lambda:
+        assert Lambda &gt; 0 and Lambda &lt;= 1
+        theta_deg = 180 / (Lambda**2 + 2)
+
+    theta = np.deg2rad(theta_deg)
+
+    xb = 1.5/np.tan(theta)  # one half of x base
+
+    xi = [-xb,  0,  xb]
+    yi = [-0.5, 1, -0.5]
+
+    Lambda = np.sqrt( (180-2*theta_deg) / float(theta_deg) )  # Marcelo eqns 17--19
+
+    return np.column_stack((xi, yi))</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.points_grid"><code class="name flex">
+<span>def <span class="ident">points_grid</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L465-L466" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def points_grid():
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.points_randn"><code class="name flex">
+<span>def <span class="ident">points_randn</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L437-L438" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def points_randn():
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.points_randu"><code class="name flex">
+<span>def <span class="ident">points_randu</span></span>(<span>n, *, c=(0, 0), dx=2, dy=2)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sample from 2-d uniform.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L441-L446" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def points_randu(n, *, c=(0, 0), dx=2, dy=2):
+    &#34;&#34;&#34;Sample from 2-d uniform.&#34;&#34;&#34;
+    c = np.asarray(c)
+    x = np.random.uniform(-dx, dx, (n,))
+    y = np.random.uniform(-dy, dy, (n,))
+    return np.column_stack((x, y)) + c</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.points_spiral"><code class="name flex">
+<span>def <span class="ident">points_spiral</span></span>(<span>n, *, c=(0, 0), rmin=0, rmax=2, revs=3)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create spiral of points.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L449-L462" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
+    &#34;&#34;&#34;Create spiral of points.&#34;&#34;&#34;
+    c = np.asarray(c)
+
+    rad = np.linspace(rmin, rmax, n)  # radius
+
+    deg_tot = revs*360
+    rotmat = rotmat_2d(deg_tot/n)
+    rhat = np.full((n, 2), (0, 1), dtype=np.float)  # rhat: unit vectors
+    for i in range(1, n):
+        rhat[i, :] = rotate_2d(rhat[i-1, :], rotmat=rotmat)
+    # TODO: here would be simpler to do polar coords first then convert to x,y
+
+    return rad[:, np.newaxis] * rhat + c</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.regular_polygon_vertices"><code class="name flex">
+<span>def <span class="ident">regular_polygon_vertices</span></span>(<span>n, *, c=(0, 0), r_c=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Regular polygon vertices.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>n</code></strong> :&ensp;<code>int</code></dt>
+<dd>order (number of sides/vertices)</dd>
+<dt><strong><code>c</code></strong> :&ensp;<code>2-tuple / array-like</code></dt>
+<dd>center coordinate of the inscribing circle</dd>
+<dt><strong><code>r_c</code></strong> :&ensp;<code>float, int</code></dt>
+<dd>radius of the inscribing circle</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L528-L553" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def regular_polygon_vertices(n, *, c=(0, 0), r_c=1):
+    &#34;&#34;&#34;Regular polygon vertices.
+
+    Parameters
+    ----------
+    n : int
+        order (number of sides/vertices)
+    c : 2-tuple / array-like
+        center coordinate of the inscribing circle
+    r_c : float, int
+        radius of the inscribing circle
+    &#34;&#34;&#34;
+    c = np.asarray(c)
+
+    # initial vertex
+    vert0 = np.r_[0, r_c]
+
+    # rotation matrix -- left-multiplies a column position vector to give rotated position
+    rotmat = rotmat_2d(360/n)
+
+    verts = np.full((n, 2), vert0, dtype=np.float)
+    # successive rotations
+    for i in range(1, n):
+        verts[i, :] = rotate_2d(verts[i-1, :], rotmat=rotmat)
+
+    return verts + c</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.rotate_2d"><code class="name flex">
+<span>def <span class="ident">rotate_2d</span></span>(<span>x, *, ang_deg=None, rotmat=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Rotate vector <code>x</code> by <code>ang_deg</code> degrees.</p>
+<p>Either <code>ang_deg</code> or <code>rotmat</code> must be provided.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>x</code></strong> :&ensp;<code>array-like (1-d)</code></dt>
+<dd>the vector to be rotated</dd>
+<dt><strong><code>ang_deg</code></strong> :&ensp;<code>int, float</code></dt>
+<dd>degrees to rotate <code>x</code> about the origin
+positive -&gt; counter-clockwise</dd>
+<dt><strong><code>rotmat</code></strong> :&ensp;<code>array, shape (2, 2)</code>, optional</dt>
+<dd>rotation matrix &ndash; left-multiplies a column position vector to give rotated position</dd>
+</dl>
+<p>Optionally can pass <code>rotmat</code> instead to avoid computing it multiple times.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L496-L525" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def rotate_2d(x, *, ang_deg=None, rotmat=None):
+    &#34;&#34;&#34;Rotate vector `x` by `ang_deg` degrees.
+
+    Either `ang_deg` or `rotmat` must be provided.
+
+    Parameters
+    ----------
+    x : array-like (1-d)
+        the vector to be rotated
+    ang_deg : int, float
+        degrees to rotate `x` about the origin
+        positive -&gt; counter-clockwise
+    rotmat : array, shape (2, 2), optional
+        rotation matrix -- left-multiplies a column position vector to give rotated position
+
+    Optionally can pass `rotmat` instead to avoid computing it multiple times.
+    &#34;&#34;&#34;
+    x = np.asarray(x)
+    if ang_deg and rotmat:
+        raise Exception(&#34;Only one of `ang_deg` and `rotmat` should be specified.&#34;)
+
+    assert x.ndim == 1  # need a true vector
+
+    if ang_deg:
+        rotmat = rotmat_2d(ang_deg)
+    else:
+        if rotmat is None:
+            raise Exception(&#34;If `ang_deg` is not provided, `rotmat` must be.&#34;)
+
+    return (rotmat @ x[:, np.newaxis]).squeeze()</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.rotmat_2d"><code class="name flex">
+<span>def <span class="ident">rotmat_2d</span></span>(<span>ang_deg)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return rotation matrix for rotation <code>ang_deg</code> in degrees.
+For left-multiplication of a column position vector.</p>
+<p>Note: <code>scipy.spatial.transform.Rotation</code> can be used for 3-d rotations.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L481-L493" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def rotmat_2d(ang_deg):
+    &#34;&#34;&#34;Return rotation matrix for rotation `ang_deg` in degrees.
+    For left-multiplication of a column position vector.
+
+    Note: `scipy.spatial.transform.Rotation` can be used for 3-d rotations.
+    &#34;&#34;&#34;
+    ang = np.deg2rad(ang_deg)
+    c, s = np.cos(ang), np.sin(ang)
+    R = np.array([
+        [c, -s],
+        [s, c]
+    ])
+    return R</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="vorts.vortons.Tracer"><code class="flex name class">
+<span>class <span class="ident">Tracer</span></span>
+<span>(</span><span>x: float, y: float)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Tracer &ndash; a vorton with G=0 (no power).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L18-L21" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Tracer(NamedTuple):
+    &#34;&#34;&#34;Tracer -- a vorton with G=0 (no power).&#34;&#34;&#34;
+    x: float
+    y: float</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>builtins.tuple</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="vorts.vortons.Tracer.x"><code class="name">var <span class="ident">x</span> : float</code></dt>
+<dd>
+<div class="desc"><p>Alias for field number 0</p></div>
+</dd>
+<dt id="vorts.vortons.Tracer.y"><code class="name">var <span class="ident">y</span> : float</code></dt>
+<dd>
+<div class="desc"><p>Alias for field number 1</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="vorts.vortons.Tracers"><code class="flex name class">
+<span>class <span class="ident">Tracers</span></span>
+<span>(</span><span>x, y)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Collection of <code><a title="vorts.vortons.Tracer" href="#vorts.vortons.Tracer">Tracer</a></code>s.</p>
+<p>Create tracer collection.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>x</code></strong>, <strong><code>y</code></strong> :&ensp;<code>array_like (n_vortons,)</code></dt>
+<dd>tracer initial x and y positions</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L29-L100" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Tracers:
+    &#34;&#34;&#34;Collection of `Tracer`s.&#34;&#34;&#34;
+    def __init__(self, x, y):
+        &#34;&#34;&#34;Create tracer collection.
+
+        Parameters
+        ----------
+        x, y : array_like (n_vortons,)
+            tracer initial x and y positions
+        &#34;&#34;&#34;
+        x = np.asarray(x, dtype=np.float)
+        y = np.asarray(y, dtype=np.float)
+
+        assert x.shape == y.shape and x.ndim == 1
+
+        self.state_mat = np.column_stack((x, y))
+
+
+    def __repr__(self):
+        # unlike Vortons, might have many tracers
+        # so don&#39;t need to show all in the repr
+        n = self.n
+        return f&#34;Tracers(n={n})&#34;
+
+    @property
+    def n(self):
+        return self.state_mat.shape[0]
+
+    @property
+    def x(self):
+        return self.state_mat[:,0]
+
+    @property
+    def y(self):
+        return self.state_mat[:,1]
+
+    def state_vec(self):
+        return self.state_mat.T.flatten()
+
+    def state_mat_full(self):
+        &#34;&#34;&#34;Full state mat for tracers doesn&#39;t include G.&#34;&#34;&#34;
+        warnings.warn(&#34;Note that `state_mat_full` for tracers is the same as `state_mat` (no G).&#34;)
+        return self.state_mat
+
+    @staticmethod
+    def randu(n, **kwargs):
+        xy = points_randu(n, **kwargs).T
+        return Tracers(*xy)
+
+    @staticmethod
+    def spiral(n, **kwargs):
+        xy = points_spiral(n, **kwargs).T
+        return Tracers(*xy)
+
+
+    def plot(self, *, connect=False):
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots()
+
+        x, y = self.x, self.y
+        fmt = &#34;-o&#34; if connect else &#34;o&#34;
+        ax.plot(x, y, fmt, c=&#34;0.5&#34;, ms=4, label=&#34;tracers&#34;)
+
+        ax.set(
+            xlabel=&#34;$x$&#34;,
+            ylabel=&#34;$y$&#34;,
+        )
+        ax.set_aspect(&#34;equal&#34;, &#34;box&#34;)
+        fig.legend()
+        ax.grid(True)
+        fig.tight_layout()</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="vorts.vortons.Tracers.randu"><code class="name flex">
+<span>def <span class="ident">randu</span></span>(<span>n, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L73-L76" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@staticmethod
+def randu(n, **kwargs):
+    xy = points_randu(n, **kwargs).T
+    return Tracers(*xy)</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Tracers.spiral"><code class="name flex">
+<span>def <span class="ident">spiral</span></span>(<span>n, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L78-L81" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@staticmethod
+def spiral(n, **kwargs):
+    xy = points_spiral(n, **kwargs).T
+    return Tracers(*xy)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="vorts.vortons.Tracers.n"><code class="name">var <span class="ident">n</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L53-L55" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def n(self):
+    return self.state_mat.shape[0]</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Tracers.x"><code class="name">var <span class="ident">x</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L57-L59" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def x(self):
+    return self.state_mat[:,0]</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Tracers.y"><code class="name">var <span class="ident">y</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L61-L63" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def y(self):
+    return self.state_mat[:,1]</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="vorts.vortons.Tracers.plot"><code class="name flex">
+<span>def <span class="ident">plot</span></span>(<span>self, *, connect=False)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L84-L100" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def plot(self, *, connect=False):
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+
+    x, y = self.x, self.y
+    fmt = &#34;-o&#34; if connect else &#34;o&#34;
+    ax.plot(x, y, fmt, c=&#34;0.5&#34;, ms=4, label=&#34;tracers&#34;)
+
+    ax.set(
+        xlabel=&#34;$x$&#34;,
+        ylabel=&#34;$y$&#34;,
+    )
+    ax.set_aspect(&#34;equal&#34;, &#34;box&#34;)
+    fig.legend()
+    ax.grid(True)
+    fig.tight_layout()</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Tracers.state_mat_full"><code class="name flex">
+<span>def <span class="ident">state_mat_full</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Full state mat for tracers doesn't include G.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L68-L71" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def state_mat_full(self):
+    &#34;&#34;&#34;Full state mat for tracers doesn&#39;t include G.&#34;&#34;&#34;
+    warnings.warn(&#34;Note that `state_mat_full` for tracers is the same as `state_mat` (no G).&#34;)
+    return self.state_mat</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Tracers.state_vec"><code class="name flex">
+<span>def <span class="ident">state_vec</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L65-L66" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def state_vec(self):
+    return self.state_mat.T.flatten()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="vorts.vortons.Vorton"><code class="flex name class">
+<span>class <span class="ident">Vorton</span></span>
+<span>(</span><span>G: float, x: float, y: float)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Vorton(G, x, y)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L12-L15" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Vorton(NamedTuple):
+    G: float
+    x: float
+    y: float</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>builtins.tuple</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="vorts.vortons.Vorton.G"><code class="name">var <span class="ident">G</span> : float</code></dt>
+<dd>
+<div class="desc"><p>Alias for field number 0</p></div>
+</dd>
+<dt id="vorts.vortons.Vorton.x"><code class="name">var <span class="ident">x</span> : float</code></dt>
+<dd>
+<div class="desc"><p>Alias for field number 1</p></div>
+</dd>
+<dt id="vorts.vortons.Vorton.y"><code class="name">var <span class="ident">y</span> : float</code></dt>
+<dd>
+<div class="desc"><p>Alias for field number 2</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="vorts.vortons.Vortons"><code class="flex name class">
+<span>class <span class="ident">Vortons</span></span>
+<span>(</span><span>G, x, y)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Collection of <code><a title="vorts.vortons.Vorton" href="#vorts.vortons.Vorton">Vorton</a></code>s.</p>
+<p>Create vorton collection.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>G</code></strong>, <strong><code>x</code></strong>, <strong><code>y</code></strong> :&ensp;<code>array_like (n_vortons,)</code></dt>
+<dd>G: Gamma (strength of the circulation, with sign to indicate direction)
+In fluid dynamics, circulation $\Gamma$ is the line integral of velocity
+or flux of vorticity vectors through a surface (here the xy-plane).
+x: x position
+y: y position</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L106-L426" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Vortons:
+    &#34;&#34;&#34;Collection of `Vorton`s.&#34;&#34;&#34;
+    def __init__(self, G, x, y):
+        r&#34;&#34;&#34;Create vorton collection.
+
+        Parameters
+        ----------
+        G, x, y : array_like (n_vortons,)
+            G: Gamma (strength of the circulation, with sign to indicate direction)
+                In fluid dynamics, circulation $\Gamma$ is the line integral of velocity
+                or flux of vorticity vectors through a surface (here the xy-plane).
+            x: x position
+            y: y position
+
+        &#34;&#34;&#34;
+        self.G = np.asarray(G)
+        if np.any(self.G == 0):
+            warnings.warn(
+                &#34;Tracers should be in a `Tracers` instance. &#34;
+                &#34;The ability to add them here may be removed in the future.&#34;
+            )
+
+        # the state matrix has shape (n_vortons, n_pos_dims) (G excluded since time-invariant)
+        x = np.asarray(x, dtype=np.float)
+        y = np.asarray(y, dtype=np.float)
+        self.state_mat = np.column_stack((x, y))
+
+        assert self.G.ndim == 1 and self.state_mat.shape[1] == 2
+        assert self.G.size == self.state_mat.shape[0]  # n_vortons
+
+        # create initial corresponding Vorton objects
+        self._update_vortons()
+
+
+    # these 2 don&#39;t really need to be property?
+    # maybe shouldn&#39;t be, to emphasize that state_mat is the real data
+    # @property
+    def state_vec(self):
+        &#34;&#34;&#34;Return flattened state matrix (G not included).
+
+        Needed to feed to `scipy.integrate.solve_ivp`,
+        which requires a 1-d array for the `y0` input.
+        &#34;&#34;&#34;
+        return self.state_mat.T.flatten()
+
+    # @property
+    def state_mat_full(self):
+        &#34;&#34;&#34;Return full state matrix: G and positions.&#34;&#34;&#34;
+        return np.column_stack((self.G, self.state_mat))
+
+    # seems to return a view into self.G, so ok to be property
+    @property
+    def G_col(self):
+        &#34;&#34;&#34;G as a column vector.&#34;&#34;&#34;
+        return self.G[:, np.newaxis]
+
+    @property
+    def x(self):
+        # slice indexing should give just a view into `self.state_mat`
+        # thus `self.x.base` will return the state mat
+        # i.e., `vs.x.base is vs.state_mat`
+        return self.state_mat[:,0]
+
+    @property
+    def y(self):
+        return self.state_mat[:,1]
+
+    @property
+    def n(self):
+        &#34;&#34;&#34;Number of vortons.&#34;&#34;&#34;
+        # numpy.ndarray size lookups are esentially free
+        return self.G.size  # will have to change if want to allow single G at some point
+
+    def __repr__(self):
+        # n_vortons shouldn&#39;t be too many, so let&#39;s show all
+        s_vorts = &#34;\n&#34;.join(f&#34;  {v}&#34; for v in self._vortons)
+        return f&#34;Vortons(\n{s_vorts}\n)&#34;
+        # TODO: should this call `self._update_vortons`? so as to not be out-of-date if state changes?
+
+    def _update_vortons(self):
+        self._vortons = [Vorton(G, x, y) for G, x, y in self.state_mat_full()]
+
+
+    def C(self):
+        r&#34;&#34;&#34;Calculate $C$.
+
+        $$
+        C = \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
+            \Gamma_{\alpha} \Gamma_{\beta} l_{\alpha \beta}^{2}
+        $$
+
+        $C$ is supposed to be a conserved quantity in this system.
+        - Chamecki (2005) eq. 15, which references Aref (1979)
+        &#34;&#34;&#34;
+        n_vortons = self.n
+        G = self.G
+        C = 0
+        for i, j in zip(*np.triu_indices(n_vortons, 1)):  # all combinations without repetition
+
+            xi, yi = self.x[i], self.y[i]
+            xj, yj = self.x[j], self.y[j]
+
+            lij_sqd = (xi-xj)**2 + (yi-yj)**2
+
+            Gi, Gj = G[i], G[j]
+
+            C += Gi * Gj * lij_sqd
+
+        return C
+
+
+    def H(self):
+        r&#34;&#34;&#34;Calculate $H$, the Hamiltonian of the system.
+
+        $$
+        H = -\frac{1}{4 \pi} \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
+            \Gamma_{\alpha} \Gamma_{\beta}
+            \ln | r_{\alpha} - r_{\beta} |
+        $$
+        &#34;&#34;&#34;
+        nv = self.n
+        G = self.G
+        r = self.state_mat  # vorton positions
+        H = 0
+        for a, b in zip(*np.triu_indices(nv, 1)):
+            ra, rb = r[a], r[b]
+            Ga, Gb = G[a], G[b]
+            H += -1/(4*np.pi) * Ga * Gb * np.log(np.linalg.norm(ra - rb))
+
+        return H
+
+
+    def I(self):
+        r&#34;&#34;&#34;Calculate $I$, the angular impulse of the system.
+
+        $$
+        I = \sum_{\alpha = 1}^{N} \Gamma_{\alpha} | r_{\alpha} |^2
+        $$
+        &#34;&#34;&#34;
+        G = self.G
+        # r = self.state_mat
+        x = self.x
+        y = self.y
+
+        # r_hat_sqd =
+
+        return (G * (x**2 + y**2)).sum()
+
+
+    # TODO: P and Q (coordinates of the center-of-vorticity)
+
+
+    # TODO: results are not right for equi tri... need to check formulas
+    def theta(self):
+        r&#34;&#34;&#34;Calculate $\theta$, the action angles??
+
+        Chamecki eq. 19
+        &#34;&#34;&#34;
+        N = self.n
+        I = self.I()
+        H = self.H()
+
+        return (2/(N-1))**(N*(N-1)/2) * I**(N*(N-1)) * np.exp(4*np.pi*H)
+
+
+    def plot(self):
+        &#34;&#34;&#34;Plot the vortons.
+        (Only their current positions, which are all this container knows about.)
+        &#34;&#34;&#34;
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots()
+
+        # plot vorton positions
+        c_Gp = &#34;cadetblue&#34;
+        c_Gm = &#34;salmon&#34;
+        G = self.G
+        Gp, Gm = G &gt; 0, G &lt; 0
+        x, y = self.x, self.y
+        ax.plot(x[Gp], y[Gp], &#34;o&#34;, ms=7, c=c_Gp, label=r&#34;$\Gamma &gt; 0$&#34;)
+        ax.plot(x[Gm], y[Gm], &#34;o&#34;, ms=7, c=c_Gm, label=r&#34;$\Gamma &lt; 0$&#34;)
+
+        # plot center-of-mass
+        x_cm, y_cm = self.cm()
+        s_cm = f&#34;({x_cm:.4g}, {y_cm:.4g})&#34;
+        ax.plot(x_cm, y_cm, &#34;*&#34;, ms=13, c=&#34;gold&#34;, label=f&#34;center-of-mass\n{s_cm}&#34;)
+
+        # 2nd mom
+        x_cm2, y_cm2 = self.mom(2)
+        s_cm2 = f&#34;({x_cm2:.4g}, {y_cm2:.4g})&#34;
+        ax.plot(x_cm2, y_cm2, &#34;*&#34;, ms=13, c=&#34;0.4&#34;, label=f&#34;mom2\n{s_cm2}&#34;)
+
+        # 3nd mom
+        # TODO: helper fn to DRY this
+        x_cm3, y_cm3 = self.mom(3)
+        s_cm3 = f&#34;({x_cm3:.4g}, {y_cm3:.4g})&#34;
+        ax.plot(x_cm3, y_cm3, &#34;*&#34;, ms=13, c=&#34;0.55&#34;, label=f&#34;mom3\n{s_cm3}&#34;)
+
+        ax.set(
+            title=f&#34;$C = {self.C():.4g}$&#34;,
+            xlabel=&#34;$x$&#34;,
+            ylabel=&#34;$y$&#34;,
+        )
+        ax.set_aspect(&#34;equal&#34;, &#34;datalim&#34;)
+        fig.legend()
+        ax.grid(True)
+        fig.tight_layout()
+
+        # return
+
+
+    def mom(self, n, *, abs_G=False, center=False):
+        &#34;&#34;&#34;Compute `n`-th moment.
+
+        Parameters
+        ----------
+        n : int
+            which moment
+            https://en.wikipedia.org/wiki/Moment_(mathematics)
+        abs_G : bool, optional (default False)
+            whether to take the absolute value of G values
+        center : bool, optional (default True)
+            True: evaluate moment wrt. center-of-mass
+            False: evaluate moment wrt. (0, 0)
+        &#34;&#34;&#34;
+        # seems like a moment but that might not be the correct terminology...
+        G = self.G_col
+        if abs_G:
+            G = np.abs(G)
+        G_tot = G.sum()
+
+        x = self.state_mat  # x, y (columns)
+
+        c = self.cm() if center else 0
+
+        x_mom = (G * (x-c)**n).sum(axis=0) / G_tot  # sum along vortons dim, giving a position
+        # ^ maybe this should be x - x_cm here...
+
+        return x_mom
+
+
+    # Chamecki notes suggest this should be called &#34;center of vorticity&#34; or &#34;linear impulse&#34;
+    def cm(self):
+        &#34;&#34;&#34;Compute center-of-mass using Gamma as mass.&#34;&#34;&#34;
+        # TODO: what impact should sign of G have on cm? mass is always pos. but G can be neg.
+        return self.mom(1, abs_G=True, center=False)
+
+
+    def center_coords(self, inplace=False):
+        &#34;&#34;&#34;Make center-of-mass (0, 0).&#34;&#34;&#34;
+        xy_cm = self.cm()
+        x_cm, y_cm = xy_cm
+        if not inplace:
+            return Vortons(self.G, self.x-x_cm, self.y-y_cm)
+        else:
+            self.state_mat -= x_cm
+
+
+    @staticmethod
+    def regular_polygon(n, *, G=None, **kwargs):
+        &#34;&#34;&#34;Create Vortons with positions corresponding to regular polygon.
+
+        Parameters
+        ----------
+        n : int
+            polygon order
+        G : int, array-like, optional
+            Gamma value(s) to use
+            single value or array of values
+            default: 1.0
+
+        `**kwargs` are passed on to `vortons.regular_polygon_vertices`.
+        See signature there.
+        &#34;&#34;&#34;
+        if G is None:
+            G = 1.0  # default
+        G = np.asarray(G)
+        if G.size == 1:  # single G provided, or using the default
+            G = np.full((n,), G)  # TODO: could also the constructor to accept single G
+        if G.size != n:
+            raise ValueError(f&#34;`G` must have size `n` or 1, but is {G.size!r}&#34;)
+
+        xy = regular_polygon_vertices(n, **kwargs).T  # x, y cols-&gt; rows (for unpacking)
+
+        return Vortons(G, *xy)
+
+
+    @staticmethod
+    def isos_triangle(*, G=None, **kwargs):
+        &#34;&#34;&#34;Create Vortons with isosceles triangle vertices.
+
+        `**kwargs` are passed on to `vortons.isos_triangle_vertices`.
+        See signature there.
+        &#34;&#34;&#34;
+        G = _maybe_fill_G(G, 3)
+
+        xy = isos_triangle_vertices(**kwargs).T
+
+        return Vortons(G, *xy)
+
+
+    def maybe_with_tracers(self, tracers: Tracers = None):
+        &#34;&#34;&#34;Return new `Vortons` with the tracers.
+        (Temporary? hack to get full state_vec)
+
+        If `Tracers` is `None`, just return `self`.
+        &#34;&#34;&#34;
+        if tracers is None:
+            return self
+
+        # TODO: add option to extend existing Vortons instead of creating a new. `inplace`?
+
+        G_v = self.G
+        xy_v = self.state_mat
+        xy_t = tracers.state_mat
+        G_t = np.zeros((tracers.n,))
+
+        G = np.append(G_v, G_t)
+        x, y = np.append(xy_v, xy_t, axis=0).T  # unpacking arrays goes by rows
+
+        return Vortons(G, x, y)</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="vorts.vortons.Vortons.isos_triangle"><code class="name flex">
+<span>def <span class="ident">isos_triangle</span></span>(<span>*, G=None, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create Vortons with isosceles triangle vertices.</p>
+<p><code>**kwargs</code> are passed on to <code>vortons.isos_triangle_vertices</code>.
+See signature there.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L393-L404" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@staticmethod
+def isos_triangle(*, G=None, **kwargs):
+    &#34;&#34;&#34;Create Vortons with isosceles triangle vertices.
+
+    `**kwargs` are passed on to `vortons.isos_triangle_vertices`.
+    See signature there.
+    &#34;&#34;&#34;
+    G = _maybe_fill_G(G, 3)
+
+    xy = isos_triangle_vertices(**kwargs).T
+
+    return Vortons(G, *xy)</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Vortons.regular_polygon"><code class="name flex">
+<span>def <span class="ident">regular_polygon</span></span>(<span>n, *, G=None, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create Vortons with positions corresponding to regular polygon.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>n</code></strong> :&ensp;<code>int</code></dt>
+<dd>polygon order</dd>
+<dt><strong><code>G</code></strong> :&ensp;<code>int, array-like</code>, optional</dt>
+<dd>Gamma value(s) to use
+single value or array of values
+default: 1.0</dd>
+</dl>
+<p><code>**kwargs</code> are passed on to <code>vortons.regular_polygon_vertices</code>.
+See signature there.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L364-L390" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@staticmethod
+def regular_polygon(n, *, G=None, **kwargs):
+    &#34;&#34;&#34;Create Vortons with positions corresponding to regular polygon.
+
+    Parameters
+    ----------
+    n : int
+        polygon order
+    G : int, array-like, optional
+        Gamma value(s) to use
+        single value or array of values
+        default: 1.0
+
+    `**kwargs` are passed on to `vortons.regular_polygon_vertices`.
+    See signature there.
+    &#34;&#34;&#34;
+    if G is None:
+        G = 1.0  # default
+    G = np.asarray(G)
+    if G.size == 1:  # single G provided, or using the default
+        G = np.full((n,), G)  # TODO: could also the constructor to accept single G
+    if G.size != n:
+        raise ValueError(f&#34;`G` must have size `n` or 1, but is {G.size!r}&#34;)
+
+    xy = regular_polygon_vertices(n, **kwargs).T  # x, y cols-&gt; rows (for unpacking)
+
+    return Vortons(G, *xy)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="vorts.vortons.Vortons.G_col"><code class="name">var <span class="ident">G_col</span></code></dt>
+<dd>
+<div class="desc"><p>G as a column vector.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L157-L160" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def G_col(self):
+    &#34;&#34;&#34;G as a column vector.&#34;&#34;&#34;
+    return self.G[:, np.newaxis]</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Vortons.n"><code class="name">var <span class="ident">n</span></code></dt>
+<dd>
+<div class="desc"><p>Number of vortons.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L173-L177" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def n(self):
+    &#34;&#34;&#34;Number of vortons.&#34;&#34;&#34;
+    # numpy.ndarray size lookups are esentially free
+    return self.G.size  # will have to change if want to allow single G at some point</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Vortons.x"><code class="name">var <span class="ident">x</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L162-L167" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def x(self):
+    # slice indexing should give just a view into `self.state_mat`
+    # thus `self.x.base` will return the state mat
+    # i.e., `vs.x.base is vs.state_mat`
+    return self.state_mat[:,0]</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Vortons.y"><code class="name">var <span class="ident">y</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L169-L171" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def y(self):
+    return self.state_mat[:,1]</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="vorts.vortons.Vortons.C"><code class="name flex">
+<span>def <span class="ident">C</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate $C$.</p>
+<p>$$
+C = \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
+\Gamma_{\alpha} \Gamma_{\beta} l_{\alpha \beta}^{2}
+$$</p>
+<p>$C$ is supposed to be a conserved quantity in this system.
+- Chamecki (2005) eq. 15, which references Aref (1979)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L189-L214" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def C(self):
+    r&#34;&#34;&#34;Calculate $C$.
+
+    $$
+    C = \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
+        \Gamma_{\alpha} \Gamma_{\beta} l_{\alpha \beta}^{2}
+    $$
+
+    $C$ is supposed to be a conserved quantity in this system.
+    - Chamecki (2005) eq. 15, which references Aref (1979)
+    &#34;&#34;&#34;
+    n_vortons = self.n
+    G = self.G
+    C = 0
+    for i, j in zip(*np.triu_indices(n_vortons, 1)):  # all combinations without repetition
+
+        xi, yi = self.x[i], self.y[i]
+        xj, yj = self.x[j], self.y[j]
+
+        lij_sqd = (xi-xj)**2 + (yi-yj)**2
+
+        Gi, Gj = G[i], G[j]
+
+        C += Gi * Gj * lij_sqd
+
+    return C</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Vortons.H"><code class="name flex">
+<span>def <span class="ident">H</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate $H$, the Hamiltonian of the system.</p>
+<p>$$
+H = -\frac{1}{4 \pi} \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
+\Gamma_{\alpha} \Gamma_{\beta}
+\ln | r_{\alpha} - r_{\beta} |
+$$</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L217-L235" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def H(self):
+    r&#34;&#34;&#34;Calculate $H$, the Hamiltonian of the system.
+
+    $$
+    H = -\frac{1}{4 \pi} \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
+        \Gamma_{\alpha} \Gamma_{\beta}
+        \ln | r_{\alpha} - r_{\beta} |
+    $$
+    &#34;&#34;&#34;
+    nv = self.n
+    G = self.G
+    r = self.state_mat  # vorton positions
+    H = 0
+    for a, b in zip(*np.triu_indices(nv, 1)):
+        ra, rb = r[a], r[b]
+        Ga, Gb = G[a], G[b]
+        H += -1/(4*np.pi) * Ga * Gb * np.log(np.linalg.norm(ra - rb))
+
+    return H</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Vortons.I"><code class="name flex">
+<span>def <span class="ident">I</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate $I$, the angular impulse of the system.</p>
+<p>$$
+I = \sum_{\alpha = 1}^{N} \Gamma_{\alpha} | r_{\alpha} |^2
+$$</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L238-L252" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def I(self):
+    r&#34;&#34;&#34;Calculate $I$, the angular impulse of the system.
+
+    $$
+    I = \sum_{\alpha = 1}^{N} \Gamma_{\alpha} | r_{\alpha} |^2
+    $$
+    &#34;&#34;&#34;
+    G = self.G
+    # r = self.state_mat
+    x = self.x
+    y = self.y
+
+    # r_hat_sqd =
+
+    return (G * (x**2 + y**2)).sum()</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Vortons.center_coords"><code class="name flex">
+<span>def <span class="ident">center_coords</span></span>(<span>self, inplace=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Make center-of-mass (0, 0).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L354-L361" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def center_coords(self, inplace=False):
+    &#34;&#34;&#34;Make center-of-mass (0, 0).&#34;&#34;&#34;
+    xy_cm = self.cm()
+    x_cm, y_cm = xy_cm
+    if not inplace:
+        return Vortons(self.G, self.x-x_cm, self.y-y_cm)
+    else:
+        self.state_mat -= x_cm</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Vortons.cm"><code class="name flex">
+<span>def <span class="ident">cm</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Compute center-of-mass using Gamma as mass.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L348-L351" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def cm(self):
+    &#34;&#34;&#34;Compute center-of-mass using Gamma as mass.&#34;&#34;&#34;
+    # TODO: what impact should sign of G have on cm? mass is always pos. but G can be neg.
+    return self.mom(1, abs_G=True, center=False)</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Vortons.maybe_with_tracers"><code class="name flex">
+<span>def <span class="ident">maybe_with_tracers</span></span>(<span>self, tracers: <a title="vorts.vortons.Tracers" href="#vorts.vortons.Tracers">Tracers</a> = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return new <code><a title="vorts.vortons.Vortons" href="#vorts.vortons.Vortons">Vortons</a></code> with the tracers.
+(Temporary? hack to get full state_vec)</p>
+<p>If <code><a title="vorts.vortons.Tracers" href="#vorts.vortons.Tracers">Tracers</a></code> is <code>None</code>, just return <code>self</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L407-L426" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def maybe_with_tracers(self, tracers: Tracers = None):
+    &#34;&#34;&#34;Return new `Vortons` with the tracers.
+    (Temporary? hack to get full state_vec)
+
+    If `Tracers` is `None`, just return `self`.
+    &#34;&#34;&#34;
+    if tracers is None:
+        return self
+
+    # TODO: add option to extend existing Vortons instead of creating a new. `inplace`?
+
+    G_v = self.G
+    xy_v = self.state_mat
+    xy_t = tracers.state_mat
+    G_t = np.zeros((tracers.n,))
+
+    G = np.append(G_v, G_t)
+    x, y = np.append(xy_v, xy_t, axis=0).T  # unpacking arrays goes by rows
+
+    return Vortons(G, x, y)</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Vortons.mom"><code class="name flex">
+<span>def <span class="ident">mom</span></span>(<span>self, n, *, abs_G=False, center=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Compute <code>n</code>-th moment.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>n</code></strong> :&ensp;<code>int</code></dt>
+<dd>which moment
+<a href="https://en.wikipedia.org/wiki/Moment_(mathematics)">https://en.wikipedia.org/wiki/Moment_(mathematics)</a></dd>
+<dt><strong><code>abs_G</code></strong> :&ensp;<code>bool</code>, optional <code>(default False)</code></dt>
+<dd>whether to take the absolute value of G values</dd>
+<dt><strong><code>center</code></strong> :&ensp;<code>bool</code>, optional <code>(default True)</code></dt>
+<dd>True: evaluate moment wrt. center-of-mass
+False: evaluate moment wrt. (0, 0)</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L317-L344" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def mom(self, n, *, abs_G=False, center=False):
+    &#34;&#34;&#34;Compute `n`-th moment.
+
+    Parameters
+    ----------
+    n : int
+        which moment
+        https://en.wikipedia.org/wiki/Moment_(mathematics)
+    abs_G : bool, optional (default False)
+        whether to take the absolute value of G values
+    center : bool, optional (default True)
+        True: evaluate moment wrt. center-of-mass
+        False: evaluate moment wrt. (0, 0)
+    &#34;&#34;&#34;
+    # seems like a moment but that might not be the correct terminology...
+    G = self.G_col
+    if abs_G:
+        G = np.abs(G)
+    G_tot = G.sum()
+
+    x = self.state_mat  # x, y (columns)
+
+    c = self.cm() if center else 0
+
+    x_mom = (G * (x-c)**n).sum(axis=0) / G_tot  # sum along vortons dim, giving a position
+    # ^ maybe this should be x - x_cm here...
+
+    return x_mom</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Vortons.plot"><code class="name flex">
+<span>def <span class="ident">plot</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Plot the vortons.
+(Only their current positions, which are all this container knows about.)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L271-L312" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def plot(self):
+    &#34;&#34;&#34;Plot the vortons.
+    (Only their current positions, which are all this container knows about.)
+    &#34;&#34;&#34;
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+
+    # plot vorton positions
+    c_Gp = &#34;cadetblue&#34;
+    c_Gm = &#34;salmon&#34;
+    G = self.G
+    Gp, Gm = G &gt; 0, G &lt; 0
+    x, y = self.x, self.y
+    ax.plot(x[Gp], y[Gp], &#34;o&#34;, ms=7, c=c_Gp, label=r&#34;$\Gamma &gt; 0$&#34;)
+    ax.plot(x[Gm], y[Gm], &#34;o&#34;, ms=7, c=c_Gm, label=r&#34;$\Gamma &lt; 0$&#34;)
+
+    # plot center-of-mass
+    x_cm, y_cm = self.cm()
+    s_cm = f&#34;({x_cm:.4g}, {y_cm:.4g})&#34;
+    ax.plot(x_cm, y_cm, &#34;*&#34;, ms=13, c=&#34;gold&#34;, label=f&#34;center-of-mass\n{s_cm}&#34;)
+
+    # 2nd mom
+    x_cm2, y_cm2 = self.mom(2)
+    s_cm2 = f&#34;({x_cm2:.4g}, {y_cm2:.4g})&#34;
+    ax.plot(x_cm2, y_cm2, &#34;*&#34;, ms=13, c=&#34;0.4&#34;, label=f&#34;mom2\n{s_cm2}&#34;)
+
+    # 3nd mom
+    # TODO: helper fn to DRY this
+    x_cm3, y_cm3 = self.mom(3)
+    s_cm3 = f&#34;({x_cm3:.4g}, {y_cm3:.4g})&#34;
+    ax.plot(x_cm3, y_cm3, &#34;*&#34;, ms=13, c=&#34;0.55&#34;, label=f&#34;mom3\n{s_cm3}&#34;)
+
+    ax.set(
+        title=f&#34;$C = {self.C():.4g}$&#34;,
+        xlabel=&#34;$x$&#34;,
+        ylabel=&#34;$y$&#34;,
+    )
+    ax.set_aspect(&#34;equal&#34;, &#34;datalim&#34;)
+    fig.legend()
+    ax.grid(True)
+    fig.tight_layout()</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Vortons.state_mat_full"><code class="name flex">
+<span>def <span class="ident">state_mat_full</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return full state matrix: G and positions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L152-L154" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def state_mat_full(self):
+    &#34;&#34;&#34;Return full state matrix: G and positions.&#34;&#34;&#34;
+    return np.column_stack((self.G, self.state_mat))</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Vortons.state_vec"><code class="name flex">
+<span>def <span class="ident">state_vec</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return flattened state matrix (G not included).</p>
+<p>Needed to feed to <code>scipy.integrate.solve_ivp</code>,
+which requires a 1-d array for the <code>y0</code> input.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L143-L149" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def state_vec(self):
+    &#34;&#34;&#34;Return flattened state matrix (G not included).
+
+    Needed to feed to `scipy.integrate.solve_ivp`,
+    which requires a 1-d array for the `y0` input.
+    &#34;&#34;&#34;
+    return self.state_mat.T.flatten()</code></pre>
+</details>
+</dd>
+<dt id="vorts.vortons.Vortons.theta"><code class="name flex">
+<span>def <span class="ident">theta</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate $\theta$, the action angles??</p>
+<p>Chamecki eq. 19</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\vortons.py#L259-L268" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def theta(self):
+    r&#34;&#34;&#34;Calculate $\theta$, the action angles??
+
+    Chamecki eq. 19
+    &#34;&#34;&#34;
+    N = self.n
+    I = self.I()
+    H = self.H()
+
+    return (2/(N-1))**(N*(N-1)/2) * I**(N*(N-1)) * np.exp(4*np.pi*H)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<h1 style="margin-top: -16px;">
+<a class="homelink" rel="home" title="vorts Home" href="https://zmoon.github.io/vorts/">
+vorts
+</a>
+</h1>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = 'search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="vorts" href="index.html">vorts</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="vorts.vortons.isos_triangle_vertices" href="#vorts.vortons.isos_triangle_vertices">isos_triangle_vertices</a></code></li>
+<li><code><a title="vorts.vortons.points_grid" href="#vorts.vortons.points_grid">points_grid</a></code></li>
+<li><code><a title="vorts.vortons.points_randn" href="#vorts.vortons.points_randn">points_randn</a></code></li>
+<li><code><a title="vorts.vortons.points_randu" href="#vorts.vortons.points_randu">points_randu</a></code></li>
+<li><code><a title="vorts.vortons.points_spiral" href="#vorts.vortons.points_spiral">points_spiral</a></code></li>
+<li><code><a title="vorts.vortons.regular_polygon_vertices" href="#vorts.vortons.regular_polygon_vertices">regular_polygon_vertices</a></code></li>
+<li><code><a title="vorts.vortons.rotate_2d" href="#vorts.vortons.rotate_2d">rotate_2d</a></code></li>
+<li><code><a title="vorts.vortons.rotmat_2d" href="#vorts.vortons.rotmat_2d">rotmat_2d</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="vorts.vortons.Tracer" href="#vorts.vortons.Tracer">Tracer</a></code></h4>
+<ul class="">
+<li><code><a title="vorts.vortons.Tracer.x" href="#vorts.vortons.Tracer.x">x</a></code></li>
+<li><code><a title="vorts.vortons.Tracer.y" href="#vorts.vortons.Tracer.y">y</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="vorts.vortons.Tracers" href="#vorts.vortons.Tracers">Tracers</a></code></h4>
+<ul class="two-column">
+<li><code><a title="vorts.vortons.Tracers.n" href="#vorts.vortons.Tracers.n">n</a></code></li>
+<li><code><a title="vorts.vortons.Tracers.plot" href="#vorts.vortons.Tracers.plot">plot</a></code></li>
+<li><code><a title="vorts.vortons.Tracers.randu" href="#vorts.vortons.Tracers.randu">randu</a></code></li>
+<li><code><a title="vorts.vortons.Tracers.spiral" href="#vorts.vortons.Tracers.spiral">spiral</a></code></li>
+<li><code><a title="vorts.vortons.Tracers.state_mat_full" href="#vorts.vortons.Tracers.state_mat_full">state_mat_full</a></code></li>
+<li><code><a title="vorts.vortons.Tracers.state_vec" href="#vorts.vortons.Tracers.state_vec">state_vec</a></code></li>
+<li><code><a title="vorts.vortons.Tracers.x" href="#vorts.vortons.Tracers.x">x</a></code></li>
+<li><code><a title="vorts.vortons.Tracers.y" href="#vorts.vortons.Tracers.y">y</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="vorts.vortons.Vorton" href="#vorts.vortons.Vorton">Vorton</a></code></h4>
+<ul class="">
+<li><code><a title="vorts.vortons.Vorton.G" href="#vorts.vortons.Vorton.G">G</a></code></li>
+<li><code><a title="vorts.vortons.Vorton.x" href="#vorts.vortons.Vorton.x">x</a></code></li>
+<li><code><a title="vorts.vortons.Vorton.y" href="#vorts.vortons.Vorton.y">y</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="vorts.vortons.Vortons" href="#vorts.vortons.Vortons">Vortons</a></code></h4>
+<ul class="two-column">
+<li><code><a title="vorts.vortons.Vortons.C" href="#vorts.vortons.Vortons.C">C</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.G_col" href="#vorts.vortons.Vortons.G_col">G_col</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.H" href="#vorts.vortons.Vortons.H">H</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.I" href="#vorts.vortons.Vortons.I">I</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.center_coords" href="#vorts.vortons.Vortons.center_coords">center_coords</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.cm" href="#vorts.vortons.Vortons.cm">cm</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.isos_triangle" href="#vorts.vortons.Vortons.isos_triangle">isos_triangle</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.maybe_with_tracers" href="#vorts.vortons.Vortons.maybe_with_tracers">maybe_with_tracers</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.mom" href="#vorts.vortons.Vortons.mom">mom</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.n" href="#vorts.vortons.Vortons.n">n</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.plot" href="#vorts.vortons.Vortons.plot">plot</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.regular_polygon" href="#vorts.vortons.Vortons.regular_polygon">regular_polygon</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.state_mat_full" href="#vorts.vortons.Vortons.state_mat_full">state_mat_full</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.state_vec" href="#vorts.vortons.Vortons.state_vec">state_vec</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.theta" href="#vorts.vortons.Vortons.theta">theta</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.x" href="#vorts.vortons.Vortons.x">x</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.y" href="#vorts.vortons.Vortons.y">y</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<span style="color:#777777">&copy; Z. Moon 2020</span>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+</footer>
+</body>
+</html>

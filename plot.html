@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.1" />
+<title>vorts.plot API documentation</title>
+<meta name="description" content="Plotting routines" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<!-- MathJax 3, with $..$ for inline math enabled -->
+<script>
+MathJax = {
+tex: {
+inlineMath: [['$', '$'], ['\\(', '\\)']]
+},
+svg: {
+fontCache: 'global'
+}
+};
+</script>
+<script type="text/javascript" id="MathJax-script" async
+src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>vorts.plot</code></h1>
+</header>
+<section id="section-intro">
+<p>Plotting routines</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\plot.py#L0-L201" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Plotting routines
+&#34;&#34;&#34;
+
+from cycler import cycler
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+# Tableau&#39;s newer version of tab10
+_NEW_TAB10 = [
+    &#34;#4e79a7&#34;,
+    &#34;#f28e2b&#34;,
+    &#34;#e15759&#34;,
+    &#34;#76b7b2&#34;,
+    &#34;#59a14f&#34;,
+    &#34;#edc948&#34;,
+    &#34;#b07aa1&#34;,
+    &#34;#ff9da7&#34;,
+    &#34;#9c755f&#34;,
+    &#34;#bab0ac&#34;,
+]
+
+# TODO: PlotMethods object that could allow .plot_type(...) and (&#34;plot_type&#34;, ...) and be attached to the Model? (like pandas/xarray)
+
+# TODO: should plotters return `fig, ax`, or just `ax`? or something else? xarray returns the set of matplotlib artists
+
+# TODO: routine to determine system rotation; plot trajectories with respect to this rotating ref frame
+
+def plot_vorton_trajectories(ds, **kwargs):
+    &#34;&#34;&#34;Plot lines: one for each vorton&#39;s trajectory.
+
+    **kwargs are passed on to `plt.subplots()`
+    &#34;&#34;&#34;
+    # select vortons
+    iv = ds.G != 0
+    ds = ds.sel(v=iv)
+
+    fig, ax = plt.subplots(**kwargs)
+
+    color_cycle = cycler(color=_NEW_TAB10)
+    ax.set_prop_cycle(color_cycle)
+
+    # could be done with one plot command, but...
+    nv = ds.v.size
+    for i in range(nv):
+        ts_i = ds.isel(v=i)
+        x = ts_i.x
+        y = ts_i.y
+        l, = ax.plot(x, y, lw=0.5, alpha=0.5)
+        # highlight starting position
+        ax.plot(x[0], y[0], &#39;o&#39;, c=l.get_color())
+
+
+    ax.set(
+        xlabel=&#34;$x$&#34;,
+        ylabel=&#34;$y$&#34;,
+        title=&#34;Vortons&#34;,
+    )
+
+    ax.set_aspect(&#34;equal&#34;, &#34;box&#34;)
+
+    fig.tight_layout()
+
+
+# note much shared with vorton traj plot
+def plot_tracer_trajectories(ds, **kwargs):
+    &#34;&#34;&#34;Plot tracer trajectories.&#34;&#34;&#34;
+    # select tracers
+    it = ds.G == 0  # tracers boolean
+    ds = ds.sel(v=it)
+
+    fig, ax = plt.subplots(**kwargs)
+
+    nv = ds.v.size
+    for i in range(nv):
+        ts_i = ds.isel(v=i)
+        x = ts_i.x
+        y = ts_i.y
+        ax.plot(x, y, c=&#34;0.5&#34;, lw=0.5, alpha=0.5)
+
+    ax.set(
+        xlabel=&#34;$x$&#34;,
+        ylabel=&#34;$y$&#34;,
+        title=&#34;Tracers&#34;,
+    )
+
+    ax.set_aspect(&#34;equal&#34;, &#34;box&#34;)
+
+    fig.tight_layout()
+
+
+def ps_data(ds, iv_ref=0, *, xtol=1e-2):
+    &#34;&#34;&#34;From full set of data, extract data corresponding to times for the Poincare Section.
+
+    We find the times when the reference vorton is in a certain place
+    or passing through a certain plane (TODO).
+
+    Parameters
+    ----------
+    iv_ref : int
+        index of the vorton to use for reference
+
+    &#34;&#34;&#34;
+    # initial position
+    r0_ref = ds.isel(t=0, v=iv_ref)
+    x0 = r0_ref.x#.values
+    # y0 = r0_ref.y#.values
+
+    # xtol = 1e-2
+    # ytol = 1e-2
+
+    # TODO: need to be more careful. should make wrt. center-of-vort, ...
+    # cond = (np.abs(ds.x - x0) &lt;= xtol) &amp; (np.abs(ds.y - y0) &lt;= ytol) &amp; (ds.v == iv_ref)
+    # cond = (np.abs(ds.x - x0) &lt;= xtol) &amp; (ds.v == iv_ref)
+    cond = (np.abs(ds.x - x0) &lt;= xtol) &amp; (ds.y &gt; 0) &amp; (ds.v == iv_ref)
+    ds_ps_ref = ds.where(cond, drop=True)
+    t_ps = ds_ps_ref.t  # ps times
+
+    ds_ps = ds.sel(t=t_ps)
+
+    return ds_ps
+
+
+def plot_ps(ds, *, iv_ref=0, **kwargs):
+    &#34;&#34;&#34;Poincare section plot.
+
+    Here using the data set of all data.
+
+    `**kwargs` are passed on to either `ps_data()` (if applicable) or `plt.subplots()`
+    &#34;&#34;&#34;
+    # subset
+    # first take only the kwargs we want
+    # TODO: there&#39;s got to be a less awkward way to do this...
+    ps_data_kwarg_keys = [&#34;xtol&#34;, ]  # could get using `inspect`
+    ps_data_kwargs = {k: kwargs.pop(k) for k in ps_data_kwarg_keys if k in kwargs}
+    ds = ps_data(ds, iv_ref, **ps_data_kwargs)
+
+    # select tracers
+    it = ds.G == 0
+    ds = ds.sel(v=it)
+
+    fig, ax = plt.subplots(**kwargs)
+
+    # TODO: (optionally?) plot vorton initial positions / positions at reference time?
+
+    # TODO: algo for choosing marker size and alpha (but also allow passing in)
+
+    # plot all
+    x = ds.x  # (nt, nv)
+    y = ds.y
+    ax.plot(x, y, &#34;.&#34;, c=&#34;0.35&#34;, ms=0.2, alpha=0.5, mew=0)
+
+    ax.set(
+        xlabel=&#34;$x$&#34;,
+        ylabel=&#34;$y$&#34;,
+        title=&#34;Poincaré map (tracers)&#34;,
+    )
+
+    ax.set_aspect(&#34;equal&#34;, &#34;box&#34;)
+
+    fig.tight_layout()
+
+
+def frame_only(ax=None, *, keep_ax_labels=True, keep_title=True):
+    &#34;&#34;&#34;Remove ticks and tick labels from `ax`.&#34;&#34;&#34;
+    if ax is None:
+        ax = plt.gca()
+
+    ax.tick_params(
+        axis=&#34;both&#34;,
+        which=&#34;both&#34;,  # &#39;major&#39;, &#39;minor&#39;, or &#39;both&#39;
+        bottom=False,
+        labelbottom=False,
+        left=False,
+        labelleft=False,
+        top=False,
+        labeltop=False,
+        right=False,
+        labelright=False,
+    )
+
+    if not keep_ax_labels:
+        ax.set(
+            xlabel=&#34;&#34;,
+            ylabel=&#34;&#34;,
+        )
+
+    if not keep_title:
+        ax.set_title(&#34;&#34;)
+
+
+def remove_frame(ax=None, *, keep_title=True):
+    &#34;&#34;&#34;Remove ticks, tick labels, and frame (spines).&#34;&#34;&#34;
+    if ax is None:
+        ax = plt.gca()
+
+    frame_only(ax, keep_ax_labels=False, keep_title=keep_title)
+
+    ax.set(
+        frame_on=False,
+    )</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="vorts.plot.frame_only"><code class="name flex">
+<span>def <span class="ident">frame_only</span></span>(<span>ax=None, *, keep_ax_labels=True, keep_title=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Remove ticks and tick labels from <code>ax</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\plot.py#L165-L190" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def frame_only(ax=None, *, keep_ax_labels=True, keep_title=True):
+    &#34;&#34;&#34;Remove ticks and tick labels from `ax`.&#34;&#34;&#34;
+    if ax is None:
+        ax = plt.gca()
+
+    ax.tick_params(
+        axis=&#34;both&#34;,
+        which=&#34;both&#34;,  # &#39;major&#39;, &#39;minor&#39;, or &#39;both&#39;
+        bottom=False,
+        labelbottom=False,
+        left=False,
+        labelleft=False,
+        top=False,
+        labeltop=False,
+        right=False,
+        labelright=False,
+    )
+
+    if not keep_ax_labels:
+        ax.set(
+            xlabel=&#34;&#34;,
+            ylabel=&#34;&#34;,
+        )
+
+    if not keep_title:
+        ax.set_title(&#34;&#34;)</code></pre>
+</details>
+</dd>
+<dt id="vorts.plot.plot_ps"><code class="name flex">
+<span>def <span class="ident">plot_ps</span></span>(<span>ds, *, iv_ref=0, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Poincare section plot.</p>
+<p>Here using the data set of all data.</p>
+<p><code>**kwargs</code> are passed on to either <code><a title="vorts.plot.ps_data" href="#vorts.plot.ps_data">ps_data()</a></code> (if applicable) or <code>plt.subplots()</code></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\plot.py#L125-L162" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def plot_ps(ds, *, iv_ref=0, **kwargs):
+    &#34;&#34;&#34;Poincare section plot.
+
+    Here using the data set of all data.
+
+    `**kwargs` are passed on to either `ps_data()` (if applicable) or `plt.subplots()`
+    &#34;&#34;&#34;
+    # subset
+    # first take only the kwargs we want
+    # TODO: there&#39;s got to be a less awkward way to do this...
+    ps_data_kwarg_keys = [&#34;xtol&#34;, ]  # could get using `inspect`
+    ps_data_kwargs = {k: kwargs.pop(k) for k in ps_data_kwarg_keys if k in kwargs}
+    ds = ps_data(ds, iv_ref, **ps_data_kwargs)
+
+    # select tracers
+    it = ds.G == 0
+    ds = ds.sel(v=it)
+
+    fig, ax = plt.subplots(**kwargs)
+
+    # TODO: (optionally?) plot vorton initial positions / positions at reference time?
+
+    # TODO: algo for choosing marker size and alpha (but also allow passing in)
+
+    # plot all
+    x = ds.x  # (nt, nv)
+    y = ds.y
+    ax.plot(x, y, &#34;.&#34;, c=&#34;0.35&#34;, ms=0.2, alpha=0.5, mew=0)
+
+    ax.set(
+        xlabel=&#34;$x$&#34;,
+        ylabel=&#34;$y$&#34;,
+        title=&#34;Poincaré map (tracers)&#34;,
+    )
+
+    ax.set_aspect(&#34;equal&#34;, &#34;box&#34;)
+
+    fig.tight_layout()</code></pre>
+</details>
+</dd>
+<dt id="vorts.plot.plot_tracer_trajectories"><code class="name flex">
+<span>def <span class="ident">plot_tracer_trajectories</span></span>(<span>ds, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Plot tracer trajectories.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\plot.py#L67-L90" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def plot_tracer_trajectories(ds, **kwargs):
+    &#34;&#34;&#34;Plot tracer trajectories.&#34;&#34;&#34;
+    # select tracers
+    it = ds.G == 0  # tracers boolean
+    ds = ds.sel(v=it)
+
+    fig, ax = plt.subplots(**kwargs)
+
+    nv = ds.v.size
+    for i in range(nv):
+        ts_i = ds.isel(v=i)
+        x = ts_i.x
+        y = ts_i.y
+        ax.plot(x, y, c=&#34;0.5&#34;, lw=0.5, alpha=0.5)
+
+    ax.set(
+        xlabel=&#34;$x$&#34;,
+        ylabel=&#34;$y$&#34;,
+        title=&#34;Tracers&#34;,
+    )
+
+    ax.set_aspect(&#34;equal&#34;, &#34;box&#34;)
+
+    fig.tight_layout()</code></pre>
+</details>
+</dd>
+<dt id="vorts.plot.plot_vorton_trajectories"><code class="name flex">
+<span>def <span class="ident">plot_vorton_trajectories</span></span>(<span>ds, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Plot lines: one for each vorton's trajectory.</p>
+<p>**kwargs are passed on to <code>plt.subplots()</code></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\plot.py#L30-L63" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def plot_vorton_trajectories(ds, **kwargs):
+    &#34;&#34;&#34;Plot lines: one for each vorton&#39;s trajectory.
+
+    **kwargs are passed on to `plt.subplots()`
+    &#34;&#34;&#34;
+    # select vortons
+    iv = ds.G != 0
+    ds = ds.sel(v=iv)
+
+    fig, ax = plt.subplots(**kwargs)
+
+    color_cycle = cycler(color=_NEW_TAB10)
+    ax.set_prop_cycle(color_cycle)
+
+    # could be done with one plot command, but...
+    nv = ds.v.size
+    for i in range(nv):
+        ts_i = ds.isel(v=i)
+        x = ts_i.x
+        y = ts_i.y
+        l, = ax.plot(x, y, lw=0.5, alpha=0.5)
+        # highlight starting position
+        ax.plot(x[0], y[0], &#39;o&#39;, c=l.get_color())
+
+
+    ax.set(
+        xlabel=&#34;$x$&#34;,
+        ylabel=&#34;$y$&#34;,
+        title=&#34;Vortons&#34;,
+    )
+
+    ax.set_aspect(&#34;equal&#34;, &#34;box&#34;)
+
+    fig.tight_layout()</code></pre>
+</details>
+</dd>
+<dt id="vorts.plot.ps_data"><code class="name flex">
+<span>def <span class="ident">ps_data</span></span>(<span>ds, iv_ref=0, *, xtol=0.01)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>From full set of data, extract data corresponding to times for the Poincare Section.</p>
+<p>We find the times when the reference vorton is in a certain place
+or passing through a certain plane (TODO).</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>iv_ref</code></strong> :&ensp;<code>int</code></dt>
+<dd>index of the vorton to use for reference</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\plot.py#L93-L122" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def ps_data(ds, iv_ref=0, *, xtol=1e-2):
+    &#34;&#34;&#34;From full set of data, extract data corresponding to times for the Poincare Section.
+
+    We find the times when the reference vorton is in a certain place
+    or passing through a certain plane (TODO).
+
+    Parameters
+    ----------
+    iv_ref : int
+        index of the vorton to use for reference
+
+    &#34;&#34;&#34;
+    # initial position
+    r0_ref = ds.isel(t=0, v=iv_ref)
+    x0 = r0_ref.x#.values
+    # y0 = r0_ref.y#.values
+
+    # xtol = 1e-2
+    # ytol = 1e-2
+
+    # TODO: need to be more careful. should make wrt. center-of-vort, ...
+    # cond = (np.abs(ds.x - x0) &lt;= xtol) &amp; (np.abs(ds.y - y0) &lt;= ytol) &amp; (ds.v == iv_ref)
+    # cond = (np.abs(ds.x - x0) &lt;= xtol) &amp; (ds.v == iv_ref)
+    cond = (np.abs(ds.x - x0) &lt;= xtol) &amp; (ds.y &gt; 0) &amp; (ds.v == iv_ref)
+    ds_ps_ref = ds.where(cond, drop=True)
+    t_ps = ds_ps_ref.t  # ps times
+
+    ds_ps = ds.sel(t=t_ps)
+
+    return ds_ps</code></pre>
+</details>
+</dd>
+<dt id="vorts.plot.remove_frame"><code class="name flex">
+<span>def <span class="ident">remove_frame</span></span>(<span>ax=None, *, keep_title=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Remove ticks, tick labels, and frame (spines).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/USER/PROJECT/blob/5428ae02a3a93400c69313bb357c9a76df6c09d6/vorts\plot.py#L193-L202" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def remove_frame(ax=None, *, keep_title=True):
+    &#34;&#34;&#34;Remove ticks, tick labels, and frame (spines).&#34;&#34;&#34;
+    if ax is None:
+        ax = plt.gca()
+
+    frame_only(ax, keep_ax_labels=False, keep_title=keep_title)
+
+    ax.set(
+        frame_on=False,
+    )</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<h1 style="margin-top: -16px;">
+<a class="homelink" rel="home" title="vorts Home" href="https://zmoon.github.io/vorts/">
+vorts
+</a>
+</h1>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = 'search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="vorts" href="index.html">vorts</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="vorts.plot.frame_only" href="#vorts.plot.frame_only">frame_only</a></code></li>
+<li><code><a title="vorts.plot.plot_ps" href="#vorts.plot.plot_ps">plot_ps</a></code></li>
+<li><code><a title="vorts.plot.plot_tracer_trajectories" href="#vorts.plot.plot_tracer_trajectories">plot_tracer_trajectories</a></code></li>
+<li><code><a title="vorts.plot.plot_vorton_trajectories" href="#vorts.plot.plot_vorton_trajectories">plot_vorton_trajectories</a></code></li>
+<li><code><a title="vorts.plot.ps_data" href="#vorts.plot.ps_data">ps_data</a></code></li>
+<li><code><a title="vorts.plot.remove_frame" href="#vorts.plot.remove_frame">remove_frame</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<span style="color:#777777">&copy; Z. Moon 2020</span>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+</footer>
+</body>
+</html>
