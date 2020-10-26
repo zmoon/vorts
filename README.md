@@ -2,7 +2,8 @@
 
 Integrate a system of *N* point vortices.
 
-Created for the PSU class METEO 523 – Modeling the climate system.
+[pdoc3](https://pdoc3.github.io/pdoc/) documentation:
+<https://zmoon.github.io/vorts>
 
 ## Equations
 
@@ -11,6 +12,7 @@ Created for the PSU class METEO 523 – Modeling the climate system.
     alt="N-vortex system of equations in 2 dimensions."
     width=300>
 </div>
+
 
 ## Example visualizations
 
@@ -23,8 +25,14 @@ Releasing tracers into the rotating *N*-vortex system:
 Also includes tool for making Poincare plots, given a sufficiently long run with a large number (e.g. 100) of tracers. You can make pretty pictures like this:
 ![example Poincare section plot](./examples/img/ps_theta60deg.png)
 
+
+## Notes
+
+Originally created for the PSU class METEO 523 – Modeling the climate system.
+
+
 ## TODO:
 
 * [x] Add the Poincare output as an option to the Fortran code
-* [ ] Convert the two test scripts to a Jupyter Notebook (Jupytext) for example
+* [x] Convert the two test scripts to a Jupyter Notebook (Jupytext) for example
 * [ ] Write Python interface to the Fortran version as practice?
