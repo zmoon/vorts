@@ -1,7 +1,7 @@
 
-Build documentation from in here by running
+Build documentation from in here (`doc`) by running
 ```bash
-pdoc --html ../vorts
+pdoc --html --force --template-dir ./templates ../vorts
 ```
 
 This generates the site in `./html/vorts`.
