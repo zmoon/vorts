@@ -22,14 +22,13 @@ def integrate_scipy(
     G_col,
     *,
     # `solve_ivp` kwargs
-    method="RK45",
+    method: str = "RK45",
     max_step: float,
     **options,
 ):
-    """Integrate using `scipy.integrate.solve_ivp`.
+    """Integrate using [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html).
 
-    **options
-        passed through to `solve_ivp`
+    `**options` are passed through to `solve_ivp`.
     """
     from scipy.integrate import solve_ivp
 
@@ -82,24 +81,27 @@ def integrate_manual(
     G,
     x0,
     y0,
-    C_0: float,  # could be computed instead (so could be optional arg)
+    C_0: float,  # TODO: could be computed instead (so could be optional arg)
     t_eval,
     stepper,  # f(G, x, y)
     *,
-    adapt_tstep=False,
-    use_tqdm=True,
+    adapt_tstep: bool = False,
+    use_tqdm: bool = True,
     C_err_reltol: float = 1.0e-9,
     dt_min: float = 1.0e-4,
 
 ):
     """Integration routine for use with my handwritten FT/RK4 steppers.
 
-    Optional naive adaptive time-stepping.
+    Optional naive adaptive time-stepping by setting `adapt_tstep=True`.
 
+    Parameters
+    ----------
     t_eval : array_like
-        times to store
-        not including 0, which has already been stored
-
+        Times to store (not including $t=0$, which has already been stored).
+    stepper
+        A time stepping function that returns new positions after one step,
+        e.g., one from the `vorts.py.integ.MANUAL_STEPPERS` dict.
     """
     if adapt_tstep:
         use_tqdm = False  # override this for now
@@ -181,23 +183,20 @@ def integrate_manual(
 
 
 def calc_lsqd_xy(x1, y1, x2, y2):
-    """Calculate intervortical distance $l^2$."""
+    """Calculate intervortical distance $l^2$, using positions to compute `dx` and `dy`."""
     return (x1-x2)**2 + (y1-y2)**2
 
 
 def calc_lsqd_diff(dx, dy):
-    """Calculate intervortical distance $l^2$."""
+    """Calculate intervortical distance $l^2$, passing in already-computed `dx` and `dy`."""
     return dx**2 + dy**2
 
 
 def calc_C(G, x, y):
-    """Calculate $C$ at time $l$.
-
-    $C$ is supposed to be a conserved quantity in this system.
-    - Chamecki (2005) eq. 15
+    r"""Calculate $C$ at time $l$ (see equation and info in `vorts.vortons.Vortons.C`).
 
     We use deparature from $C_0$ (initial value of $C$) in the adaptive stepping
-    to see if we need to go back and step with smaller dt.
+    to see if we need to go back and step with smaller $\delta t$.
     """
     nv = x.size  # number of vortons
 
@@ -218,7 +217,7 @@ def calc_C(G, x, y):
 
 
 def calc_tend_vec(G, x, y):
-    """Calculate both x- and y-tend written in a vectorized way."""
+    """Calculate both $x$- and $y$-tend written in a vectorized way."""
     # a more-optimized calculation trying to reduce mem usage / repetition
     # but still is slower than RK4_3 (at least for nt=2000, 3 vortons)
     # (seems to overtake RK4_3 in performance as increase N (vortons))
@@ -240,9 +239,12 @@ def calc_tend_vec(G, x, y):
 
 @numba.njit
 def calc_tend_vec_premesh(G, X, Y):
-    """Calculate both x- and y-tend vectorized,
-    but must pass in x and y in meshgrid form.
-    Numba doesn't support `np.meshgrid`.
+    """Calculate both $x$- and $y$-tend vectorized, but they must be passed in in meshgrid form.
+
+    Note that Numba [doesn't support](https://numba.pydata.org/numba-doc/dev/reference/numpysupported.html) `numpy.meshgrid`.
+
+    .. note::
+       This function is wrapped with `numba.njit`.
     """
     # with pre-calculated meshgrid so can use Numba
     dx = X - X.T
@@ -261,6 +263,9 @@ def calc_tend_vec_premesh(G, X, Y):
 def calc_tend(G, x, y):
     """Calculate tendencies for each vorton (or tracer).
     Using explicit loops intead of vector(ized) operations.
+
+    .. note::
+       This function is wrapped with `numba.njit`.
     """
     # pre-allocate
     dxdt = np.zeros(x.size)
@@ -285,7 +290,7 @@ def calc_tend(G, x, y):
 
 
 def calc_tend_one(xi, yi, Gn, xn, yn):
-    """Calculate tendencies for one position based on others.
+    """Calculate tendencies for one position (`xi`, `yi`) based on others (`Gn`, `xn`, `yn`).
     Using explicit loops intead of vector(ized) operations.
     """
     dxdt, dydt = 0, 0
@@ -348,8 +353,12 @@ def RK4_step_1b1(G, x0_all, y0_all, dt: float):
     """Step using RK4.
 
     One vorton at a time.
-    **This doesn't work for RK4 since we have sub-steps where the tendencies due to
-    all other vortons need to be up to date or we introduce error.**
+
+    .. warning::
+       This doesn't work for RK4 since we have sub-steps where the tendencies due to
+       all other vortons need to be up to date or we introduce error.
+
+       So don't use this if you want to get a good solution.
     """
     # pre-allocate
     nv = x0_all.size
@@ -425,6 +434,7 @@ MANUAL_STEPPERS = {
     'RK4': RK4_step,
     'RK4_1b1': RK4_step_1b1,
 }
+"""Time steppers (return new positions after stepping forward in time once)."""
 
 # for selecting tend fn when creating model, like stepper with `int_scheme_name`
 # TODO: implement selecting these when creating model
