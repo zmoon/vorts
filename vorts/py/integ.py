@@ -26,9 +26,15 @@ def integrate_scipy(
     max_step: float,
     **options,
 ):
-    """Integrate using [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html).
+    r"""Integrate using [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html),
+    to which `**options` are passed, along with `t_eval`, `method`, and `max_step`.
 
-    `**options` are passed through to `solve_ivp`.
+    Parameters
+    ----------
+    y0 : array_like
+        Vorton state as a single column, e.g., from `vorts.vortons.Vortons.state_vec`.
+    G_col : array_like
+        Array of $\Gamma$ values as a column vector, e.g., from `vorts.vortons.Vortons.G_col`.
     """
     from scipy.integrate import solve_ivp
 
@@ -97,6 +103,11 @@ def integrate_manual(
 
     Parameters
     ----------
+    G, x0, y0 : array_like
+        Vectors of $\Gamma$ and initial positions ($x$, $y$) for the system of vortons.
+    C_0: float
+        Initial of value of $C$ (see description in `vorts.vortons.Vortons.C`)
+        to compare to if doing adaptive time stepping.
     t_eval : array_like
         Times to store (not including $t=0$, which has already been stored).
     stepper
