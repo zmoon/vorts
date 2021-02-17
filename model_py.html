@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.1" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>vorts.model_py API documentation</title>
 <meta name="description" content="Driver for the Python version." />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
@@ -40,7 +40,7 @@ src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/e2ed4ff05af7136eb6cfbfb37cd67f4e71556969/vorts\model_py.py#L0-L120" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/1bd2bef90a0f04a5a35b34a60d689cb99b954fad/vorts\model_py.py#L0-L130" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 Driver for the Python version.
@@ -75,29 +75,39 @@ class Model_py(ModelBase):
         int_scheme_name=&#39;scipy_RK45&#39;,
         **int_scheme_kwargs,
     ):
-        &#34;&#34;&#34;Create model.
+        r&#34;&#34;&#34;
 
         Parameters
         ----------
-        vortons : Vortons
-            default: equilateral triangle with all G=1
+        vortons : vorts.vortons.Vortons
+            default: equilateral triangle with inscribing circle radius of $1$ and all $G=1$.
 
-        tracers : Tracers (optional)
+        tracers : vorts.vortons.Tracers
             default: no tracers
 
         dt : float
-            time step for the output
-            for the integrators, `dt` is used as the constant or maximum integration time step
-            depending on the integration scheme
+            Time step $\delta t$ for the output.
+            Additionally, for the integrators, `dt` is used as the constant or maximum integration time step
+            depending on the integration scheme.
         nt : int
-            number of time steps to run (not including t=0)
+            Number of time steps to run (not including $t=0$).
 
         int_scheme_name : str
-            default: &#39;RK4_3&#39; (handwritten basic RK4 stepper)
+            Time integration scheme name.
+
+            default: `&#39;scipy_RK45&#39;` (the default method of [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html))
+
+            Other currently valid options are:
+
+            * `&#39;scipy_DOP853&#39;` -- also from SciPy, higher-order RK method `&#39;DOP853&#39;` is written in Python like `&#39;RK45&#39;`
+
+            * `&#39;FT&#39;` -- handwritten 1st-order forward Euler
+
+            * `&#39;RK4&#39;` -- handwritten standard RK4
 
         **int_scheme_kwargs
-            passed on to `integrate_manual` or `integrate_scipy`
-            see their signatures
+            Passed on to `vorts.py.integ.integrate_manual` or `vorts.py.integ.integrate_scipy`.
+
         &#34;&#34;&#34;
         # call base initialization
         super().__init__(vortons, tracers, dt=dt, nt=nt)
@@ -180,29 +190,42 @@ class Model_py(ModelBase):
 </code></dt>
 <dd>
 <div class="desc"><p>Model in Python.</p>
-<p>Create model.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>vortons</code></strong> :&ensp;<code>Vortons</code></dt>
-<dd>default: equilateral triangle with all G=1</dd>
-<dt><strong><code>tracers</code></strong> :&ensp;<code>Tracers (optional)</code></dt>
+<dt><strong><code>vortons</code></strong> :&ensp;<code><a title="vorts.vortons.Vortons" href="vortons.html#vorts.vortons.Vortons">Vortons</a></code></dt>
+<dd>default: equilateral triangle with inscribing circle radius of $1$ and all $G=1$.</dd>
+<dt><strong><code>tracers</code></strong> :&ensp;<code><a title="vorts.vortons.Tracers" href="vortons.html#vorts.vortons.Tracers">Tracers</a></code></dt>
 <dd>default: no tracers</dd>
 <dt><strong><code>dt</code></strong> :&ensp;<code>float</code></dt>
-<dd>time step for the output
-for the integrators, <code>dt</code> is used as the constant or maximum integration time step
-depending on the integration scheme</dd>
+<dd>Time step $\delta t$ for the output.
+Additionally, for the integrators, <code>dt</code> is used as the constant or maximum integration time step
+depending on the integration scheme.</dd>
 <dt><strong><code>nt</code></strong> :&ensp;<code>int</code></dt>
-<dd>number of time steps to run (not including t=0)</dd>
+<dd>Number of time steps to run (not including $t=0$).</dd>
 <dt><strong><code>int_scheme_name</code></strong> :&ensp;<code>str</code></dt>
-<dd>default: 'RK4_3' (handwritten basic RK4 stepper)</dd>
+<dd>
+<p>Time integration scheme name.</p>
+<p>default: <code>'scipy_RK45'</code> (the default method of <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html"><code>scipy.integrate.solve_ivp</code></a>)</p>
+<p>Other currently valid options are:</p>
+<ul>
+<li>
+<p><code>'scipy_DOP853'</code> &ndash; also from SciPy, higher-order RK method <code>'DOP853'</code> is written in Python like <code>'RK45'</code></p>
+</li>
+<li>
+<p><code>'FT'</code> &ndash; handwritten 1st-order forward Euler</p>
+</li>
+<li>
+<p><code>'RK4'</code> &ndash; handwritten standard RK4</p>
+</li>
+</ul>
+</dd>
 <dt><strong><code>**int_scheme_kwargs</code></strong></dt>
-<dd>passed on to <code>integrate_manual</code> or <code>integrate_scipy</code>
-see their signatures</dd>
+<dd>Passed on to <code><a title="vorts.py.integ.integrate_manual" href="py/integ.html#vorts.py.integ.integrate_manual">integrate_manual()</a></code> or <code><a title="vorts.py.integ.integrate_scipy" href="py/integ.html#vorts.py.integ.integrate_scipy">integrate_scipy()</a></code>.</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/e2ed4ff05af7136eb6cfbfb37cd67f4e71556969/vorts\model_py.py#L16-L121" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/1bd2bef90a0f04a5a35b34a60d689cb99b954fad/vorts\model_py.py#L16-L131" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Model_py(ModelBase):
     &#34;&#34;&#34;Model in Python.&#34;&#34;&#34;
@@ -222,29 +245,39 @@ see their signatures</dd>
         int_scheme_name=&#39;scipy_RK45&#39;,
         **int_scheme_kwargs,
     ):
-        &#34;&#34;&#34;Create model.
+        r&#34;&#34;&#34;
 
         Parameters
         ----------
-        vortons : Vortons
-            default: equilateral triangle with all G=1
+        vortons : vorts.vortons.Vortons
+            default: equilateral triangle with inscribing circle radius of $1$ and all $G=1$.
 
-        tracers : Tracers (optional)
+        tracers : vorts.vortons.Tracers
             default: no tracers
 
         dt : float
-            time step for the output
-            for the integrators, `dt` is used as the constant or maximum integration time step
-            depending on the integration scheme
+            Time step $\delta t$ for the output.
+            Additionally, for the integrators, `dt` is used as the constant or maximum integration time step
+            depending on the integration scheme.
         nt : int
-            number of time steps to run (not including t=0)
+            Number of time steps to run (not including $t=0$).
 
         int_scheme_name : str
-            default: &#39;RK4_3&#39; (handwritten basic RK4 stepper)
+            Time integration scheme name.
+
+            default: `&#39;scipy_RK45&#39;` (the default method of [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html))
+
+            Other currently valid options are:
+
+            * `&#39;scipy_DOP853&#39;` -- also from SciPy, higher-order RK method `&#39;DOP853&#39;` is written in Python like `&#39;RK45&#39;`
+
+            * `&#39;FT&#39;` -- handwritten 1st-order forward Euler
+
+            * `&#39;RK4&#39;` -- handwritten standard RK4
 
         **int_scheme_kwargs
-            passed on to `integrate_manual` or `integrate_scipy`
-            see their signatures
+            Passed on to `vorts.py.integ.integrate_manual` or `vorts.py.integ.integrate_scipy`.
+
         &#34;&#34;&#34;
         # call base initialization
         super().__init__(vortons, tracers, dt=dt, nt=nt)
@@ -362,7 +395,7 @@ const query = new URL(window.location).searchParams.get('q');
 if (query)
 search(query);
 function search(query) {
-const url = 'search.html#' + encodeURIComponent(query);
+const url = '../doc-search.html#' + encodeURIComponent(query);
 new tingle.modal({
 cssClass: ['modal-dialog'],
 onClose: () => {
@@ -396,7 +429,7 @@ setTimeout(() => input.focus(), 100);
 </main>
 <footer id="footer">
 <span style="color:#777777">&copy; Z. Moon 2020</span>
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 </body>
 </html>

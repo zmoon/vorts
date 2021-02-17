@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.1" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>vorts.model_f API documentation</title>
 <meta name="description" content="Python driver for the Fortran version." />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
@@ -40,16 +40,14 @@ src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/e2ed4ff05af7136eb6cfbfb37cd67f4e71556969/vorts\model_f.py#L0-L173" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/1bd2bef90a0f04a5a35b34a60d689cb99b954fad/vorts\model_f.py#L0-L174" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 Python driver for the Fortran version.
 &#34;&#34;&#34;
-# import copy
 import os
 from pathlib import Path
 import subprocess
-# import sys
 
 import numpy as np
 
@@ -63,7 +61,8 @@ assert (FORT_BASE_DIR / &#34;src&#34;).exists()  # make sure that this is the ri
 
 
 def fort_bool(b: bool):
-    &#34;&#34;&#34;Convert Python boolean to string of the Fortran form.&#34;&#34;&#34;
+    &#34;&#34;&#34;Convert Python boolean to a string of the Fortran form.&#34;&#34;&#34;
+    # TODO: shorten
     if b:
         return &#34;.true.&#34;
     else:
@@ -71,9 +70,10 @@ def fort_bool(b: bool):
 
 
 class Model_f(ModelBase):
-    &#34;&#34;&#34;Thin wrapper for functionality of the Fortran model in `src/`.
+    &#34;&#34;&#34;Thin wrapper for functionality of the Fortran model, whose source code is in `vorts/f/src/`.
 
-    In this implementation we communicate with the Fortran program via text files.
+    .. note::
+       In this implementation we communicate with the Fortran program via text files.
     &#34;&#34;&#34;
     # _allowed_int_scheme_names = (&#34;FT&#34;, &#34;RK4&#34;)
 
@@ -91,26 +91,27 @@ class Model_f(ModelBase):
         write_tracers=False,
         write_ps=False,
     ):
-        &#34;&#34;&#34;Initialize and create inputs for the Fortran model.
+        r&#34;&#34;&#34;
 
         Parameters
         ----------
-        vortons : Vortons
-            default: equilateral triangle with all G=1
+        vortons : vorts.vortons.Vortons
+            default: equilateral triangle with inscribing circle radius of $1$ and all $G=1$.
 
-        tracers : Tracers (optional)
+        tracers : vorts.vortons.Tracers
             default: no tracers
 
         dt : float
-            time step for the output
-            for the integrators, `dt` is used as the constant or maximum integration time step
-            depending on the integration scheme
+            Time step $\delta t$ for the output.
+            Additionally, for the integrators, `dt` is used as the constant or maximum integration time step
+            depending on the integration scheme.
         nt : int
-            number of time steps to run (not including t=0)
+            Number of time steps to run (not including $t=0$).
 
         int_scheme_name : str
-            default: &#39;RK4_3&#39; (handwritten basic RK4 stepper)
+            Time integration scheme name.
 
+            options: `&#39;RK4&#39;` (standard RK4; default), `&#39;FT&#39;` (1st-order forward Euler)
 
         &#34;&#34;&#34;
         # call base initialization
@@ -138,7 +139,7 @@ class Model_f(ModelBase):
 
     def create_inputs(self):
         &#34;&#34;&#34;
-        Create input files for the Fotran model
+        Create input files for the Fortran model
           describing the initial condition
           and the simulation settings.
         &#34;&#34;&#34;
@@ -229,14 +230,15 @@ class Model_f(ModelBase):
 <span>def <span class="ident">fort_bool</span></span>(<span>b: bool)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Convert Python boolean to string of the Fortran form.</p></div>
+<div class="desc"><p>Convert Python boolean to a string of the Fortran form.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/e2ed4ff05af7136eb6cfbfb37cd67f4e71556969/vorts\model_f.py#L21-L26" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/1bd2bef90a0f04a5a35b34a60d689cb99b954fad/vorts\model_f.py#L19-L25" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def fort_bool(b: bool):
-    &#34;&#34;&#34;Convert Python boolean to string of the Fortran form.&#34;&#34;&#34;
+    &#34;&#34;&#34;Convert Python boolean to a string of the Fortran form.&#34;&#34;&#34;
+    # TODO: shorten
     if b:
         return &#34;.true.&#34;
     else:
@@ -253,33 +255,39 @@ class Model_f(ModelBase):
 <span>(</span><span>vortons: <a title="vorts.vortons.Vortons" href="vortons.html#vorts.vortons.Vortons">Vortons</a> = None, tracers: <a title="vorts.vortons.Tracers" href="vortons.html#vorts.vortons.Tracers">Tracers</a> = None, *, dt=0.1, nt=1000, int_scheme_name='RK4', write_vortons=True, write_tracers=False, write_ps=False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Thin wrapper for functionality of the Fortran model in <code>src/</code>.</p>
+<div class="desc"><p>Thin wrapper for functionality of the Fortran model, whose source code is in <code>vorts/f/src/</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
 <p>In this implementation we communicate with the Fortran program via text files.</p>
-<p>Initialize and create inputs for the Fortran model.</p>
+</div>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>vortons</code></strong> :&ensp;<code>Vortons</code></dt>
-<dd>default: equilateral triangle with all G=1</dd>
-<dt><strong><code>tracers</code></strong> :&ensp;<code>Tracers (optional)</code></dt>
+<dt><strong><code>vortons</code></strong> :&ensp;<code><a title="vorts.vortons.Vortons" href="vortons.html#vorts.vortons.Vortons">Vortons</a></code></dt>
+<dd>default: equilateral triangle with inscribing circle radius of $1$ and all $G=1$.</dd>
+<dt><strong><code>tracers</code></strong> :&ensp;<code><a title="vorts.vortons.Tracers" href="vortons.html#vorts.vortons.Tracers">Tracers</a></code></dt>
 <dd>default: no tracers</dd>
 <dt><strong><code>dt</code></strong> :&ensp;<code>float</code></dt>
-<dd>time step for the output
-for the integrators, <code>dt</code> is used as the constant or maximum integration time step
-depending on the integration scheme</dd>
+<dd>Time step $\delta t$ for the output.
+Additionally, for the integrators, <code>dt</code> is used as the constant or maximum integration time step
+depending on the integration scheme.</dd>
 <dt><strong><code>nt</code></strong> :&ensp;<code>int</code></dt>
-<dd>number of time steps to run (not including t=0)</dd>
+<dd>Number of time steps to run (not including $t=0$).</dd>
 <dt><strong><code>int_scheme_name</code></strong> :&ensp;<code>str</code></dt>
-<dd>default: 'RK4_3' (handwritten basic RK4 stepper)</dd>
+<dd>
+<p>Time integration scheme name.</p>
+<p>options: <code>'RK4'</code> (standard RK4; default), <code>'FT'</code> (1st-order forward Euler)</p>
+</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/e2ed4ff05af7136eb6cfbfb37cd67f4e71556969/vorts\model_f.py#L29-L174" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/1bd2bef90a0f04a5a35b34a60d689cb99b954fad/vorts\model_f.py#L28-L175" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Model_f(ModelBase):
-    &#34;&#34;&#34;Thin wrapper for functionality of the Fortran model in `src/`.
+    &#34;&#34;&#34;Thin wrapper for functionality of the Fortran model, whose source code is in `vorts/f/src/`.
 
-    In this implementation we communicate with the Fortran program via text files.
+    .. note::
+       In this implementation we communicate with the Fortran program via text files.
     &#34;&#34;&#34;
     # _allowed_int_scheme_names = (&#34;FT&#34;, &#34;RK4&#34;)
 
@@ -297,26 +305,27 @@ depending on the integration scheme</dd>
         write_tracers=False,
         write_ps=False,
     ):
-        &#34;&#34;&#34;Initialize and create inputs for the Fortran model.
+        r&#34;&#34;&#34;
 
         Parameters
         ----------
-        vortons : Vortons
-            default: equilateral triangle with all G=1
+        vortons : vorts.vortons.Vortons
+            default: equilateral triangle with inscribing circle radius of $1$ and all $G=1$.
 
-        tracers : Tracers (optional)
+        tracers : vorts.vortons.Tracers
             default: no tracers
 
         dt : float
-            time step for the output
-            for the integrators, `dt` is used as the constant or maximum integration time step
-            depending on the integration scheme
+            Time step $\delta t$ for the output.
+            Additionally, for the integrators, `dt` is used as the constant or maximum integration time step
+            depending on the integration scheme.
         nt : int
-            number of time steps to run (not including t=0)
+            Number of time steps to run (not including $t=0$).
 
         int_scheme_name : str
-            default: &#39;RK4_3&#39; (handwritten basic RK4 stepper)
+            Time integration scheme name.
 
+            options: `&#39;RK4&#39;` (standard RK4; default), `&#39;FT&#39;` (1st-order forward Euler)
 
         &#34;&#34;&#34;
         # call base initialization
@@ -344,7 +353,7 @@ depending on the integration scheme</dd>
 
     def create_inputs(self):
         &#34;&#34;&#34;
-        Create input files for the Fotran model
+        Create input files for the Fortran model
           describing the initial condition
           and the simulation settings.
         &#34;&#34;&#34;
@@ -434,17 +443,17 @@ depending on the integration scheme</dd>
 <span>def <span class="ident">create_inputs</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create input files for the Fotran model
+<div class="desc"><p>Create input files for the Fortran model
 describing the initial condition
 and the simulation settings.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/e2ed4ff05af7136eb6cfbfb37cd67f4e71556969/vorts\model_f.py#L95-L121" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/1bd2bef90a0f04a5a35b34a60d689cb99b954fad/vorts\model_f.py#L96-L122" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_inputs(self):
     &#34;&#34;&#34;
-    Create input files for the Fotran model
+    Create input files for the Fortran model
       describing the initial condition
       and the simulation settings.
     &#34;&#34;&#34;
@@ -518,7 +527,7 @@ const query = new URL(window.location).searchParams.get('q');
 if (query)
 search(query);
 function search(query) {
-const url = 'search.html#' + encodeURIComponent(query);
+const url = '../doc-search.html#' + encodeURIComponent(query);
 new tingle.modal({
 cssClass: ['modal-dialog'],
 onClose: () => {
@@ -560,7 +569,7 @@ setTimeout(() => input.focus(), 100);
 </main>
 <footer id="footer">
 <span style="color:#777777">&copy; Z. Moon 2020</span>
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 </body>
 </html>
