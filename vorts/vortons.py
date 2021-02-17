@@ -1,5 +1,5 @@
 """
-`Vorton` class and `Vortons` container class.
+`Vorton`/`Tracer` classes and `Vortons`/`Tracers` container classes.
 """
 from typing import NamedTuple
 import warnings
@@ -10,15 +10,26 @@ import xarray as xr
 
 # new Vorton -- doesn't know its history, just current state
 class Vorton(NamedTuple):
+    """A vorton that knows its current state (position and strength)."""
     G: float
+    r"""$\Gamma$, the strength of the circulation, with sign to indicate direction.
+
+    See also
+    --------
+    Vortons : For a more detailed description.
+    """
     x: float
+    """$x$ position"""
     y: float
+    """$y$ position"""
 
 
 class Tracer(NamedTuple):
-    """Tracer -- a vorton with G=0 (no power)."""
+    r"""Tracer -- a vorton with $\Gamma=0$ (no circulation/mass) that knows its current position."""
     x: float
+    """$x$ position"""
     y: float
+    """$y$ position"""
 
 
 # TODO: PointVortices ABC that implements adding, has position state_mat, n, x, y, state_vec, etc.
@@ -29,12 +40,13 @@ class Tracer(NamedTuple):
 class Tracers:
     """Collection of `Tracer`s."""
     def __init__(self, x, y):
-        """Create tracer collection.
-
+        """
         Parameters
         ----------
-        x, y : array_like (n_vortons,)
-            tracer initial x and y positions
+        x, y : array_like
+            shape: `(n_vortons,)`
+
+            Tracer initial $x$ and $y$ positions.
         """
         x = np.asarray(x, dtype=np.float)
         y = np.asarray(y, dtype=np.float)
@@ -80,7 +92,6 @@ class Tracers:
         xy = points_spiral(n, **kwargs).T
         return Tracers(*xy)
 
-
     def plot(self, *, connect=False):
         import matplotlib.pyplot as plt
 
@@ -101,24 +112,30 @@ class Tracers:
 
 
 
-
 # could exchange x,y for r at some point, to open 3-d option more easily
 class Vortons:
     """Collection of `Vorton`s."""
     def __init__(self, G, x, y):
-        r"""Create vorton collection.
+        r"""
 
         Parameters
         ----------
-        G, x, y : array_like (n_vortons,)
-            G: Gamma (strength of the circulation, with sign to indicate direction)
-                In fluid dynamics, circulation $\Gamma$ is the line integral of velocity
-                or flux of vorticity vectors through a surface (here the xy-plane).
-            x: x position
-            y: y position
+        G, x, y : array_like
+            shape: `(n_vortons,)`
+
+            `G`: $\Gamma$s ("G" for [Gamma](https://en.wikipedia.org/wiki/Gamma)).
+
+            $\Gamma$ represents the strength of the circulation, with sign to indicate direction.
+            In fluid dynamics, circulation $\Gamma$ is the line integral of velocity
+            or flux of vorticity vectors through a surface (here the xy-plane).
+
+            `x`: $x$ positions
+
+            `y`: $y$ positions
 
         """
         self.G = np.asarray(G)
+        r"""Array of vorton strengths ($\Gamma$)."""
         if np.any(self.G == 0):
             warnings.warn(
                 "Tracers should be in a `Tracers` instance. "
@@ -129,6 +146,7 @@ class Vortons:
         x = np.asarray(x, dtype=np.float)
         y = np.asarray(y, dtype=np.float)
         self.state_mat = np.column_stack((x, y))
+        """2-d array of $(x, y)$ coordinates -- each row is the coordinate of one vorton."""
 
         assert self.G.ndim == 1 and self.state_mat.shape[1] == 2
         assert self.G.size == self.state_mat.shape[0]  # n_vortons
@@ -141,26 +159,27 @@ class Vortons:
     # maybe shouldn't be, to emphasize that state_mat is the real data
     # @property
     def state_vec(self):
-        """Return flattened state matrix (G not included).
+        """Return flattened state matrix (`Vortons.state_mat`; `Vortons.G` not included).
 
         Needed to feed to `scipy.integrate.solve_ivp`,
         which requires a 1-d array for the `y0` input.
         """
-        return self.state_mat.T.flatten()
+        return self.state_mat.T.flatten()  # TODO: change to ravel, to return view when possible
 
     # @property
     def state_mat_full(self):
-        """Return full state matrix: G and positions."""
+        """Return full state matrix: (`Vortons.G`, `Vortons.x`, `Vortons.y`) as 3 columns."""
         return np.column_stack((self.G, self.state_mat))
 
     # seems to return a view into self.G, so ok to be property
     @property
     def G_col(self):
-        """G as a column vector."""
+        """`Vortons.G` as a column vector."""
         return self.G[:, np.newaxis]
 
     @property
     def x(self):
+        """Array of $x$ positions (a view into `Vortons.state_mat`)."""
         # slice indexing should give just a view into `self.state_mat`
         # thus `self.x.base` will return the state mat
         # i.e., `vs.x.base is vs.state_mat`
@@ -168,6 +187,7 @@ class Vortons:
 
     @property
     def y(self):
+        """Array of $y$ positions (a view into `Vortons.state_mat`)."""
         return self.state_mat[:,1]
 
     @property
@@ -195,7 +215,7 @@ class Vortons:
         $$
 
         $C$ is supposed to be a conserved quantity in this system.
-        - Chamecki (2005) eq. 15, which references Aref (1979)
+        -- Chamecki (2005) eq. 15, which references Aref (1979)
         """
         n_vortons = self.n
         G = self.G
@@ -270,7 +290,7 @@ class Vortons:
 
     def plot(self):
         """Plot the vortons.
-        (Only their current positions, which are all this container knows about.)
+        (Only their current positions, which are all `Vortons` knows about.)
         """
         import matplotlib.pyplot as plt
 
@@ -285,10 +305,10 @@ class Vortons:
         ax.plot(x[Gp], y[Gp], "o", ms=7, c=c_Gp, label=r"$\Gamma > 0$")
         ax.plot(x[Gm], y[Gm], "o", ms=7, c=c_Gm, label=r"$\Gamma < 0$")
 
-        # plot center-of-mass
+        # plot center of mass
         x_cm, y_cm = self.cm()
         s_cm = f"({x_cm:.4g}, {y_cm:.4g})"
-        ax.plot(x_cm, y_cm, "*", ms=13, c="gold", label=f"center-of-mass\n{s_cm}")
+        ax.plot(x_cm, y_cm, "*", ms=13, c="gold", label=f"center of mass\n{s_cm}")
 
         # 2nd mom
         x_cm2, y_cm2 = self.mom(2)
@@ -315,18 +335,18 @@ class Vortons:
 
 
     def mom(self, n, *, abs_G=False, center=False):
-        """Compute `n`-th moment.
+        r"""Compute `n`-th moment.
 
         Parameters
         ----------
         n : int
-            which moment
-            https://en.wikipedia.org/wiki/Moment_(mathematics)
-        abs_G : bool, optional (default False)
-            whether to take the absolute value of G values
-        center : bool, optional (default True)
-            True: evaluate moment wrt. center-of-mass
-            False: evaluate moment wrt. (0, 0)
+            Which [moment](https://en.wikipedia.org/wiki/Moment_(mathematics)) to calculate.
+        abs_G : bool
+            Whether to take the absolute value of the $\Gamma$ values (false by default).
+        center : bool
+            `True`: evaluate moment wrt. center of mass from `Vortons.cm`
+
+            `False`: evaluate moment wrt. $(0, 0)$
         """
         # seems like a moment but that might not be the correct terminology...
         G = self.G_col
@@ -345,14 +365,20 @@ class Vortons:
 
 
     # Chamecki notes suggest this should be called "center of vorticity" or "linear impulse"
-    def cm(self):
-        """Compute center-of-mass using Gamma as mass."""
+    def center_of_mass(self):
+        r"""Compute [center of mass](https://en.wikipedia.org/wiki/Center_of_mass#A_system_of_particles)
+        using $\Gamma$ (`Vortons.G`) as mass.
+        Equivalent to `Vortons.mom` with `n=1`, `abs_G=True` (currently), `center=False`.
+        """
         # TODO: what impact should sign of G have on cm? mass is always pos. but G can be neg.
         return self.mom(1, abs_G=True, center=False)
 
+    def cm(self):
+        """Alias for `Vortons.center_of_mass`."""
+        return self.center_of_mass()
 
     def center_coords(self, inplace=False):
-        """Make center-of-mass (0, 0)."""
+        """Make $(0, 0)$ the center of mass."""
         xy_cm = self.cm()
         x_cm, y_cm = xy_cm
         if not inplace:
@@ -363,19 +389,20 @@ class Vortons:
 
     @staticmethod
     def regular_polygon(n, *, G=None, **kwargs):
-        """Create Vortons with positions corresponding to regular polygon.
+        r"""Create Vortons with positions corresponding to regular polygon.
 
         Parameters
         ----------
         n : int
-            polygon order
+            Polygon order.
         G : int, array-like, optional
-            Gamma value(s) to use
-            single value or array of values
+            $\Gamma$ value(s) to use.
+
+            Single value or array of values
+
             default: 1.0
 
-        `**kwargs` are passed on to `vortons.regular_polygon_vertices`.
-        See signature there.
+        `**kwargs` are passed on to `regular_polygon_vertices`.
         """
         if G is None:
             G = 1.0  # default
@@ -394,8 +421,7 @@ class Vortons:
     def isos_triangle(*, G=None, **kwargs):
         """Create Vortons with isosceles triangle vertices.
 
-        `**kwargs` are passed on to `vortons.isos_triangle_vertices`.
-        See signature there.
+        `**kwargs` are passed on to `isos_triangle_vertices`.
         """
         G = _maybe_fill_G(G, 3)
 
@@ -405,10 +431,12 @@ class Vortons:
 
 
     def maybe_with_tracers(self, tracers: Tracers = None):
-        """Return new `Vortons` with the tracers.
-        (Temporary? hack to get full state_vec)
+        """Return new `Vortons` with the tracers (maybe) included.
 
-        If `Tracers` is `None`, just return `self`.
+        .. caution::
+           Temporary? hack to get full (combined) `state_vec` for the whole system.
+
+        If `Tracers` is `None`, just returns `self`.
         """
         if tracers is None:
             return self
@@ -427,19 +455,29 @@ class Vortons:
 
     # TODO: indexing dunder methods
 
-    # TODO: overload addition
+    # TODO: overload addition and such
 
     # TODO: class method to take List[Vorton] and return a Vortons?
 
 
 
 
-def points_randn():
+def points_randn():  # TODO
     raise NotImplementedError
 
 
 def points_randu(n, *, c=(0, 0), dx=2, dy=2):
-    """Sample from 2-d uniform."""
+    """Sample from 2-d uniform.
+
+    Parameters
+    ----------
+    n : int
+        Number of points.
+    c : array_like
+        Coordinates of the center ($x_c$, $y_c$).
+    dx, dy : float
+        $x$ positions will be sampled from $[$`-dx`, `dx`$)$, and $y$ similarly.
+    """
     c = np.asarray(c)
     x = np.random.uniform(-dx, dx, (n,))
     y = np.random.uniform(-dy, dy, (n,))
@@ -447,7 +485,21 @@ def points_randu(n, *, c=(0, 0), dx=2, dy=2):
 
 
 def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
-    """Create spiral of points."""
+    """Create spiral of points.
+
+    Parameters
+    ----------
+    n : int
+        Number of points.
+    c : array_like
+        Coordinates of the center ($x_c$, $y_c$).
+    rmin : float
+        Minimum radius (distance from the center for the innermost point).
+    rmax : float
+        Maximum radius (distance from the center for the outermost point).
+    revs : float
+        Total number of revolutions in the spiral.
+    """
     c = np.asarray(c)
 
     rad = np.linspace(rmin, rmax, n)  # radius
@@ -462,7 +514,7 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
     return rad[:, np.newaxis] * rhat + c
 
 
-def points_grid():
+def points_grid():  # TODO
     raise NotImplementedError
 
 
@@ -478,11 +530,12 @@ def _maybe_fill_G(G, n):
     return G
 
 
-def rotmat_2d(ang_deg):
+def rotmat_2d(ang_deg):  # TODO: could lru_cache?
     """Return rotation matrix for rotation `ang_deg` in degrees.
     For left-multiplication of a column position vector.
 
-    Note: `scipy.spatial.transform.Rotation` can be used for 3-d rotations.
+    .. note::
+       `scipy.spatial.transform.Rotation` can be used for 3-d rotations.
     """
     ang = np.deg2rad(ang_deg)
     c, s = np.cos(ang), np.sin(ang)
@@ -496,19 +549,25 @@ def rotmat_2d(ang_deg):
 def rotate_2d(x, *, ang_deg=None, rotmat=None):
     """Rotate vector `x` by `ang_deg` degrees.
 
-    Either `ang_deg` or `rotmat` must be provided.
+    .. important::
+       Either `ang_deg` or `rotmat` can be provided to specify the degree of rotation, but not both.
+
+       If `ang_deg` is used, the rotation matrix will be computed with `rotmat_2d`, so
+       you can pass `rotmat` instead to avoid computing it multiple times.
 
     Parameters
     ----------
-    x : array-like (1-d)
-        the vector to be rotated
+    x : array_like
+        The vector to be rotated.
     ang_deg : int, float
-        degrees to rotate `x` about the origin
-        positive -> counter-clockwise
-    rotmat : array, shape (2, 2), optional
-        rotation matrix -- left-multiplies a column position vector to give rotated position
+        Degrees by which to rotate `x` about the origin.
 
-    Optionally can pass `rotmat` instead to avoid computing it multiple times.
+        positive $\to$ counter-clockwise rotation
+    rotmat : array_like
+        shape: `(2, 2)`
+
+        Rotation matrix -- left-multiplies a column position vector to give rotated position.
+
     """
     x = np.asarray(x)
     if ang_deg and rotmat:
@@ -531,11 +590,11 @@ def regular_polygon_vertices(n, *, c=(0, 0), r_c=1):
     Parameters
     ----------
     n : int
-        order (number of sides/vertices)
-    c : 2-tuple / array-like
-        center coordinate of the inscribing circle
+        Polygon order (number of sides/vertices).
+    c : array_like
+        Coordinates of the center of the inscribing circle ($x_c$, $y_c$).
     r_c : float, int
-        radius of the inscribing circle
+        Radius $r_c$ of the inscribing circle.
     """
     c = np.asarray(c)
 
@@ -554,17 +613,27 @@ def regular_polygon_vertices(n, *, c=(0, 0), r_c=1):
 
 
 def isos_triangle_vertices(*, theta_deg=None, Lambda=None):
-    """Isosceles triangle vertices.
-    With fixed top point (0, 1) and fixed left & right y=-0.5.
+    r"""Isosceles triangle vertices.
+    With fixed top point $(0, 1)$ and fixed left & right $y=-0.5$.
 
-    theta_deg : int, float
-        the two angles between the base and connections to the top point at (0,1)
-        72 -> Lambda_c (1/sqrt(2))
-        60 -> equi tri
+    .. important::
+       Either `theta_deg` or `Lambda` can be used to specify the angle, but not both.
+
+    Parameters
+    ----------
+    theta_deg : float
+        Value of the two angles $\theta$ between the horizontal base and connections to the top point at $(0,1)$
+        in degrees.
+
+        $\theta = 72^{\circ} \to \Lambda_c$ (equal to $1/\sqrt{2}$)
+
+        $\theta = 60^{\circ} \to$ equilateral triangle (can also create with `regular_polygon_vertices`,
+        which gives control over size and location)
 
     Lambda : float
-        in (0, 1]
-        1 -> equi tri
+        $\Lambda \in (0, 1]$. Related to $\theta$ by $\theta = \pi / (\Lambda^2 + 2)$
+
+        $\Lambda = 1 \to$ equilateral triangle
 
     """
     if (theta_deg is not None and Lambda is not None) or (theta_deg is None and Lambda is None):
