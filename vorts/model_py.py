@@ -31,29 +31,39 @@ class Model_py(ModelBase):
         int_scheme_name='scipy_RK45',
         **int_scheme_kwargs,
     ):
-        """Create model.
+        r"""
 
         Parameters
         ----------
-        vortons : Vortons
-            default: equilateral triangle with all G=1
+        vortons : vorts.vortons.Vortons
+            default: equilateral triangle with inscribing circle radius of $1$ and all $G=1$.
 
-        tracers : Tracers (optional)
+        tracers : vorts.vortons.Tracers
             default: no tracers
 
         dt : float
-            time step for the output
-            for the integrators, `dt` is used as the constant or maximum integration time step
-            depending on the integration scheme
+            Time step $\delta t$ for the output.
+            Additionally, for the integrators, `dt` is used as the constant or maximum integration time step
+            depending on the integration scheme.
         nt : int
-            number of time steps to run (not including t=0)
+            Number of time steps to run (not including $t=0$).
 
         int_scheme_name : str
-            default: 'RK4_3' (handwritten basic RK4 stepper)
+            Time integration scheme name.
+
+            default: `'scipy_RK45'` (the default method of [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html))
+
+            Other currently valid options are:
+
+            * `'scipy_DOP853'` -- also from SciPy, higher-order RK method `'DOP853'` is written in Python like `'RK45'`
+
+            * `'FT'` -- handwritten 1st-order forward Euler
+
+            * `'RK4'` -- handwritten standard RK4
 
         **int_scheme_kwargs
-            passed on to `integrate_manual` or `integrate_scipy`
-            see their signatures
+            Passed on to `vorts.py.integ.integrate_manual` or `vorts.py.integ.integrate_scipy`.
+
         """
         # call base initialization
         super().__init__(vortons, tracers, dt=dt, nt=nt)

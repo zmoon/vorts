@@ -8,6 +8,7 @@ import numpy as np
 
 
 # Tableau's newer version of tab10
+# https://www.tableau.com/about/blog/2016/7/colors-upgrade-tableau-10-56782
 _NEW_TAB10 = [
     "#4e79a7",
     "#f28e2b",
@@ -30,7 +31,12 @@ _NEW_TAB10 = [
 def plot_vorton_trajectories(ds, **kwargs):
     """Plot lines: one for each vorton's trajectory.
 
-    **kwargs are passed on to `plt.subplots()`
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        `hist` attribute of the model instance.
+    **kwargs
+        Passed on to [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
     """
     # select vortons
     iv = ds.G != 0
@@ -65,7 +71,15 @@ def plot_vorton_trajectories(ds, **kwargs):
 
 # note much shared with vorton traj plot
 def plot_tracer_trajectories(ds, **kwargs):
-    """Plot tracer trajectories."""
+    """Plot tracer trajectories.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        `hist` attribute of the model instance.
+    **kwargs
+        Passed on to [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
+    """
     # select tracers
     it = ds.G == 0  # tracers boolean
     ds = ds.sel(v=it)
@@ -98,9 +112,17 @@ def ps_data(ds, iv_ref=0, *, xtol=1e-2):
 
     Parameters
     ----------
+    ds : xarray.Dataset
+        `hist` attribute of the model instance.
     iv_ref : int
-        index of the vorton to use for reference
+        Index of the vorton to use for reference.
+    xtol : float
+        Tolerance to use when searching for timesteps when the reference vorton is in its original position.
 
+    Returns
+    -------
+    xarray.Dataset
+        Only consisting of the timesteps when the reference vorton is approximately in the desired position.
     """
     # initial position
     r0_ref = ds.isel(t=0, v=iv_ref)
@@ -127,12 +149,23 @@ def plot_ps(ds, *, iv_ref=0, **kwargs):
 
     Here using the data set of all data.
 
-    `**kwargs` are passed on to either `ps_data()` (if applicable) or `plt.subplots()`
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Output from `ps_data`.
+    iv_ref : int
+        Index of the vorton to use for reference.
+    **kwargs
+        Passed on to either `ps_data()` (if applicable) or [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
+
+    See also
+    --------
+    ps_data
     """
     # subset
     # first take only the kwargs we want
     # TODO: there's got to be a less awkward way to do this...
-    ps_data_kwarg_keys = ["xtol", ]  # could get using `inspect`
+    ps_data_kwarg_keys = ["xtol", ]  # TODO: could get using `inspect`
     ps_data_kwargs = {k: kwargs.pop(k) for k in ps_data_kwarg_keys if k in kwargs}
     ds = ps_data(ds, iv_ref, **ps_data_kwargs)
 
@@ -163,7 +196,7 @@ def plot_ps(ds, *, iv_ref=0, **kwargs):
 
 
 def frame_only(ax=None, *, keep_ax_labels=True, keep_title=True):
-    """Remove ticks and tick labels from `ax`."""
+    """Remove ticks and tick labels from `ax` (uses current by default)."""
     if ax is None:
         ax = plt.gca()
 
@@ -191,7 +224,7 @@ def frame_only(ax=None, *, keep_ax_labels=True, keep_title=True):
 
 
 def remove_frame(ax=None, *, keep_title=True):
-    """Remove ticks, tick labels, and frame (spines)."""
+    """Remove ticks, tick labels, and frame (spines) from `ax` (uses current by default)."""
     if ax is None:
         ax = plt.gca()
 
