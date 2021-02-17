@@ -26,7 +26,7 @@ def fort_bool(b: bool):
 
 
 class Model_f(ModelBase):
-    """Thin wrapper for functionality of the Fortran model in `src/`.
+    """Thin wrapper for functionality of the Fortran model, whose source code is in `vorts/f/src/`.
 
     .. note::
        In this implementation we communicate with the Fortran program via text files.
