@@ -51,10 +51,10 @@ class Model_f(ModelBase):
 
         Parameters
         ----------
-        vortons : Vortons
+        vortons : vorts.vortons.Vortons
             default: equilateral triangle with inscribing circle radius of $1$ and all $G=1$.
 
-        tracers : Tracers
+        tracers : vorts.vortons.Tracers
             default: no tracers
 
         dt : float

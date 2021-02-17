@@ -26,10 +26,9 @@ def integrate_scipy(
     max_step: float,
     **options,
 ):
-    """Integrate using `scipy.integrate.solve_ivp`.
+    """Integrate using [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html).
 
-    **options
-        passed through to `solve_ivp`
+    `**options` are passed through to `solve_ivp`.
     """
     from scipy.integrate import solve_ivp
 
@@ -94,12 +93,12 @@ def integrate_manual(
 ):
     """Integration routine for use with my handwritten FT/RK4 steppers.
 
-    Optional naive adaptive time-stepping.
+    Optional naive adaptive time-stepping by setting `adapt_tstep=True`.
 
+    Parameters
+    ----------
     t_eval : array_like
-        times to store
-        not including 0, which has already been stored
-
+        Times to store (not including $t=0$, which has already been stored).
     """
     if adapt_tstep:
         use_tqdm = False  # override this for now
