@@ -1,11 +1,9 @@
 """
 Python driver for the Fortran version.
 """
-# import copy
 import os
 from pathlib import Path
 import subprocess
-# import sys
 
 import numpy as np
 
@@ -19,7 +17,8 @@ assert (FORT_BASE_DIR / "src").exists()  # make sure that this is the right spot
 
 
 def fort_bool(b: bool):
-    """Convert Python boolean to string of the Fortran form."""
+    """Convert Python boolean to a string of the Fortran form."""
+    # TODO: shorten
     if b:
         return ".true."
     else:
@@ -29,7 +28,8 @@ def fort_bool(b: bool):
 class Model_f(ModelBase):
     """Thin wrapper for functionality of the Fortran model in `src/`.
 
-    In this implementation we communicate with the Fortran program via text files.
+    .. note::
+       In this implementation we communicate with the Fortran program via text files.
     """
     # _allowed_int_scheme_names = ("FT", "RK4")
 
@@ -47,26 +47,27 @@ class Model_f(ModelBase):
         write_tracers=False,
         write_ps=False,
     ):
-        """Initialize and create inputs for the Fortran model.
+        r"""
 
         Parameters
         ----------
         vortons : Vortons
-            default: equilateral triangle with all G=1
+            default: equilateral triangle with inscribing circle radius of $1$ and all $G=1$.
 
-        tracers : Tracers (optional)
+        tracers : Tracers
             default: no tracers
 
         dt : float
-            time step for the output
-            for the integrators, `dt` is used as the constant or maximum integration time step
-            depending on the integration scheme
+            Time step $\delta t$ for the output.
+            Additionally, for the integrators, `dt` is used as the constant or maximum integration time step
+            depending on the integration scheme.
         nt : int
-            number of time steps to run (not including t=0)
+            Number of time steps to run (not including $t=0$).
 
         int_scheme_name : str
-            default: 'RK4_3' (handwritten basic RK4 stepper)
+            Time integration scheme name.
 
+            options: `'RK4'` (standard RK4; default), `'FT'` (1st-order forward Euler)
 
         """
         # call base initialization
@@ -94,7 +95,7 @@ class Model_f(ModelBase):
 
     def create_inputs(self):
         """
-        Create input files for the Fotran model
+        Create input files for the Fortran model
           describing the initial condition
           and the simulation settings.
         """
