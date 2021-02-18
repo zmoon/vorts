@@ -14,6 +14,9 @@ dependencies:
   - cycler
   - tqdm
   #
+  # dev
+  - pytest
+  #
   # for docs
   - pip
   - pip:
