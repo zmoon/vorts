@@ -2,10 +2,11 @@
 
 Integrate a system of *N* point vortices.
 
+[![Tests status](https://github.com/zmoon/vorts/workflows/Test/badge.svg)](https://github.com/zmoon/vorts/actions?query=workflow%3ATest)
+
 * [pdoc3](https://pdoc3.github.io/pdoc/) documentation:
   [zmoon.github.io/vorts](https://zmoon.github.io/vorts)
 * GitHub: [zmoon/vorts](https://github.com/zmoon/vorts)
-
 
 ## Equations
 
