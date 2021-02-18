@@ -536,7 +536,8 @@ def rotmat_2d(ang_deg):  # TODO: could lru_cache?
     For left-multiplication of a column position vector.
 
     .. note::
-       `scipy.spatial.transform.Rotation` can be used for 3-d rotations.
+       [`scipy.spatial.transform.Rotation`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.html)
+       can be used for 3-d rotations.
     """
     ang = np.deg2rad(ang_deg)
     c, s = np.cos(ang), np.sin(ang)
