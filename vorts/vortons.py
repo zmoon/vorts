@@ -127,7 +127,7 @@ class Vortons:
 
             $\Gamma$ represents the strength of the circulation, with sign to indicate direction.
             In fluid dynamics, circulation $\Gamma$ is the line integral of velocity
-            or flux of vorticity vectors through a surface (here the xy-plane).
+            or flux of vorticity vectors through a surface (here the $xy$-plane).
 
             `x`: $x$ positions
 
@@ -549,7 +549,7 @@ def rotmat_2d(ang_deg):  # TODO: could lru_cache?
 
 
 def rotate_2d(x, *, ang_deg=None, rotmat=None):
-    """Rotate vector `x` by `ang_deg` degrees.
+    r"""Rotate vector `x` by `ang_deg` degrees.
 
     .. important::
        Either `ang_deg` or `rotmat` can be provided to specify the degree of rotation, but not both.
