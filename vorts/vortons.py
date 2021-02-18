@@ -48,8 +48,8 @@ class Tracers:
 
             Tracer initial $x$ and $y$ positions.
         """
-        x = np.asarray(x, dtype=np.float)
-        y = np.asarray(y, dtype=np.float)
+        x = np.asarray(x, dtype=float)
+        y = np.asarray(y, dtype=float)
 
         assert x.shape == y.shape and x.ndim == 1
 
@@ -143,8 +143,8 @@ class Vortons:
             )
 
         # the state matrix has shape (n_vortons, n_pos_dims) (G excluded since time-invariant)
-        x = np.asarray(x, dtype=np.float)
-        y = np.asarray(y, dtype=np.float)
+        x = np.asarray(x, dtype=float)
+        y = np.asarray(y, dtype=float)
         self.state_mat = np.column_stack((x, y))
         """2-d array of $(x, y)$ coordinates -- each row is the coordinate of one vorton."""
 
@@ -507,7 +507,7 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
 
     deg_tot = revs*360
     rotmat = rotmat_2d(deg_tot/n)
-    rhat = np.full((n, 2), (0, 1), dtype=np.float)  # rhat: unit vectors
+    rhat = np.full((n, 2), (0, 1), dtype=float)  # rhat: unit vectors
     for i in range(1, n):
         rhat[i, :] = rotate_2d(rhat[i-1, :], rotmat=rotmat)
     # TODO: here would be simpler to do polar coords first then convert to x,y
@@ -605,7 +605,7 @@ def regular_polygon_vertices(n, *, c=(0, 0), r_c=1):
     # rotation matrix -- left-multiplies a column position vector to give rotated position
     rotmat = rotmat_2d(360/n)
 
-    verts = np.full((n, 2), vert0, dtype=np.float)
+    verts = np.full((n, 2), vert0, dtype=float)
     # successive rotations
     for i in range(1, n):
         verts[i, :] = rotate_2d(verts[i-1, :], rotmat=rotmat)
