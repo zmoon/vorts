@@ -388,7 +388,7 @@ class Vortons:
 
 
     @staticmethod
-    def regular_polygon(n, *, G=None, **kwargs):
+    def regular_polygon(n, *, G=None, **kwargs):  # TODO: this and the below should be made classmethod since they return class instance
         r"""Create Vortons with positions corresponding to regular polygon.
 
         Parameters
