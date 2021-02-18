@@ -97,7 +97,7 @@ def integrate_manual(
     dt_min: float = 1.0e-4,
 
 ):
-    """Integration routine for use with my handwritten FT/RK4 steppers.
+    r"""Integration routine for use with my handwritten FT/RK4 steppers.
 
     Optional naive adaptive time-stepping by setting `adapt_tstep=True`.
 

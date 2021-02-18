@@ -27,7 +27,7 @@ ts.plot()
 
 m = vorts.Model_f(
     vs, ts,
-    dt=0.005, nt=2e6,
+    dt=0.05, nt=2e5,  # 0.005, 2e6 to get better Poincare, but only use this with `write_ps` only to avoid writing large tracer files!
     int_scheme_name='RK4',
     write_vortons=True,  # default `True`
     write_tracers=True,  # default `False`
