@@ -1,5 +1,5 @@
 """
-Integration routines and time steppers in Python.
+Integration routines in Python.
 
 The integration functions `vorts.py.integ.integrate_manual` and `vorts.py.integ.integrate_scipy`
 are available here (in the `vorts.py` namespace).

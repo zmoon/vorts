@@ -161,8 +161,9 @@ class Vortons:
     def state_vec(self):
         """Return flattened state matrix (`Vortons.state_mat`; `Vortons.G` not included).
 
-        Needed to feed to `scipy.integrate.solve_ivp`,
-        which requires a 1-d array for the `y0` input.
+        If using `vorts.py.integ.integrate_scipy`,
+        this is needed to feed to [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html),
+        which requires a 1-d array for its `y0` input.
         """
         return self.state_mat.T.flatten()  # TODO: change to ravel, to return view when possible
 
