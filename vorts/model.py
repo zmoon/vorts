@@ -4,6 +4,7 @@ directing input and collecting output, etc.
 """
 import abc
 import copy
+import glob
 import os
 import subprocess
 import warnings
@@ -389,12 +390,13 @@ class Model_f(ModelBase):
         # exe_abs = str(self.vorts_exe_path)
         exe_rel = str(self.vorts_exe_path.relative_to(FORT_BASE_DIR))
         cmd = exe_rel
+        # print(cmd)
 
         # invoke the Fortran model's executable
         cwd = os.getcwd()
         os.chdir(FORT_BASE_DIR)
-        os.system('rm ./out/*')
-        # print(cmd)
+        for f in glob.glob('./out/*'):  # non-hidden files
+            os.remove(f)
         self.oe = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
         os.chdir(cwd)
         # ^ hack for now, but could instead pass FORT_BASE_DIR into the Fortran program
