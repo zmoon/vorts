@@ -346,11 +346,6 @@ class Model_f(ModelBase):
 
         # executing the model
         self.vorts_exe_path = FORT_BASE_DIR / 'bin/vorts.exe'
-        if not self.vorts_exe_path.exists():
-            raise Exception(
-                f"{self.vorts_exe_path!r} doesn't exist. "
-                "The Fortran code must first be compiled to produce this file."
-            )
         self.oe = ''  # we will store standard output and error here
 
         # write the text input files to directory `vorts/f/in`
@@ -384,9 +379,26 @@ class Model_f(ModelBase):
         np.savetxt(FORT_BASE_DIR / 'in/vorts_sim_in.txt', mat,
                    delimiter=' ', fmt='%s')
 
+    def _maybe_try_compile(self):
+        """Try to run `make` if the executable is missing."""
+        if not self.vorts_exe_path.exists():
+            cwd = os.getcwd()
+            os.chdir(FORT_BASE_DIR / "src")
+            print(f"{self.vorts_exe_path!r} doesn't exist, attempting to `make`.\n")
+            try:
+                subprocess.run("make")
+            except Exception as e:
+                raise Exception(
+                    f"Attempted `make` failed with exception (see above). "
+                    "The Fortran code must be compiled before running!"
+                ) from e
+            finally:
+                os.chdir(cwd)
+
     # implement abstract method `_run`
     def _run(self):
         """Invoke the Fortran model's executable and load the results."""
+        self._maybe_try_compile()
         # exe_abs = str(self.vorts_exe_path)
         exe_rel = str(self.vorts_exe_path.relative_to(FORT_BASE_DIR))
         cmd = exe_rel
