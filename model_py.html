@@ -40,7 +40,7 @@ src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/3f164e8c574abcc8ec5ccabc915b82924df8c88e/vorts\model_py.py#L0-L130" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/5c4b20e78c1e40aa7180f01ae852894a184b7492/vorts\model_py.py#L0-L134" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 Driver for the Python version.
@@ -56,6 +56,10 @@ from ._model import ModelBase
 from .py import (integrate_manual, integrate_scipy, MANUAL_STEPPERS, SCIPY_METHODS)
 from .vortons import Vortons, Tracers
 
+
+__pdoc__ = {
+    &#34;Model_py.run&#34;: True,
+}
 
 class Model_py(ModelBase):
     &#34;&#34;&#34;Model in Python.&#34;&#34;&#34;
@@ -225,7 +229,7 @@ depending on the integration scheme.</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/3f164e8c574abcc8ec5ccabc915b82924df8c88e/vorts\model_py.py#L16-L131" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/5c4b20e78c1e40aa7180f01ae852894a184b7492/vorts\model_py.py#L20-L135" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Model_py(ModelBase):
     &#34;&#34;&#34;Model in Python.&#34;&#34;&#34;
@@ -346,8 +350,17 @@ depending on the integration scheme.</dd>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>vorts._model.ModelBase</li>
+<li><a title="vorts._model.ModelBase" href="_model.html#vorts._model.ModelBase">ModelBase</a></li>
 <li>abc.ABC</li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="vorts._model.ModelBase" href="_model.html#vorts._model.ModelBase">ModelBase</a></b></code>:
+<ul class="hlist">
+<li><code><a title="vorts._model.ModelBase.plot" href="_model.html#vorts._model.ModelBase.plot">plot</a></code></li>
+<li><code><a title="vorts._model.ModelBase.run" href="_model.html#vorts._model.ModelBase.run">run</a></code></li>
+</ul>
+</li>
 </ul>
 </dd>
 </dl>

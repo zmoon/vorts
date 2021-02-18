@@ -64,16 +64,14 @@ you can make pretty pictures like this:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/3f164e8c574abcc8ec5ccabc915b82924df8c88e/vorts\__init__.py#L0-L9" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/5c4b20e78c1e40aa7180f01ae852894a184b7492/vorts\__init__.py#L0-L7" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 vorts -- point vortex models
 
 .. include:: ../README.md
 &#34;&#34;&#34;
-
-from .model_py import Model_py
-from .model_f import Model_f
+from .model import Model_py, Model_f
 from .vortons import Vortons, Tracers
 from . import plot</code></pre>
 </details>
@@ -81,13 +79,10 @@ from . import plot</code></pre>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
-<dt><code class="name"><a title="vorts.model_f" href="model_f.html">vorts.model_f</a></code></dt>
+<dt><code class="name"><a title="vorts.model" href="model.html">vorts.model</a></code></dt>
 <dd>
-<div class="desc"><p>Python driver for the Fortran version.</p></div>
-</dd>
-<dt><code class="name"><a title="vorts.model_py" href="model_py.html">vorts.model_py</a></code></dt>
-<dd>
-<div class="desc"><p>Driver for the Python version.</p></div>
+<div class="desc"><p>Model classes that act as drivers for the integration routines,
+directing input and collecting output, etc.</p></div>
 </dd>
 <dt><code class="name"><a title="vorts.plot" href="plot.html">vorts.plot</a></code></dt>
 <dd>
@@ -178,8 +173,7 @@ setTimeout(() => input.focus(), 100);
 <ul id="index">
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
-<li><code><a title="vorts.model_f" href="model_f.html">vorts.model_f</a></code></li>
-<li><code><a title="vorts.model_py" href="model_py.html">vorts.model_py</a></code></li>
+<li><code><a title="vorts.model" href="model.html">vorts.model</a></code></li>
 <li><code><a title="vorts.plot" href="plot.html">vorts.plot</a></code></li>
 <li><code><a title="vorts.py" href="py/index.html">vorts.py</a></code></li>
 <li><code><a title="vorts.vortons" href="vortons.html">vorts.vortons</a></code></li>
