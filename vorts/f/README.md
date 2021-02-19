@@ -6,7 +6,13 @@
 To compile the Fortran model, navigate to `src` and run `make`.
 The `Makefile` will have to be adjusted if you don't want to use `gfortran`.
 
-The hello-world program can be used to test your Fortran installation.
+A simple program like this can be used to test your Fortran installation.
+```fortran
+! hello_world.f90
+program test
+  write(*, *) "Hello, world!"
+end program test
+```
 ```bash
 gfortran hello_world.f90 -o hello_world && ./hello_world
 ```
