@@ -1,34 +1,33 @@
-# This Makefile generates an executable (`../bin/vorts.exe`) for the main Fortran program.
+# This Makefile generates an executable (`../bin/vorts` or `../bin/vorts.exe` on Windows)
+# for the main Fortran program.
 
-# settings for gfortran
+# Settings for gfortran
 FC = gfortran
 CFLAGS = -O3 -std=f2008
 LFLAGS =
 
-# settings for ifort
+# Settings for ifort
 # FC = ifort
 # CFLAGS = -O3 -fast -free
 # LFLAGS =
 
+# Objects (order matters)
+OBJS = \
+	m_params.o \
+	m_vorts.o \
+	m_io.o \
+	main.o
 
 # Create executable
-OBJS = main.o m_vorts.o m_io.o
+EXE = ../bin/vorts
 vorts: $(OBJS)
-	$(FC) $(CFLAGS) -o ../bin/vorts.exe $(LFLAGS) $(OBJS)
+	$(FC) $(CFLAGS) -o $(EXE) $(LFLAGS) $(OBJS)
 
-# Objects
-m_params.o:./m_params.f90
-	$(FC) $(CFLAGS) -c $<
-
-m_vorts.o:./m_vorts.f90 m_params.o
-	$(FC) $(CFLAGS) -c $<
-
-m_io.o:./m_io.f90 m_params.o m_vorts.o
-	$(FC) $(CFLAGS) -c $<
-
-main.o:./main.f90 m_io.o m_vorts.o
+# Rule to make objects
+.SUFFIXES: .o .f90
+.f90.o:
 	$(FC) $(CFLAGS) -c $<
 
 .PHONY: clean
 clean:
-	rm -f -r *.o *.mod ../bin/vorts.exe ../bin/vorts
+	rm -f -r *.o *.mod $(EXE)
