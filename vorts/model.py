@@ -6,6 +6,7 @@ import abc
 import copy
 import glob
 import os
+import platform
 import subprocess
 import warnings
 from pathlib import Path
@@ -345,7 +346,8 @@ class Model_f(ModelBase):
         self.f_write_out_ps = write_ps
 
         # executing the model
-        self.vorts_exe_path = FORT_BASE_DIR / 'bin/vorts'
+        exe_name = 'vorts.exe' if platform.system() == 'Windows' else 'vorts'
+        self.vorts_exe_path = FORT_BASE_DIR / 'bin' / exe_name
         self.oe = ''  # we will store standard output and error here
 
         # write the text input files to directory `vorts/f/in`
