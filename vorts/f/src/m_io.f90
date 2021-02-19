@@ -56,8 +56,6 @@ contains
 
 
   !> Load sim settings from normal text file
-  ! type(SimSettings) function settings_from_txt(fp) result(settings)
-  ! function settings_from_txt(fp='./in/settings.txt') result(settings)
   function settings_from_txt(fp) result(settings)
     character(len=*), intent(in) :: fp
     type(SimSettings) :: settings
@@ -80,40 +78,12 @@ contains
 
     settings%dt = dt
     settings%n_timesteps = nt
-    ! settings%n_vortons = n_vortons
-    ! settings%n_tracers = n_tracers
-    ! settings%n_total = n_vortons + n_tracers
     settings%integration_routine_name = trim(integration_routine_name)
     settings%write_vortons = write_vortons
     settings%write_tracers = write_tracers
     settings%write_ps = write_ps
 
   end function settings_from_txt
-
-
-  ! !> Return array of Vorton, reading initial position and G value from text file
-  ! function vortons_from_txt(ifname, n, skiprows=1) result(vortons)
-  !   character(len=*), intent(in) :: ifname
-  !   integer, intent(in) :: n  ! number of vortons (to allocate)
-  !   integer, intent(in) :: skiprows
-  !   type(Vorton), dimension(:), allocatable :: vortons
-  !   integer :: i, iline
-
-  !   allocate(vortons(n))
-
-  !   open(unit=10, file='./in/vorts_in.txt')
-  !   do iline = 1, n + skiprows
-  !     if ( iline <= skiprows ) then
-  !       read(10, *)
-  !     else
-  !       i = iline - skiprows
-  !       read(10, *) Gamma, xi, yi
-  !       vortons(i) = Vorton(Gamma, xi, yi, nt)
-  !     end if
-  !   end do
-  !   close(10)
-
-  ! end function vortons_from_txt
 
 
   !> Parse input, creating the `Vortons` and `SimSettings` instances
@@ -178,7 +148,7 @@ contains
     integer, intent(out) :: num_vorton_lines, num_header_lines
     integer :: iline, ios
     character(len=1) :: firstchar
-    integer, parameter :: maxrecs=1001
+    integer, parameter :: maxrecs = 1001
 
     open(unit=10, file=trim(ifname))
     num_vorton_lines = 0
@@ -207,7 +177,7 @@ contains
     type(Vorton), dimension(:), intent(in) :: vortons
     type(SimSettings) :: settings
 
-    character(len=50) :: vortnum, f4
+    character(len=50) :: s_n_vortons, f1
     integer :: i, j
 
     associate( &
@@ -216,63 +186,47 @@ contains
       n_total => settings%n_total &
     )
 
-    !> save the results
-    write(vortnum, '(i0)') nt+1 - 1
-    f4 = '(g0.5, ' // trim(vortnum) // '(",", g0.5))'
-    ! print *, f4
+    !> Construct the format string for vorton/tracer CSV output
+    write(s_n_vortons, '(i0)') nt+1 - 1
+    f1 = '(g0.5, ' // trim(s_n_vortons) // '(",", g0.5))'
 
-    open(unit=101, file='./out/vortons.csv')
-    write(101, fmt=*) '# x1(1:nt); y1; x2; y2; ...'
-
-    open(unit=102, file='./out/tracers.csv')
-    write(102, fmt=*) '# x1(1:nt); y1; x2; y2; ...'
-
-    do i = 1, n_total
-
-      if ( i <= n_vortons ) then
-
-        if ( settings%write_vortons ) then
-          write(101, fmt=f4) vortons(i)%xhist
-          write(101, fmt=f4) vortons(i)%yhist
-        end if
-
-      else
-
-        if ( settings%write_tracers ) then
-          write(102, fmt=f4) vortons(i)%xhist
-          write(102, fmt=f4) vortons(i)%yhist
-        end if
-
-      end if
-    end do
-
-    close(101)
-    close(102)
-
-
-    !> Poincare section, using 2nd vorton (should be the one at the top, (0, 1)) as ref
-    if ( settings%write_ps ) then
-
-      open(unit=103, file='./out/ps.txt')
-      write(103, fmt=*) '# x y'
-
-      do j = 2, nt+1
-
-        do i = n_vortons+1, n_total  ! looping through tracers only
-
-          ! x[j] < xi[i]) & (x[j-1] > xi[i]) & (y[j] > 0
-          if ( vortons(2)%xhist(j) < 0. .and. vortons(2)%xhist(j-1) > 0. .and. vortons(2)%yhist(j) > 0 ) then
-
-            write(103, fmt=*) vortons(i)%xhist(j), vortons(i)%yhist(j)
-
-          end if
-
-        end do
+    !> Write vortons?
+    if ( settings%write_vortons ) then
+      open(unit=101, file='./out/vortons.csv')
+      write(101, fmt=*) '# x1(1:nt); y1; x2; y2; ...'
+      do i = 1, n_vortons
+          write(101, fmt=f1) vortons(i)%xhist
+          write(101, fmt=f1) vortons(i)%yhist
       end do
-
+      close(101)
     end if
 
-    close(103)
+    !> Write tracers?
+    if ( settings%write_tracers ) then
+      open(unit=102, file='./out/tracers.csv')
+      write(102, fmt=*) '# x1(1:nt); y1; x2; y2; ...'
+      do i = n_vortons + 1, n_total
+        write(102, fmt=f1) vortons(i)%xhist
+        write(102, fmt=f1) vortons(i)%yhist
+      end do
+      close(102)
+    end if
+
+    !> Write Poincare section?
+    !> ! Only works for equilateral triangle with 2nd vorton as top of triangle with x=0 !
+    if ( settings%write_ps ) then
+      open(unit=103, file='./out/ps.txt')
+      write(103, fmt=*) '# x y'
+      do j = 2, nt+1
+        do i = n_vortons+1, n_total  ! tracers only!
+          !> Check that x[j] < xi[i]) & (x[j-1] > xi[i]) & (y[j] > 0
+          if ( vortons(2)%xhist(j) < 0. .and. vortons(2)%xhist(j-1) > 0. .and. vortons(2)%yhist(j) > 0 ) then
+            write(103, fmt=*) vortons(i)%xhist(j), vortons(i)%yhist(j)
+          end if
+        end do
+      end do
+      close(103)
+    end if
 
     end associate
 
