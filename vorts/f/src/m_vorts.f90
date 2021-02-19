@@ -1,8 +1,4 @@
-!
-! module for advecting N vortons
-!   including vorton class and integration schemes which take arrays of vortons as input
-!
-
+!> Integration routines + Vorton type
 module m_vorts
   ! use omp_lib
   implicit none
@@ -22,11 +18,11 @@ module m_vorts
 
   !> Bound methods (Fortran procedures)
   ! contains
-    ! procedure :: calc_l => vorton_l  ! "intervortical distance"
+  !   procedure :: calc_l => vorton_l  ! "intervortical distance"
 
   end type Vorton
 
-  !> constructor for Vorton class
+  !> Specify constructor for Vorton class
   interface Vorton
     procedure construct_vorton
   end interface Vorton
@@ -54,7 +50,7 @@ contains
 
   !====== Other functions ==========================================================================
 
-  !> distance between one vorton and another, squared
+  !> Distance between one vorton and another, squared
   pure function calc_lsqd(x1, y1, x2, y2) result(lsqd)
     real(dp), intent(in) :: x1, y1, x2, y2  ! two sets of coords
     real(dp) :: lsqd
@@ -84,33 +80,17 @@ contains
       !> Sum contributions to the tendency of vorton `i`, which may be a normal vorton or tracer
       dxdti = 0
       dydti = 0
-      ! do j = 1, n_total
-      !   Gj  = G(j)
-
-      !   if ( i /= j .and. Gj /= 0.) then
-      !     x0j = x0(j)
-      !     y0j = y0(j)
-
-      !     lij_sqd = calc_lsqd(x0i, y0i, x0j, y0j)
-      !     dxdti = dxdti + (-1)/(2*pi) * Gj * (y0i-y0j) / lij_sqd
-      !     dydti = dydti +  1/(2*pi) * Gj * (x0i-x0j) / lij_sqd
-
-      !   end if
-
-      ! end do
       do j = 1, n_vortons  ! only vortons have G values, no tracers
-
         if ( i /= j ) then
           Gj  = G(j)
           x0j = x0(j)
           y0j = y0(j)
 
           lij_sqd = calc_lsqd(x0i, y0i, x0j, y0j)
+
           dxdti = dxdti + (-1)/(2*pi) * Gj * (y0i-y0j) / lij_sqd
           dydti = dydti +  1/(2*pi) * Gj * (x0i-x0j) / lij_sqd
-
         end if
-
       end do
 
       tends(1, i) = dxdti
@@ -136,8 +116,7 @@ contains
     real(dp), dimension(2,n_total) :: tends
     real(dp), dimension(n_total) :: xtend, ytend, xnew, ynew
 
-    !> prepare arrays for input into calc_tends
-    !  could be a separate subroutine as well
+    !> Prepare arrays for input into `calc_tends` (could be a separate subroutine)
     do i = 1, n_total
       G(i)  = vortons(i)%G
       x0(i) = vortons(i)%xhist(l-1)  ! TODO: just passing `vortons%xhist(l-1)`
@@ -151,7 +130,7 @@ contains
     xnew = x0 + xtend*dt
     ynew = y0 + ytend*dt
 
-    !> update hist values (could be separate subroutine)
+    !> Update hist values (could be separate subroutine)
     do i = 1, n_total
       vortons(i)%xhist(l) = xnew(i)
       vortons(i)%yhist(l) = ynew(i)
@@ -165,8 +144,8 @@ contains
 
   !> RK4 integration
   subroutine RK4_step(vortons, dt, l, n_total, n_vortons)
-    type(Vorton), intent(inout), dimension(:) :: vortons  ! save values to hists here
     ! type(SimSettings), intent(in) :: settings
+    type(Vorton), intent(inout), dimension(:) :: vortons  ! save values to hists here
     real(dp), intent(in) :: dt
     integer, intent(in)  :: l   ! time step to be calculated
     integer, intent(in)  :: n_total  ! num vortons + tracers
@@ -183,14 +162,14 @@ contains
                                     k1x, k2x, k3x, k4x, &
                                     k1y, k2y, k3y, k4y
 
-    !> prepare arrays for input into calc_tends
-    !  this could be a separate subroutine as since done in FT_step also
+    !> Prepare arrays for input into `calc_tends`
     do i = 1, n_total
       G(i)  = vortons(i)%G
       x0(i) = vortons(i)%xhist(l-1)
       y0(i) = vortons(i)%yhist(l-1)
     end do
 
+    !> RK4
     x1 = x0
     y1 = y0
     tends = calc_tends(G, x1, y1, n_total, n_vortons)
@@ -218,7 +197,7 @@ contains
     xnew = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
     ynew = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
 
-    !> update hist values (could be separate subroutine)
+    !> Update hist values
     do i = 1, n_total
       vortons(i)%xhist(l) = xnew(i)
       vortons(i)%yhist(l) = ynew(i)
