@@ -25,7 +25,7 @@ program lets_do_it
   end do
   print *, ''
   print *, 'And the first 10 tracers:'
-  print *, '  Tracer   xi      yi'
+  print *, '  Tracer    xi      yi'
   do i = settings%n_vortons + 1, settings%n_total
     print f1, i - settings%n_vortons, vortons(i)%xhist(1), vortons(i)%yhist(1)
     if ( (i - settings%n_vortons) == 10 ) exit
@@ -33,7 +33,7 @@ program lets_do_it
 
   !> Integrate
   print *, ''
-  print *, 'Now doing some integrating'
+  print *, 'Now integrating...'
   time_loop: do l = 2, settings%n_timesteps+1  ! start at 2 to not overwrite values in history
     if ( settings%integration_routine_name == 'FT' ) then  ! is there a way to assign subroutine to variable so as to avoid this if ?
 
@@ -51,6 +51,8 @@ program lets_do_it
   end do time_loop
 
   !> Write output
+  print *, ''
+  print *, 'Now writing output...'
   call write_output_txt(vortons, settings)
 
   !> Done!
