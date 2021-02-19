@@ -8,7 +8,7 @@ module m_io
 
   type :: SimSettings
     real(dp) :: dt  ! simulation time step
-    integer :: nt  ! number of time steps
+    integer :: n_timesteps  ! number of time steps
     integer :: n_vortons  ! number of vortons (first in the input)
     integer :: n_tracers  ! number of tracers (after vortons in the input)
     integer :: n_total  ! number of vortons + tracers
@@ -42,7 +42,7 @@ contains
   !   close(10)
 
   !   settings%dt = dt
-  !   settings%nt = nt
+  !   settings%n_timesteps = nt
   !   ! settings%n_vortons = n_vortons
   !   ! settings%n_tracers = n_tracers
   !   ! settings%n_total = n_vortons + n_tracers
@@ -78,7 +78,7 @@ contains
     close(9)
 
     settings%dt = dt
-    settings%nt = nt
+    settings%n_timesteps = nt
     ! settings%n_vortons = n_vortons
     ! settings%n_tracers = n_tracers
     ! settings%n_total = n_vortons + n_tracers
@@ -144,7 +144,7 @@ contains
         !> Read and add to the vortons array
         i = iline - skiprows  ! vorton index
         read(10, *) Gamma, xi, yi
-        vortons(i) = Vorton(Gamma, xi, yi, settings%nt)
+        vortons(i) = Vorton(Gamma, xi, yi, settings%n_timesteps)
 
         !> Increment counts
         if ( Gamma == 0 ) then
@@ -210,7 +210,7 @@ contains
     integer :: i, j
 
     associate( &
-      nt => settings%nt, &
+      nt => settings%n_timesteps, &
       n_vortons => settings%n_vortons, &
       n_total => settings%n_total &
     )

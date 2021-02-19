@@ -34,7 +34,7 @@ program lets_do_it
   !> Integrate
   print *, ''
   print *, 'Now doing some integrating'
-  time_loop: do l = 2, settings%nt+1  ! start at 2 to not overwrite values in history
+  time_loop: do l = 2, settings%n_timesteps+1  ! start at 2 to not overwrite values in history
     if ( settings%integration_routine_name == 'FT' ) then  ! is there a way to assign subroutine to variable so as to avoid this if ?
 
       call FT_step(vortons, settings%dt, l, settings%n_total, settings%n_vortons)
