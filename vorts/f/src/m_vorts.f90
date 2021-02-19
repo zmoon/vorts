@@ -4,6 +4,7 @@
 !
 
 module m_vorts
+  ! use omp_lib
   implicit none
 
   private
@@ -54,7 +55,7 @@ contains
   !====== Other functions ==========================================================================
 
   !> distance between one vorton and another, squared
-  function calc_lsqd(x1, y1, x2, y2) result(lsqd)
+  pure function calc_lsqd(x1, y1, x2, y2) result(lsqd)
     real(dp), intent(in) :: x1, y1, x2, y2  ! two sets of coords
     real(dp) :: lsqd
 
@@ -64,24 +65,43 @@ contains
 
 
   !> dxdt and dydt calculations
-  function calc_tends(G, x0, y0, n) result(tends)
+  function calc_tends(G, x0, y0, n_total, n_vortons) result(tends)
     real(dp), intent(in), dimension(:) :: G, x0, y0  ! arrays of coords and Gamma vals
-    integer, intent(in) :: n  ! num vortons + tracers
-    real(dp), dimension(2,n) :: tends
+    integer, intent(in) :: n_total  ! num vortons + tracers
+    integer, intent(in) :: n_vortons
+    real(dp), dimension(2,n_total) :: tends
 
     integer :: i, j
     real(dp) :: x0i, y0i, x0j, y0j, Gj, dxdti, dydti, lij_sqd
 
-    do i = 1, n
+    ! !$omp parallel private (i)
+    ! !$omp do
+    ! do i = 1, n_total
+    do concurrent (i = 1:n_total)
       x0i = x0(i)
       y0i = y0(i)
 
+      !> Sum contributions to the tendency of vorton `i`, which may be a normal vorton or tracer
       dxdti = 0
       dydti = 0
-      do j = 1, n
-        Gj  = G(j)
+      ! do j = 1, n_total
+      !   Gj  = G(j)
 
-        if ( i /= j .and. Gj /= 0.) then
+      !   if ( i /= j .and. Gj /= 0.) then
+      !     x0j = x0(j)
+      !     y0j = y0(j)
+
+      !     lij_sqd = calc_lsqd(x0i, y0i, x0j, y0j)
+      !     dxdti = dxdti + (-1)/(2*pi) * Gj * (y0i-y0j) / lij_sqd
+      !     dydti = dydti +  1/(2*pi) * Gj * (x0i-x0j) / lij_sqd
+
+      !   end if
+
+      ! end do
+      do j = 1, n_vortons  ! only vortons have G values, no tracers
+
+        if ( i /= j ) then
+          Gj  = G(j)
           x0j = x0(j)
           y0j = y0(j)
 
@@ -97,31 +117,34 @@ contains
       tends(2, i) = dydti
 
     end do
+    ! !$omp end do
+    ! !$omp end parallel
 
   end function calc_tends
 
 
   !> Euler forward integration (1st-order)
-  subroutine FT_step(vortons, dt, l, n)
+  subroutine FT_step(vortons, dt, l, n_total, n_vortons)
     type(Vorton), intent(inout), dimension(:) :: vortons  ! save values to hists here
     real(dp), intent(in) :: dt
     integer, intent(in)  :: l  ! time step to be calculated
-    integer, intent(in)  :: n  ! num vortons + tracers; TODO: try `parameter` and setting equal to `size(vortons)`
+    integer, intent(in)  :: n_total  ! num vortons + tracers; TODO: try `parameter` and setting equal to `size(vortons)`
+    integer, intent(in)  :: n_vortons
 
-    real(dp), dimension(n) :: G, x0, y0  ! arrays of coords and Gamma vals
+    real(dp), dimension(n_total) :: G, x0, y0  ! arrays of coords and Gamma vals
     integer :: i
-    real(dp), dimension(2,n) :: tends
-    real(dp), dimension(n) :: xtend, ytend, xnew, ynew
+    real(dp), dimension(2,n_total) :: tends
+    real(dp), dimension(n_total) :: xtend, ytend, xnew, ynew
 
     !> prepare arrays for input into calc_tends
     !  could be a separate subroutine as well
-    do i = 1, n
+    do i = 1, n_total
       G(i)  = vortons(i)%G
       x0(i) = vortons(i)%xhist(l-1)  ! TODO: just passing `vortons%xhist(l-1)`
       y0(i) = vortons(i)%yhist(l-1)
     end do
 
-    tends = calc_tends(G, x0, y0, n)
+    tends = calc_tends(G, x0, y0, n_total, n_vortons)
     xtend = tends(1,:)
     ytend = tends(2,:)
 
@@ -129,7 +152,7 @@ contains
     ynew = y0 + ytend*dt
 
     !> update hist values (could be separate subroutine)
-    do i = 1, n
+    do i = 1, n_total
       vortons(i)%xhist(l) = xnew(i)
       vortons(i)%yhist(l) = ynew(i)
     end do
@@ -141,26 +164,28 @@ contains
 
 
   !> RK4 integration
-  subroutine RK4_step(vortons, dt, l, n)
+  subroutine RK4_step(vortons, dt, l, n_total, n_vortons)
     type(Vorton), intent(inout), dimension(:) :: vortons  ! save values to hists here
+    ! type(SimSettings), intent(in) :: settings
     real(dp), intent(in) :: dt
     integer, intent(in)  :: l   ! time step to be calculated
-    integer, intent(in)  :: n  ! num vortons + tracers
+    integer, intent(in)  :: n_total  ! num vortons + tracers
+    integer, intent(in)  :: n_vortons
 
-    real(dp), dimension(n) :: G, x0, y0  ! arrays of coords and Gamma vals
+    real(dp), dimension(n_total) :: G, x0, y0  ! arrays of coords and Gamma vals
     integer :: i
     integer :: num_vortons
-    real(dp), dimension(2,n) :: tends
-    real(dp), dimension(n) :: xnew, ynew
+    real(dp), dimension(2,n_total) :: tends
+    real(dp), dimension(n_total) :: xnew, ynew
 
-    real(dp), dimension(n) :: x1, x2, x3, x4, &
-                              y1, y2, y3, y4, &
-                              k1x, k2x, k3x, k4x, &
-                              k1y, k2y, k3y, k4y
+    real(dp), dimension(n_total) :: x1, x2, x3, x4, &
+                                    y1, y2, y3, y4, &
+                                    k1x, k2x, k3x, k4x, &
+                                    k1y, k2y, k3y, k4y
 
     !> prepare arrays for input into calc_tends
     !  this could be a separate subroutine as since done in FT_step also
-    do i = 1, n
+    do i = 1, n_total
       G(i)  = vortons(i)%G
       x0(i) = vortons(i)%xhist(l-1)
       y0(i) = vortons(i)%yhist(l-1)
@@ -168,25 +193,25 @@ contains
 
     x1 = x0
     y1 = y0
-    tends = calc_tends(G, x1, y1, n)
+    tends = calc_tends(G, x1, y1, n_total, n_vortons)
     k1x = tends(1,:)
     k1y = tends(2,:)
 
     x2 = x0 + dt/2*k1x
     y2 = y0 + dt/2*k1y
-    tends = calc_tends(G, x2, y2, n)
+    tends = calc_tends(G, x2, y2, n_total, n_vortons)
     k2x = tends(1,:)
     k2y = tends(2,:)
 
     x3 = x0 + dt/2*k2x
     y3 = y0 + dt/2*k2y
-    tends = calc_tends(G, x3, y3, n)
+    tends = calc_tends(G, x3, y3, n_total, n_vortons)
     k3x = tends(1,:)
     k3y = tends(2,:)
 
     x4 = x0 + dt/1*k3x
     y4 = y0 + dt/1*k3y
-    tends = calc_tends(G, x4, y4, n)
+    tends = calc_tends(G, x4, y4, n_total, n_vortons)
     k4x = tends(1,:)
     k4y = tends(2,:)
 
@@ -194,7 +219,7 @@ contains
     ynew = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
 
     !> update hist values (could be separate subroutine)
-    do i = 1, n
+    do i = 1, n_total
       vortons(i)%xhist(l) = xnew(i)
       vortons(i)%yhist(l) = ynew(i)
     end do

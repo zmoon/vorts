@@ -34,21 +34,21 @@ program lets_do_it
   !> Integrate
   print *, ''
   print *, 'Now doing some integrating'
-  do l = 2, settings%nt+1  ! start at 2 to not overwrite values in history
+  time_loop: do l = 2, settings%nt+1  ! start at 2 to not overwrite values in history
     if ( settings%integration_routine_name == 'FT' ) then  ! is there a way to assign subroutine to variable so as to avoid this if ?
 
-      call FT_step(vortons, settings%dt, l, settings%n_total)
+      call FT_step(vortons, settings%dt, l, settings%n_total, settings%n_vortons)
 
     else if ( settings%integration_routine_name == 'RK4' ) then
 
-      call RK4_step(vortons, settings%dt, l, settings%n_total)
+      call RK4_step(vortons, settings%dt, l, settings%n_total, settings%n_vortons)
 
     else
 
       stop 'Invalid `integration_routine_name`'
 
     end if
-  end do
+  end do time_loop
 
   !> Write output
   call write_output_txt(vortons, settings)
