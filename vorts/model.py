@@ -102,7 +102,7 @@ class ModelBase(abc.ABC):
         """The number of vortons."""
 
         # initialize hist (an `xr.Dataset`)
-        v0 = self.vortons0.maybe_with_tracers(self.tracers0)  # TODO: this maybe should be private
+        v0 = self.vortons0.maybe_with_tracers(self.tracers0)  # TODO: change to `add_tracers` and/or overload addition (`__radd__`)
         # self.hist = init_hist(G, x0, y0, self.nv, self.nt, self.dt)
         self.hist = init_hist(self.nv + self.n_tracers, self.nt, self.dt)
         """An `xr.Dataset` with coordinates `'t'` (time) and `'v'` (vorton),
@@ -357,15 +357,20 @@ class Model_f(ModelBase):
           describing the initial condition
           and the simulation settings.
         """
-        # write vorton system initial state
-        mat = self.vortons0.state_mat_full()  # needs to be rows of G, xi, yi
-        np.savetxt(FORT_BASE_DIR / 'in/vorts_in.txt', mat,
-                   delimiter=' ', fmt='%.16f', header='Gamma xi yi')
+        # # write vorton system initial state
+        # mat = self.vortons0.state_mat_full()  # needs to be rows of G, xi, yi
+        # np.savetxt(FORT_BASE_DIR / 'in/vorts_in.txt', mat,
+        #            delimiter=' ', fmt='%.16f', header='Gamma xi yi')
 
-        # write tracers initial state (positions only)
-        mat = self.tracers0.state_mat
-        np.savetxt(FORT_BASE_DIR / 'in/tracers_in.txt', mat,
-                   delimiter=' ', fmt='%.16f', header='xi, yi')
+        # # write tracers initial state (positions only)
+        # mat = self.tracers0.state_mat
+        # np.savetxt(FORT_BASE_DIR / 'in/tracers_in.txt', mat,
+        #            delimiter=' ', fmt='%.16f', header='xi yi')
+
+        # Write combined vortons + tracers, with vortons first
+        mat = self.vortons0.maybe_with_tracers(self.tracers0).state_mat_full()
+        np.savetxt(FORT_BASE_DIR / 'in/vortons.txt', mat,
+            delimiter=' ', fmt='%.16f', header='Gamma xi yi')
 
         # write model options
         mat = [
@@ -376,7 +381,7 @@ class Model_f(ModelBase):
             fort_bool(self.f_write_out_tracers),
             fort_bool(self.f_write_out_ps),
         ]
-        np.savetxt(FORT_BASE_DIR / 'in/vorts_sim_in.txt', mat,
+        np.savetxt(FORT_BASE_DIR / 'in/settings.txt', mat,
                    delimiter=' ', fmt='%s')
 
     def _maybe_try_compile(self):

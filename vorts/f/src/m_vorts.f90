@@ -7,22 +7,20 @@ module m_vorts
   implicit none
 
   private
-  public construct_vorton, count_num_in, FT_step, RK4_step, &
-    dp, pi
+  public Vorton, FT_step, RK4_step, dp, pi
 
   integer, parameter :: dp = kind(1.0d0)  ! chosen precision
   real(kind=dp), parameter :: pi = 4*atan(1.0_dp)
 
 
   !> Vorton class
-  type, public :: Vorton
-
-    !> attributes
+  type :: Vorton
+    !> Attributes
     real(dp) :: G   ! vorton strength Gamma
     real(dp), dimension(:), allocatable :: xhist, yhist  ! position history. or 2xN array vhist = [xhist; yhist] ?
 
-  contains  ! bound methods (fortran functions and procedures)
-    ! currently no methods. for reference, they are written like this:
+  !> Bound methods (Fortran procedures)
+  ! contains
     ! procedure :: calc_l => vorton_l  ! "intervortical distance"
 
   end type Vorton
@@ -88,7 +86,7 @@ contains
           y0j = y0(j)
 
           lij_sqd = calc_lsqd(x0i, y0i, x0j, y0j)
-          dxdti = dxdti + -1/(2*pi) * Gj * (y0i-y0j) / lij_sqd
+          dxdti = dxdti + (-1)/(2*pi) * Gj * (y0i-y0j) / lij_sqd
           dydti = dydti +  1/(2*pi) * Gj * (x0i-x0j) / lij_sqd
 
         end if
@@ -108,7 +106,7 @@ contains
     type(Vorton), intent(inout), dimension(:) :: vortons  ! save values to hists here
     real(dp), intent(in) :: dt
     integer, intent(in)  :: l  ! time step to be calculated
-    integer, intent(in)  :: n  ! num vortons + tracers
+    integer, intent(in)  :: n  ! num vortons + tracers; TODO: try `parameter` and setting equal to `size(vortons)`
 
     real(dp), dimension(n) :: G, x0, y0  ! arrays of coords and Gamma vals
     integer :: i
@@ -119,7 +117,7 @@ contains
     !  could be a separate subroutine as well
     do i = 1, n
       G(i)  = vortons(i)%G
-      x0(i) = vortons(i)%xhist(l-1)
+      x0(i) = vortons(i)%xhist(l-1)  ! TODO: just passing `vortons%xhist(l-1)`
       y0(i) = vortons(i)%yhist(l-1)
     end do
 
@@ -202,40 +200,5 @@ contains
     end do
 
   end subroutine RK4_step
-
-
-  !> determine number of input vortons
-  !  or could make subroutine to do this and also load the data for ifname
-  function count_num_in(ifname) result(num_in)
-    character(len=*), intent(in) :: ifname
-    integer :: num_in, iline, ios
-    character(len=1) :: firstchar
-    integer, parameter :: maxrecs=201
-
-    open(unit=10, file=trim(ifname))
-    num_in = 0
-    do iline = 1, maxrecs
-      read(10, *, iostat=ios) firstchar
-      if ( ios /= 0 ) exit
-      if ( iline == maxrecs ) then
-        print *, 'Error: maximum number of records exceeded...'
-        print *, 'exiting program now...'
-        stop
-      end if
-      ! if ( iline > skiprows ) then
-      !   num_vortons = num_vortons + 1
-      ! else
-      !   ! print *, 'reading header'
-      ! end if
-      if ( firstchar == '#' ) then
-        ! print *, 'reading header'
-      else
-        num_in = num_in + 1
-        ! print *, 'reading header'
-      end if
-    end do
-    close(unit=10)
-
-  end function count_num_in
 
 end module m_vorts
