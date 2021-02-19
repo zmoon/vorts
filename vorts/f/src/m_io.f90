@@ -1,13 +1,14 @@
 !> I/O routines
 module m_io
-  use m_vorts, only: dp, Vorton
+  use m_params, only: rk=>realkind
+  use m_vorts, only: Vorton
   implicit none
 
   private
   public :: SimSettings, parse_input_txt, write_output_txt
 
   type :: SimSettings
-    real(dp) :: dt  ! simulation time step
+    real(rk) :: dt  ! simulation time step
     integer :: n_timesteps  ! number of time steps
     integer :: n_vortons  ! number of vortons (first in the input)
     integer :: n_tracers  ! number of tracers (after vortons in the input)
@@ -30,7 +31,7 @@ contains
   ! type(SimSettings) function settings_from_nml(nml='./in/settings.nml') result(settings)
   !   character(len=*), intent(in) :: nml
 
-  !   real(dp) :: dt
+  !   real(rk) :: dt
   !   integer :: nt, n_vortons, n_tracers
   !   character(len=*) :: integration_routine_name
   !   logical :: write_vortons, write_tracers, write_ps
@@ -61,7 +62,7 @@ contains
     character(len=*), intent(in) :: fp
     type(SimSettings) :: settings
 
-    real(dp) :: dt
+    real(rk) :: dt
     integer :: nt, n_vortons, n_tracers
     character(len=50) :: integration_routine_name
     logical :: write_vortons, write_tracers, write_ps
@@ -122,7 +123,7 @@ contains
 
     integer :: iline, ios, skiprows
     integer :: n_vortons, n_tracers, n_total
-    real(dp) :: Gamma, xi, yi
+    real(rk) :: Gamma, xi, yi
     integer :: i
 
     !> First read the settings that are in the settings file

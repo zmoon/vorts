@@ -1,20 +1,18 @@
 !> Integration routines + Vorton type
 module m_vorts
   ! use omp_lib
+  use m_params, only: rk=>realkind, pi
   implicit none
 
   private
-  public Vorton, FT_step, RK4_step, dp, pi
-
-  integer, parameter :: dp = kind(1.0d0)  ! chosen precision
-  real(kind=dp), parameter :: pi = 4*atan(1.0_dp)
+  public Vorton, FT_step, RK4_step
 
 
   !> Vorton class
   type :: Vorton
     !> Attributes
-    real(dp) :: G   ! vorton strength Gamma
-    real(dp), dimension(:), allocatable :: xhist, yhist  ! position history. or 2xN array vhist = [xhist; yhist] ?
+    real(rk) :: G   ! vorton strength Gamma
+    real(rk), dimension(:), allocatable :: xhist, yhist  ! position history. or 2xN array vhist = [xhist; yhist] ?
 
   !> Bound methods (Fortran procedures)
   ! contains
@@ -35,7 +33,7 @@ contains
   !> Vorton class constructor
   function construct_vorton(G, xi, yi, nt) result(new_vorton)
     type(Vorton) :: new_vorton
-    real(dp), intent(in) :: G, xi, yi
+    real(rk), intent(in) :: G, xi, yi
     integer, intent(in) :: nt
 
     new_vorton%G = G
@@ -52,8 +50,8 @@ contains
 
   !> Distance between one vorton and another, squared
   pure function calc_lsqd(x1, y1, x2, y2) result(lsqd)
-    real(dp), intent(in) :: x1, y1, x2, y2  ! two sets of coords
-    real(dp) :: lsqd
+    real(rk), intent(in) :: x1, y1, x2, y2  ! two sets of coords
+    real(rk) :: lsqd
 
     lsqd = (x1 - x2)**2 + (y1 - y2)**2
 
@@ -62,13 +60,13 @@ contains
 
   !> Tendency calculations: dxdt and dydt for all point vortices (vortons and tracers)
   subroutine calc_tends(G, x0, y0, n_total, n_vortons, dxdt, dydt)
-    real(dp), intent(in), dimension(:) :: G, x0, y0  ! arrays of coords and Gamma vals
+    real(rk), intent(in), dimension(:) :: G, x0, y0  ! arrays of coords and Gamma vals
     integer, intent(in) :: n_total  ! num vortons + tracers
     integer, intent(in) :: n_vortons
-    real(dp), intent(out), dimension(:) :: dxdt, dydt
+    real(rk), intent(out), dimension(:) :: dxdt, dydt
 
     integer :: i, j
-    real(dp) :: x0i, y0i, x0j, y0j, Gj, dxdti, dydti, lij_sqd
+    real(rk) :: x0i, y0i, x0j, y0j, Gj, dxdti, dydti, lij_sqd
 
     ! !$omp parallel private (i)
     ! !$omp do
@@ -106,14 +104,14 @@ contains
   !> Euler forward integration (1st-order)
   subroutine FT_step(vortons, dt, l, n_total, n_vortons)
     type(Vorton), intent(inout), dimension(:) :: vortons  ! save values to hists here
-    real(dp), intent(in) :: dt
+    real(rk), intent(in) :: dt
     integer, intent(in)  :: l  ! time step to be calculated
     integer, intent(in)  :: n_total  ! num vortons + tracers; TODO: try `parameter` and setting equal to `size(vortons)`
     integer, intent(in)  :: n_vortons
 
-    real(dp), dimension(n_total) :: G, x0, y0  ! arrays of coords and Gamma vals
+    real(rk), dimension(n_total) :: G, x0, y0  ! arrays of coords and Gamma vals
     integer :: i
-    real(dp), dimension(n_total) :: dxdt, dydt, xnew, ynew
+    real(rk), dimension(n_total) :: dxdt, dydt, xnew, ynew
 
     !> Prepare arrays for input into `calc_tends` (could be a separate subroutine)
     do i = 1, n_total
@@ -143,18 +141,18 @@ contains
   subroutine RK4_step(vortons, dt, l, n_total, n_vortons)
     ! type(SimSettings), intent(in) :: settings
     type(Vorton), intent(inout), dimension(:) :: vortons  ! save values to hists here
-    real(dp), intent(in) :: dt
+    real(rk), intent(in) :: dt
     integer, intent(in)  :: l   ! time step to be calculated
     integer, intent(in)  :: n_total  ! num vortons + tracers
     integer, intent(in)  :: n_vortons
 
-    real(dp), dimension(n_total) :: G, x0, y0  ! arrays of coords and Gamma vals
+    real(rk), dimension(n_total) :: G, x0, y0  ! arrays of coords and Gamma vals
     integer :: i
     integer :: num_vortons
-    real(dp), dimension(2,n_total) :: tends
-    real(dp), dimension(n_total) :: xnew, ynew
+    real(rk), dimension(2,n_total) :: tends
+    real(rk), dimension(n_total) :: xnew, ynew
 
-    real(dp), dimension(n_total) :: x1, x2, x3, x4, &
+    real(rk), dimension(n_total) :: x1, x2, x3, x4, &
                                     y1, y2, y3, y4, &
                                     k1x, k2x, k3x, k4x, &
                                     k1y, k2y, k3y, k4y

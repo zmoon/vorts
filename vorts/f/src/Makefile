@@ -17,13 +17,16 @@ vorts: $(OBJS)
 	$(FC) $(CFLAGS) -o ../bin/vorts.exe $(LFLAGS) $(OBJS)
 
 # Objects
-m_vorts.o:./m_vorts.f90
+m_params.o:./m_params.f90
 	$(FC) $(CFLAGS) -c $<
 
-m_io.o:./m_io.f90 m_vorts.o
+m_vorts.o:./m_vorts.f90 m_params.o
 	$(FC) $(CFLAGS) -c $<
 
-main.o:./main.f90 m_vorts.o m_io.o
+m_io.o:./m_io.f90 m_params.o m_vorts.o
+	$(FC) $(CFLAGS) -c $<
+
+main.o:./main.f90 m_io.o m_vorts.o
 	$(FC) $(CFLAGS) -c $<
 
 .PHONY: clean
