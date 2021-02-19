@@ -345,7 +345,7 @@ class Model_f(ModelBase):
         self.f_write_out_ps = write_ps
 
         # executing the model
-        self.vorts_exe_path = FORT_BASE_DIR / 'bin/vorts.exe'
+        self.vorts_exe_path = FORT_BASE_DIR / 'bin/vorts'
         self.oe = ''  # we will store standard output and error here
 
         # write the text input files to directory `vorts/f/in`
