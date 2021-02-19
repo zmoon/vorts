@@ -60,12 +60,12 @@ contains
   end function calc_lsqd
 
 
-  !> dxdt and dydt calculations
-  function calc_tends(G, x0, y0, n_total, n_vortons) result(tends)
+  !> Tendency calculations: dxdt and dydt for all point vortices (vortons and tracers)
+  subroutine calc_tends(G, x0, y0, n_total, n_vortons, dxdt, dydt)
     real(dp), intent(in), dimension(:) :: G, x0, y0  ! arrays of coords and Gamma vals
     integer, intent(in) :: n_total  ! num vortons + tracers
     integer, intent(in) :: n_vortons
-    real(dp), dimension(2,n_total) :: tends
+    real(dp), intent(out), dimension(:) :: dxdt, dydt
 
     integer :: i, j
     real(dp) :: x0i, y0i, x0j, y0j, Gj, dxdti, dydti, lij_sqd
@@ -93,14 +93,14 @@ contains
         end if
       end do
 
-      tends(1, i) = dxdti
-      tends(2, i) = dydti
+      dxdt(i) = dxdti
+      dydt(i) = dydti
 
     end do
     ! !$omp end do
     ! !$omp end parallel
 
-  end function calc_tends
+  end subroutine calc_tends
 
 
   !> Euler forward integration (1st-order)
@@ -113,8 +113,7 @@ contains
 
     real(dp), dimension(n_total) :: G, x0, y0  ! arrays of coords and Gamma vals
     integer :: i
-    real(dp), dimension(2,n_total) :: tends
-    real(dp), dimension(n_total) :: xtend, ytend, xnew, ynew
+    real(dp), dimension(n_total) :: dxdt, dydt, xnew, ynew
 
     !> Prepare arrays for input into `calc_tends` (could be a separate subroutine)
     do i = 1, n_total
@@ -123,12 +122,10 @@ contains
       y0(i) = vortons(i)%yhist(l-1)
     end do
 
-    tends = calc_tends(G, x0, y0, n_total, n_vortons)
-    xtend = tends(1,:)
-    ytend = tends(2,:)
+    call calc_tends(G, x0, y0, n_total, n_vortons, dxdt, dydt)
 
-    xnew = x0 + xtend*dt
-    ynew = y0 + ytend*dt
+    xnew = x0 + dxdt*dt
+    ynew = y0 + dydt*dt
 
     !> Update hist values (could be separate subroutine)
     do i = 1, n_total
@@ -172,27 +169,19 @@ contains
     !> RK4
     x1 = x0
     y1 = y0
-    tends = calc_tends(G, x1, y1, n_total, n_vortons)
-    k1x = tends(1,:)
-    k1y = tends(2,:)
+    call calc_tends(G, x1, y1, n_total, n_vortons, k1x, k1y)
 
     x2 = x0 + dt/2*k1x
     y2 = y0 + dt/2*k1y
-    tends = calc_tends(G, x2, y2, n_total, n_vortons)
-    k2x = tends(1,:)
-    k2y = tends(2,:)
+    call calc_tends(G, x2, y2, n_total, n_vortons, k2x, k2y)
 
     x3 = x0 + dt/2*k2x
     y3 = y0 + dt/2*k2y
-    tends = calc_tends(G, x3, y3, n_total, n_vortons)
-    k3x = tends(1,:)
-    k3y = tends(2,:)
+    call calc_tends(G, x3, y3, n_total, n_vortons, k3x, k3y)
 
     x4 = x0 + dt/1*k3x
     y4 = y0 + dt/1*k3y
-    tends = calc_tends(G, x4, y4, n_total, n_vortons)
-    k4x = tends(1,:)
-    k4y = tends(2,:)
+    call calc_tends(G, x4, y4, n_total, n_vortons, k4x, k4y)
 
     xnew = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
     ynew = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
