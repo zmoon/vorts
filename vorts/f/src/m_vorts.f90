@@ -1,44 +1,35 @@
-!> Integration routines + Vorton type
+!> Time steppers + Vorton type
 module m_vorts
   ! use omp_lib
   use m_params, only: rk=>realkind, pi
   implicit none
 
   private
-  public Vorton, FT_step, RK4_step
-
+  public vorton_type, step_FT, step_RK4
 
   !> Vorton class
-  type :: Vorton
+  type :: vorton_type
     !> Attributes
     real(rk) :: G   ! vorton strength Gamma
-    real(rk), dimension(:), allocatable :: xhist, yhist  ! position history. or 2xN array vhist = [xhist; yhist] ?
-
-  !> Bound methods (Fortran procedures)
-  ! contains
-  !   procedure :: calc_l => vorton_l  ! "intervortical distance"
-
-  end type Vorton
+    real(rk), dimension(:), allocatable :: xhist, yhist  ! position history
+  end type vorton_type
 
   !> Specify constructor for Vorton class
-  interface Vorton
+  interface vorton_type
     procedure construct_vorton
-  end interface Vorton
-
+  end interface vorton_type
 
 contains
 
-  !====== Vorton class methods =====================================================================
-
   !> Vorton class constructor
   function construct_vorton(G, xi, yi, nt) result(new_vorton)
-    type(Vorton) :: new_vorton
+    type(vorton_type) :: new_vorton
     real(rk), intent(in) :: G, xi, yi
     integer, intent(in) :: nt
 
     new_vorton%G = G
 
-    allocate(new_vorton%xhist(nt+1))  ! these don't really have to be allocatable either, could be static
+    allocate(new_vorton%xhist(nt+1))
     allocate(new_vorton%yhist(nt+1))
     new_vorton%xhist(1) = xi
     new_vorton%yhist(1) = yi
@@ -46,16 +37,13 @@ contains
   end function construct_vorton
 
 
-  !====== Other functions ==========================================================================
-
   !> Distance between one vorton and another, squared
-  pure function calc_lsqd(x1, y1, x2, y2) result(lsqd)
+  pure real function lsqd(x1, y1, x2, y2)
     real(rk), intent(in) :: x1, y1, x2, y2  ! two sets of coords
-    real(rk) :: lsqd
 
     lsqd = (x1 - x2)**2 + (y1 - y2)**2
 
-  end function calc_lsqd
+  end function lsqd
 
 
   !> Tendency calculations: dxdt and dydt for all point vortices (vortons and tracers)
@@ -84,7 +72,7 @@ contains
           x0j = x0(j)
           y0j = y0(j)
 
-          lij_sqd = calc_lsqd(x0i, y0i, x0j, y0j)
+          lij_sqd = lsqd(x0i, y0i, x0j, y0j)
 
           dxdti = dxdti + (-1)/(2*pi) * Gj * (y0i-y0j) / lij_sqd
           dydti = dydti +  1/(2*pi) * Gj * (x0i-x0j) / lij_sqd
@@ -101,12 +89,12 @@ contains
   end subroutine calc_tends
 
 
-  !> Euler forward integration (1st-order)
-  subroutine FT_step(vortons, dt, l, n_total, n_vortons)
-    type(Vorton), intent(inout), dimension(:) :: vortons  ! save values to hists here
+  !> Take an FT time step -- Euler forward integration (1st-order)
+  subroutine step_FT(vortons, dt, l, n_total, n_vortons)
+    type(vorton_type), intent(inout), dimension(:) :: vortons  ! positions at time `l` will be updated
     real(rk), intent(in) :: dt
     integer, intent(in)  :: l  ! time step to be calculated
-    integer, intent(in)  :: n_total  ! num vortons + tracers; TODO: try `parameter` and setting equal to `size(vortons)`
+    integer, intent(in)  :: n_total  ! num vortons + tracers
     integer, intent(in)  :: n_vortons
 
     real(rk), dimension(n_total) :: G, x0, y0  ! arrays of coords and Gamma vals
@@ -131,16 +119,12 @@ contains
       vortons(i)%yhist(l) = ynew(i)
     end do
 
-  end subroutine FT_step
+  end subroutine step_FT
 
 
-  !> add centered time?
-
-
-  !> RK4 integration
-  subroutine RK4_step(vortons, dt, l, n_total, n_vortons)
-    ! type(SimSettings), intent(in) :: settings
-    type(Vorton), intent(inout), dimension(:) :: vortons  ! save values to hists here
+  !> Take an RK4 time step
+  subroutine step_RK4(vortons, dt, l, n_total, n_vortons)
+    type(vorton_type), intent(inout), dimension(:) :: vortons  ! positions at time `l` will be updated
     real(rk), intent(in) :: dt
     integer, intent(in)  :: l   ! time step to be calculated
     integer, intent(in)  :: n_total  ! num vortons + tracers
@@ -190,6 +174,6 @@ contains
       vortons(i)%yhist(l) = ynew(i)
     end do
 
-  end subroutine RK4_step
+  end subroutine step_RK4
 
 end module m_vorts
