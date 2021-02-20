@@ -5,3 +5,8 @@ repos:
       - id: trailing-whitespace
         args: ['--markdown-linebreak-ext=md,markdown']
       - id: end-of-file-fixer
+
+  - repo: https://github.com/kynan/nbstripout
+    rev: '0.3.9'
+    hooks:
+      - id: nbstripout
