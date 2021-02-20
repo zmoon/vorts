@@ -1,42 +1,72 @@
-!> I/O routines
+!> I/O routines and simulation settings
 module m_io
   use m_params, only: rk=>realkind
-  use m_vorts, only: Vorton
+  use m_vorts, only: vorton_type
   implicit none
 
   private
-  public :: SimSettings, parse_input_txt, write_output_txt
+  public :: simsettings_type, parse_input_txt, write_output_txt
 
-  type :: SimSettings
+  type :: simsettings_type
     real(rk) :: dt  ! simulation time step
     integer :: n_timesteps  ! number of time steps
     integer :: n_vortons  ! number of vortons (first in the input)
     integer :: n_tracers  ! number of tracers (after vortons in the input)
     integer :: n_total  ! number of vortons + tracers
-    character(len=10) :: integration_routine_name
+    character(len=10) :: time_stepper_name
     logical :: write_vortons, write_tracers, write_ps  ! whether to write these output files
+    procedure(time_stepper_int), pointer, nopass :: take_time_step
+  end type simsettings_type
 
-  !> Bound methods
-  ! contains
-
-  end type SimSettings
-
-  ! interface SimSettings
+  ! interface simsettings_type
   !   module procedure :: settings_from_nml
-  ! end interface SimSettings
+  ! end interface simsettings_type
+
+  !> Interface for stepper selection, in order to allow making a procedure pointer
+  !> Can't put in m_vorts source since it uses the vorton type
+  abstract interface
+    subroutine time_stepper_int(vortons, dt, l, n_total, n_vortons)
+      import :: vorton_type, rk  ! in order to access these in the interface
+
+      type(vorton_type), intent(inout), dimension(:) :: vortons  ! save values to hists here
+      real(rk), intent(in) :: dt
+      integer, intent(in)  :: l   ! time step to be calculated
+      integer, intent(in)  :: n_total  ! num vortons + tracers
+      integer, intent(in)  :: n_vortons
+
+    end subroutine time_stepper_int
+  end Interface
 
 contains
 
-  ! !> Load sim settings data from the nml
-  ! type(SimSettings) function settings_from_nml(nml='./in/settings.nml') result(settings)
+  !> Stepper selector, called when creating the settings instance
+  function time_stepper_from_name(name) result(f_ptr)
+    use m_vorts, only: step_FT, step_RK4
+
+    character(len=*), intent(in) :: name
+    procedure(time_stepper_int), pointer :: f_ptr
+
+    select case ( trim(name) )
+      case ('FT')
+        f_ptr => step_FT
+      case ('RK4')
+        f_ptr => step_RK4
+      case default
+        stop 'invalid integration routine name'
+    end select
+  end
+
+
+  ! !> Load sim settings data from namelist
+  ! type(simsettings_type) function settings_from_nml(nml='./in/settings.nml') result(settings)
   !   character(len=*), intent(in) :: nml
 
   !   real(rk) :: dt
   !   integer :: nt, n_vortons, n_tracers
-  !   character(len=*) :: integration_routine_name
+  !   character(len=*) :: time_stepper_name
   !   logical :: write_vortons, write_tracers, write_ps
 
-  !   namelist /settings/ dt, nt, n_vortons, n_tracers, integration_routine_name, &
+  !   namelist /settings/ dt, nt, n_vortons, n_tracers, time_stepper_name, &
   !     write_vortons, write_tracers, write_ps
   !   open(10, file=nml)
   !   read(10, nml=settings)
@@ -47,7 +77,7 @@ contains
   !   ! settings%n_vortons = n_vortons
   !   ! settings%n_tracers = n_tracers
   !   ! settings%n_total = n_vortons + n_tracers
-  !   settings%integration_routine_name = integration_routine_name
+  !   settings%time_stepper_name = time_stepper_name
   !   settings%write_vortons = write_vortons
   !   settings%write_tracers = write_tracers
   !   settings%write_ps = write_ps
@@ -58,19 +88,17 @@ contains
   !> Load sim settings from normal text file
   function settings_from_txt(fp) result(settings)
     character(len=*), intent(in) :: fp
-    type(SimSettings) :: settings
+    type(simsettings_type) :: settings
 
     real(rk) :: dt
     integer :: nt, n_vortons, n_tracers
-    character(len=50) :: integration_routine_name
+    character(len=50) :: time_stepper_name
     logical :: write_vortons, write_tracers, write_ps
 
     open(unit=9, file=fp)
     read(9, *) dt
     read(9, *) nt
-    ! read(9, *) n_vortons
-    ! read(9, *) n_tracers
-    read(9, *) integration_routine_name
+    read(9, *) time_stepper_name
     read(9, *) write_vortons
     read(9, *) write_tracers
     read(9, *) write_ps
@@ -78,18 +106,19 @@ contains
 
     settings%dt = dt
     settings%n_timesteps = nt
-    settings%integration_routine_name = trim(integration_routine_name)
+    settings%time_stepper_name = trim(time_stepper_name)
     settings%write_vortons = write_vortons
     settings%write_tracers = write_tracers
     settings%write_ps = write_ps
+    settings%take_time_step => time_stepper_from_name(settings%time_stepper_name)
 
   end function settings_from_txt
 
 
   !> Parse input, creating the `Vortons` and `SimSettings` instances
   subroutine parse_input_txt(vortons, settings)
-    type(Vorton), dimension(:), allocatable, intent(out) :: vortons
-    type(SimSettings), intent(out) :: settings
+    type(vorton_type), dimension(:), allocatable, intent(out) :: vortons
+    type(simsettings_type), intent(out) :: settings
 
     integer :: iline, ios, skiprows
     integer :: n_vortons, n_tracers, n_total
@@ -115,7 +144,7 @@ contains
         !> Read and add to the vortons array
         i = iline - skiprows  ! vorton index
         read(10, *) Gamma, xi, yi
-        vortons(i) = Vorton(Gamma, xi, yi, settings%n_timesteps)
+        vortons(i) = vorton_type(Gamma, xi, yi, settings%n_timesteps)
 
         !> Increment counts
         if ( Gamma == 0 ) then
@@ -124,7 +153,7 @@ contains
           n_vortons = n_vortons + 1
         end if
 
-        !> Check that vortons are first and then tracers
+        !> Check that vortons are first and then tracers only
         if ( n_tracers > 0 .and. Gamma /= 0 ) stop 'Tracers must come after true vortons in the input.'
 
       end if
@@ -174,10 +203,10 @@ contains
 
   !> Write text output
   subroutine write_output_txt(vortons, settings)
-    type(Vorton), dimension(:), intent(in) :: vortons
-    type(SimSettings) :: settings
+    type(vorton_type), dimension(:), intent(in) :: vortons
+    type(simsettings_type) :: settings
 
-    character(len=50) :: s_n_vortons, f1
+    character(len=50) :: s_n_vortons, fmt_csv
     integer :: i, j
 
     associate( &
@@ -188,15 +217,15 @@ contains
 
     !> Construct the format string for vorton/tracer CSV output
     write(s_n_vortons, '(i0)') nt+1 - 1
-    f1 = '(g0.5, ' // trim(s_n_vortons) // '(",", g0.5))'
+    fmt_csv = '(g0.5, ' // trim(s_n_vortons) // '(",", g0.5))'
 
     !> Write vortons?
     if ( settings%write_vortons ) then
       open(unit=101, file='./out/vortons.csv')
       write(101, fmt=*) '# x1(1:nt); y1; x2; y2; ...'
       do i = 1, n_vortons
-          write(101, fmt=f1) vortons(i)%xhist
-          write(101, fmt=f1) vortons(i)%yhist
+          write(101, fmt=fmt_csv) vortons(i)%xhist
+          write(101, fmt=fmt_csv) vortons(i)%yhist
       end do
       close(101)
     end if
@@ -206,8 +235,8 @@ contains
       open(unit=102, file='./out/tracers.csv')
       write(102, fmt=*) '# x1(1:nt); y1; x2; y2; ...'
       do i = n_vortons + 1, n_total
-        write(102, fmt=f1) vortons(i)%xhist
-        write(102, fmt=f1) vortons(i)%yhist
+        write(102, fmt=fmt_csv) vortons(i)%xhist
+        write(102, fmt=fmt_csv) vortons(i)%yhist
       end do
       close(102)
     end if
