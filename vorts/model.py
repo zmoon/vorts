@@ -4,7 +4,9 @@ directing input and collecting output, etc.
 """
 import abc
 import copy
+import glob
 import os
+import platform
 import subprocess
 import warnings
 from pathlib import Path
@@ -101,7 +103,7 @@ class ModelBase(abc.ABC):
         """The number of vortons."""
 
         # initialize hist (an `xr.Dataset`)
-        v0 = self.vortons0.maybe_with_tracers(self.tracers0)  # TODO: this maybe should be private
+        v0 = self.vortons0.maybe_with_tracers(self.tracers0)  # TODO: change to `add_tracers` and/or overload addition (`__radd__`)
         # self.hist = init_hist(G, x0, y0, self.nv, self.nt, self.dt)
         self.hist = init_hist(self.nv + self.n_tracers, self.nt, self.dt)
         """An `xr.Dataset` with coordinates `'t'` (time) and `'v'` (vorton),
@@ -344,12 +346,8 @@ class Model_f(ModelBase):
         self.f_write_out_ps = write_ps
 
         # executing the model
-        self.vorts_exe_path = FORT_BASE_DIR / 'bin/vorts.exe'
-        if not self.vorts_exe_path.exists():
-            raise Exception(
-                f"{self.vorts_exe_path!r} doesn't exist. "
-                "The Fortran code must first be compiled to produce this file."
-            )
+        exe_name = 'vorts.exe' if platform.system() == 'Windows' else 'vorts'
+        self.vorts_exe_path = FORT_BASE_DIR / 'bin' / exe_name
         self.oe = ''  # we will store standard output and error here
 
         # write the text input files to directory `vorts/f/in`
@@ -361,15 +359,20 @@ class Model_f(ModelBase):
           describing the initial condition
           and the simulation settings.
         """
-        # write vorton system initial state
-        mat = self.vortons0.state_mat_full()  # needs to be rows of G, xi, yi
-        np.savetxt(FORT_BASE_DIR / 'in/vorts_in.txt', mat,
-                   delimiter=' ', fmt='%.16f', header='Gamma xi yi')
+        # # write vorton system initial state
+        # mat = self.vortons0.state_mat_full()  # needs to be rows of G, xi, yi
+        # np.savetxt(FORT_BASE_DIR / 'in/vorts_in.txt', mat,
+        #            delimiter=' ', fmt='%.16f', header='Gamma xi yi')
 
-        # write tracers initial state (positions only)
-        mat = self.tracers0.state_mat
-        np.savetxt(FORT_BASE_DIR / 'in/tracers_in.txt', mat,
-                   delimiter=' ', fmt='%.16f', header='xi, yi')
+        # # write tracers initial state (positions only)
+        # mat = self.tracers0.state_mat
+        # np.savetxt(FORT_BASE_DIR / 'in/tracers_in.txt', mat,
+        #            delimiter=' ', fmt='%.16f', header='xi yi')
+
+        # Write combined vortons + tracers, with vortons first
+        mat = self.vortons0.maybe_with_tracers(self.tracers0).state_mat_full()
+        np.savetxt(FORT_BASE_DIR / 'in/vortons.txt', mat,
+            delimiter=' ', fmt='%.16f', header='Gamma xi yi')
 
         # write model options
         mat = [
@@ -380,21 +383,39 @@ class Model_f(ModelBase):
             fort_bool(self.f_write_out_tracers),
             fort_bool(self.f_write_out_ps),
         ]
-        np.savetxt(FORT_BASE_DIR / 'in/vorts_sim_in.txt', mat,
+        np.savetxt(FORT_BASE_DIR / 'in/settings.txt', mat,
                    delimiter=' ', fmt='%s')
+
+    def _maybe_try_compile(self):
+        """Try to run `make` if the executable is missing."""
+        if not self.vorts_exe_path.exists():
+            cwd = os.getcwd()
+            os.chdir(FORT_BASE_DIR / "src")
+            print(f"{self.vorts_exe_path!r} doesn't exist, attempting to `make`.\n")
+            try:
+                subprocess.run("make")
+            except Exception as e:
+                raise Exception(
+                    f"Attempted `make` failed with exception (see above). "
+                    "The Fortran code must be compiled before running!"
+                ) from e
+            finally:
+                os.chdir(cwd)
 
     # implement abstract method `_run`
     def _run(self):
         """Invoke the Fortran model's executable and load the results."""
+        self._maybe_try_compile()
         # exe_abs = str(self.vorts_exe_path)
         exe_rel = str(self.vorts_exe_path.relative_to(FORT_BASE_DIR))
         cmd = exe_rel
+        # print(cmd)
 
         # invoke the Fortran model's executable
         cwd = os.getcwd()
         os.chdir(FORT_BASE_DIR)
-        os.system('rm ./out/*')
-        # print(cmd)
+        for f in glob.glob('./out/*'):  # non-hidden files
+            os.remove(f)
         self.oe = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
         os.chdir(cwd)
         # ^ hack for now, but could instead pass FORT_BASE_DIR into the Fortran program

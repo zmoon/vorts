@@ -1,34 +1,33 @@
-#
-# This Makefile generates an executable (`../bin/vorts.exe`) for the main Fortran program.
-#
-# NOTES
-# * Originally I linked the source files to `.f` extensions,
-#   since `.f03` was not supported by the compiler I was using (I think some version of `ifort`).
-#   With `gfortran`, `.f03` doesn't seem to be a problem.
-#
+# This Makefile generates an executable (`../bin/vorts` or `../bin/vorts.exe` on Windows)
+# for the main Fortran program.
 
-# settings for gfortran
-FC=gfortran
-CFLAGS=-O2 -ffree-form
-LFLAGS=
+# Settings for gfortran
+FC = gfortran
+CFLAGS = -O3 -std=f2008 -Wall
+LFLAGS =
 
-# settings for ifort
-# FC=ifort
-# CFLAGS=-O3 -fast -free
-# LFLAGS=
+# Settings for ifort
+# FC = ifort
+# CFLAGS = -O3 -fast -free
+# LFLAGS =
 
+# Objects (order matters)
+OBJS = \
+	m_params.o \
+	m_vorts.o \
+	m_io.o \
+	main.o
 
-# create executable
-vorts: m_vorts.o main.o
-	$(FC) -o ../bin/vorts.exe $(LFLAGS) m_vorts.o main.o
+# Create executable
+EXE = ../bin/vorts
+vorts: $(OBJS)
+	$(FC) $(CFLAGS) -o $(EXE) $(LFLAGS) $(OBJS)
 
-# dependencies
-m_vorts.o:./m_vorts.f03
-	$(FC) $(CFLAGS) -c ./m_vorts.f03
+# Rule to make objects
+.SUFFIXES: .f90
+.f90.o:
+	$(FC) $(CFLAGS) -c $<
 
-main.o:./main.f03 m_vorts.o
-	$(FC) $(CFLAGS) -c ./main.f03
-
-
+.PHONY: clean
 clean:
-	rm -f -r *.o *.mod ../bin/vorts.exe ../bin/vorts
+	rm -f -r *.o *.mod $(EXE)
