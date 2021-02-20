@@ -1,14 +1,257 @@
 """
 `Vorton`/`Tracer` classes and `Vortons`/`Tracers` container classes.
 """
+import functools
 from typing import NamedTuple
 import warnings
 
 import numpy as np
 import xarray as xr
 
+from . import plot
 
-# new Vorton -- doesn't know its history, just current state
+
+def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
+    """Create spiral of points.
+
+    Parameters
+    ----------
+    n : int
+        Number of points.
+    c : array_like
+        Coordinates of the center ($x_c$, $y_c$).
+    rmin : float
+        Minimum radius (distance from the center for the innermost point).
+    rmax : float
+        Maximum radius (distance from the center for the outermost point).
+    revs : float
+        Total number of revolutions in the spiral.
+    """
+    # TODO: option for linear distance between consecutive points
+    c = np.asarray(c)
+
+    rad = np.linspace(rmin, rmax, n)  # radius
+
+    deg_tot = revs*360
+    rotmat = rotmat_2d(deg_tot/n)
+    rhat = np.full((n, 2), (0, 1), dtype=float)  # rhat: unit vectors
+    for i in range(1, n):
+        rhat[i, :] = rotate_2d(rhat[i-1, :], rotmat=rotmat)
+    # TODO: here would be simpler to do polar coords first then convert to x,y
+
+    return rad[:, np.newaxis] * rhat + c
+
+
+def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
+    """Sample from normal distribution.
+
+    Parameters
+    ----------
+    n : int
+        Number of points.
+    mu_x, mu_y : float
+        Mean/center of the distribution in each direction.
+    sig_x, sig_y : float
+        Standard deviation of the distribution in each direction.
+    c : array_like
+        Coordinates of the center ($x_c$, $y_c$).
+    """
+    c = np.asarray(c)
+    x = np.random.normal(mu_x, sig_x, (n,))
+    y = np.random.normal(mu_y, sig_y, (n,))
+    return np.column_stack((x, y)) + c
+
+
+def points_randu(n, *, c=(0, 0), dx=2, dy=2):
+    """Sample from 2-d uniform.
+
+    Parameters
+    ----------
+    n : int
+        Number of points.
+    c : array_like
+        Coordinates of the center ($x_c$, $y_c$).
+    dx, dy : float
+        $x$ positions will be sampled from $[$`-dx`, `dx`$)$, and $y$ similarly.
+    """
+    c = np.asarray(c)
+    x = np.random.uniform(-dx, dx, (n,))
+    y = np.random.uniform(-dy, dy, (n,))
+    return np.column_stack((x, y)) + c
+
+
+# TODO: sample from any scipy dist, optionally different for x and y
+
+
+def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), c=(0, 0)):
+    """Points on a grid.
+
+    Parameters
+    ----------
+    nx, ny : int
+        Number of points in the grid in each direction.
+    xbounds, ybounds : array_like
+        Inclusive bounds in each direction (lower, upper).
+    c : array_like
+        Coordinates of the center ($x_c$, $y_c$).
+    """
+    c = np.asarray(c)
+    x = np.linspace(*xbounds, nx)
+    y = np.linspace(*ybounds, ny)
+    X, Y = np.meshgrid(x, y)
+    return np.column_stack((X.ravel(), Y.ravel())) + c
+
+
+def points_circles(ns=(10, 20, 34, 50), rs=(0.5, 1, 1.5, 2), *, c=(0, 0)):
+    """Concentric circles.
+
+    Parameters
+    ----------
+    ns : array_like
+        Number of points in each circle.
+    rs : array_like
+        Radii of each circle (one for each value of `ns`).
+    c : array_like
+        Coordinates of the center ($x_c$, $y_c$).
+    """
+    c = np.asarray(c)
+    x = []
+    y = []
+    for n, r in zip(ns, rs):
+        dtheta = 360 / n
+        thetas = np.deg2rad(np.linspace(0, 360-dtheta, n))
+        x = np.append(x, r*np.cos(thetas))
+        y = np.append(y, r*np.sin(thetas))
+
+    return np.column_stack((x, y)) + c
+
+
+def rotmat_2d(ang_deg):  # TODO: could lru_cache?
+    """Return rotation matrix for rotation `ang_deg` in degrees.
+    For left-multiplication of a column position vector.
+
+    .. note::
+       [`scipy.spatial.transform.Rotation`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.html)
+       can be used for 3-d rotations.
+    """
+    ang = np.deg2rad(ang_deg)
+    c, s = np.cos(ang), np.sin(ang)
+    R = np.array([
+        [c, -s],
+        [s, c]
+    ])
+    return R
+
+
+def rotate_2d(x, *, ang_deg=None, rotmat=None):
+    r"""Rotate vector `x` by `ang_deg` degrees.
+
+    .. important::
+       Either `ang_deg` or `rotmat` can be provided to specify the degree of rotation, but not both.
+
+       If `ang_deg` is used, the rotation matrix will be computed with `rotmat_2d`, so
+       you can pass `rotmat` instead to avoid computing it multiple times.
+
+    Parameters
+    ----------
+    x : array_like
+        The vector to be rotated.
+    ang_deg : int, float
+        Degrees by which to rotate `x` about the origin.
+
+        positive $\to$ counter-clockwise rotation
+    rotmat : array_like
+        shape: `(2, 2)`
+
+        Rotation matrix -- left-multiplies a column position vector to give rotated position.
+
+    """
+    x = np.asarray(x)
+    if ang_deg and rotmat:
+        raise Exception("Only one of `ang_deg` and `rotmat` should be specified.")
+
+    assert x.ndim == 1  # need a true vector
+
+    if ang_deg:
+        rotmat = rotmat_2d(ang_deg)
+    else:
+        if rotmat is None:
+            raise Exception("If `ang_deg` is not provided, `rotmat` must be.")
+
+    return (rotmat @ x[:, np.newaxis]).squeeze()
+
+
+def regular_polygon_vertices(n, *, c=(0, 0), r_c=1):
+    """Regular polygon vertices.
+
+    Parameters
+    ----------
+    n : int
+        Polygon order (number of sides/vertices).
+    c : array_like
+        Coordinates of the center of the inscribing circle ($x_c$, $y_c$).
+    r_c : float, int
+        Radius $r_c$ of the inscribing circle.
+    """
+    c = np.asarray(c)
+
+    # initial vertex
+    vert0 = np.r_[0, r_c]
+
+    # rotation matrix -- left-multiplies a column position vector to give rotated position
+    rotmat = rotmat_2d(360/n)
+
+    verts = np.full((n, 2), vert0, dtype=float)
+    # successive rotations
+    for i in range(1, n):
+        verts[i, :] = rotate_2d(verts[i-1, :], rotmat=rotmat)
+
+    return verts + c
+
+
+def isos_triangle_vertices(*, theta_deg=None, Lambda=None):
+    r"""Isosceles triangle vertices.
+    With fixed top point $(0, 1)$ and fixed left & right $y=-0.5$.
+
+    .. important::
+       Either `theta_deg` or `Lambda` can be used to specify the angle, but not both.
+
+    Parameters
+    ----------
+    theta_deg : float
+        Value of the two angles $\theta$ between the horizontal base and connections to the top point at $(0,1)$
+        in degrees.
+
+        $\theta = 72^{\circ} \to \Lambda_c$ (equal to $1/\sqrt{2}$)
+
+        $\theta = 60^{\circ} \to$ equilateral triangle (can also create with `regular_polygon_vertices`,
+        which gives control over size and location)
+
+    Lambda : float
+        $\Lambda \in (0, 1]$. Related to $\theta$ by $\theta = \pi / (\Lambda^2 + 2)$
+
+        $\Lambda = 1 \to$ equilateral triangle
+
+    """
+    if (theta_deg is not None and Lambda is not None) or (theta_deg is None and Lambda is None):
+        raise Exception("Specify either `theta_deg` or `Lambda` (not both).")
+
+    if Lambda:
+        assert Lambda > 0 and Lambda <= 1
+        theta_deg = 180 / (Lambda**2 + 2)
+
+    theta = np.deg2rad(theta_deg)
+
+    xb = 1.5/np.tan(theta)  # one half of x base
+
+    xi = [-xb,  0,  xb]
+    yi = [-0.5, 1, -0.5]
+
+    Lambda = np.sqrt( (180-2*theta_deg) / float(theta_deg) )  # Marcelo eqns 17--19
+
+    return np.column_stack((xi, yi))
+
+
 class Vorton(NamedTuple):
     """A vorton that knows its current state (position and strength)."""
     G: float
@@ -53,6 +296,7 @@ class Tracers:
 
         assert x.shape == y.shape and x.ndim == 1
 
+        # TODO: change to private attr, `_xy` or somesuch
         self.state_mat = np.column_stack((x, y))
 
 
@@ -82,20 +326,42 @@ class Tracers:
         warnings.warn("Note that `state_mat_full` for tracers is the same as `state_mat` (no G).")
         return self.state_mat
 
+    # Note: these should be `classmethod`, but that messes up the wrapped signature (first arg missing)
     @staticmethod
-    def randu(n, **kwargs):
-        xy = points_randu(n, **kwargs).T
+    @functools.wraps(points_spiral)
+    def spiral(*args, **kwargs):
+        xy = points_spiral(*args, **kwargs).T
         return Tracers(*xy)
 
     @staticmethod
-    def spiral(n, **kwargs):
-        xy = points_spiral(n, **kwargs).T
+    @functools.wraps(points_randn)
+    def randn(*args, **kwargs):
+        xy = points_randn(*args, **kwargs).T
         return Tracers(*xy)
 
-    def plot(self, *, connect=False):
+    @staticmethod
+    @functools.wraps(points_randu)
+    def randu(*args, **kwargs):
+        xy = points_randu(*args, **kwargs).T
+        return Tracers(*xy)
+
+    @staticmethod
+    @functools.wraps(points_grid)
+    def grid(*args, **kwargs):
+        xy = points_grid(*args, **kwargs).T
+        return Tracers(*xy)
+
+    @staticmethod
+    @functools.wraps(points_circles)
+    def circles(*args, **kwargs):
+        xy = points_circles(*args, **kwargs).T
+        return Tracers(*xy)
+
+    def plot(self, *, connect=False, ax=None):
+        """Plot tracers, connected if `connect=True`."""
         import matplotlib.pyplot as plt
 
-        fig, ax = plt.subplots()
+        fig, ax = plot.maybe_new_figure(ax)
 
         x, y = self.x, self.y
         fmt = "-o" if connect else "o"
@@ -108,7 +374,7 @@ class Tracers:
         ax.set_aspect("equal", "box")
         fig.legend()
         ax.grid(True)
-        fig.tight_layout()
+        fig.set_tight_layout(True)
 
 
 
@@ -462,63 +728,6 @@ class Vortons:
 
 
 
-
-def points_randn():  # TODO
-    raise NotImplementedError
-
-
-def points_randu(n, *, c=(0, 0), dx=2, dy=2):
-    """Sample from 2-d uniform.
-
-    Parameters
-    ----------
-    n : int
-        Number of points.
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
-    dx, dy : float
-        $x$ positions will be sampled from $[$`-dx`, `dx`$)$, and $y$ similarly.
-    """
-    c = np.asarray(c)
-    x = np.random.uniform(-dx, dx, (n,))
-    y = np.random.uniform(-dy, dy, (n,))
-    return np.column_stack((x, y)) + c
-
-
-def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
-    """Create spiral of points.
-
-    Parameters
-    ----------
-    n : int
-        Number of points.
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
-    rmin : float
-        Minimum radius (distance from the center for the innermost point).
-    rmax : float
-        Maximum radius (distance from the center for the outermost point).
-    revs : float
-        Total number of revolutions in the spiral.
-    """
-    c = np.asarray(c)
-
-    rad = np.linspace(rmin, rmax, n)  # radius
-
-    deg_tot = revs*360
-    rotmat = rotmat_2d(deg_tot/n)
-    rhat = np.full((n, 2), (0, 1), dtype=float)  # rhat: unit vectors
-    for i in range(1, n):
-        rhat[i, :] = rotate_2d(rhat[i-1, :], rotmat=rotmat)
-    # TODO: here would be simpler to do polar coords first then convert to x,y
-
-    return rad[:, np.newaxis] * rhat + c
-
-
-def points_grid():  # TODO
-    raise NotImplementedError
-
-
 def _maybe_fill_G(G, n):
     if G is None:  # this first part maybe shouldn't be here? or kwarg for default G val?
         G = 1.0
@@ -529,132 +738,6 @@ def _maybe_fill_G(G, n):
         raise ValueError(f"`G` must have size `n` or 1, but is {G.size!r}")
 
     return G
-
-
-def rotmat_2d(ang_deg):  # TODO: could lru_cache?
-    """Return rotation matrix for rotation `ang_deg` in degrees.
-    For left-multiplication of a column position vector.
-
-    .. note::
-       [`scipy.spatial.transform.Rotation`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.html)
-       can be used for 3-d rotations.
-    """
-    ang = np.deg2rad(ang_deg)
-    c, s = np.cos(ang), np.sin(ang)
-    R = np.array([
-        [c, -s],
-        [s, c]
-    ])
-    return R
-
-
-def rotate_2d(x, *, ang_deg=None, rotmat=None):
-    r"""Rotate vector `x` by `ang_deg` degrees.
-
-    .. important::
-       Either `ang_deg` or `rotmat` can be provided to specify the degree of rotation, but not both.
-
-       If `ang_deg` is used, the rotation matrix will be computed with `rotmat_2d`, so
-       you can pass `rotmat` instead to avoid computing it multiple times.
-
-    Parameters
-    ----------
-    x : array_like
-        The vector to be rotated.
-    ang_deg : int, float
-        Degrees by which to rotate `x` about the origin.
-
-        positive $\to$ counter-clockwise rotation
-    rotmat : array_like
-        shape: `(2, 2)`
-
-        Rotation matrix -- left-multiplies a column position vector to give rotated position.
-
-    """
-    x = np.asarray(x)
-    if ang_deg and rotmat:
-        raise Exception("Only one of `ang_deg` and `rotmat` should be specified.")
-
-    assert x.ndim == 1  # need a true vector
-
-    if ang_deg:
-        rotmat = rotmat_2d(ang_deg)
-    else:
-        if rotmat is None:
-            raise Exception("If `ang_deg` is not provided, `rotmat` must be.")
-
-    return (rotmat @ x[:, np.newaxis]).squeeze()
-
-
-def regular_polygon_vertices(n, *, c=(0, 0), r_c=1):
-    """Regular polygon vertices.
-
-    Parameters
-    ----------
-    n : int
-        Polygon order (number of sides/vertices).
-    c : array_like
-        Coordinates of the center of the inscribing circle ($x_c$, $y_c$).
-    r_c : float, int
-        Radius $r_c$ of the inscribing circle.
-    """
-    c = np.asarray(c)
-
-    # initial vertex
-    vert0 = np.r_[0, r_c]
-
-    # rotation matrix -- left-multiplies a column position vector to give rotated position
-    rotmat = rotmat_2d(360/n)
-
-    verts = np.full((n, 2), vert0, dtype=float)
-    # successive rotations
-    for i in range(1, n):
-        verts[i, :] = rotate_2d(verts[i-1, :], rotmat=rotmat)
-
-    return verts + c
-
-
-def isos_triangle_vertices(*, theta_deg=None, Lambda=None):
-    r"""Isosceles triangle vertices.
-    With fixed top point $(0, 1)$ and fixed left & right $y=-0.5$.
-
-    .. important::
-       Either `theta_deg` or `Lambda` can be used to specify the angle, but not both.
-
-    Parameters
-    ----------
-    theta_deg : float
-        Value of the two angles $\theta$ between the horizontal base and connections to the top point at $(0,1)$
-        in degrees.
-
-        $\theta = 72^{\circ} \to \Lambda_c$ (equal to $1/\sqrt{2}$)
-
-        $\theta = 60^{\circ} \to$ equilateral triangle (can also create with `regular_polygon_vertices`,
-        which gives control over size and location)
-
-    Lambda : float
-        $\Lambda \in (0, 1]$. Related to $\theta$ by $\theta = \pi / (\Lambda^2 + 2)$
-
-        $\Lambda = 1 \to$ equilateral triangle
-
-    """
-    if (theta_deg is not None and Lambda is not None) or (theta_deg is None and Lambda is None):
-        raise Exception("Specify either `theta_deg` or `Lambda` (not both).")
-
-    if Lambda:
-        assert Lambda > 0 and Lambda <= 1
-        theta_deg = 180 / (Lambda**2 + 2)
-
-    theta = np.deg2rad(theta_deg)
-
-    xb = 1.5/np.tan(theta)  # one half of x base
-
-    xi = [-xb,  0,  xb]
-    yi = [-0.5, 1, -0.5]
-
-    Lambda = np.sqrt( (180-2*theta_deg) / float(theta_deg) )  # Marcelo eqns 17--19
-
-    return np.column_stack((xi, yi))
 
 
 if __name__ == "__main__":

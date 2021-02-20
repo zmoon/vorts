@@ -233,3 +233,11 @@ def remove_frame(ax=None, *, keep_title=True):
     ax.set(
         frame_on=False,
     )
+
+def maybe_new_figure(ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+
+    return fig, ax
