@@ -38,7 +38,7 @@ contains
 
 
   !> Distance between one vorton and another, squared
-  pure real function lsqd(x1, y1, x2, y2)
+  pure real(rk) function lsqd(x1, y1, x2, y2)
     real(rk), intent(in) :: x1, y1, x2, y2  ! two sets of coords
 
     lsqd = (x1 - x2)**2 + (y1 - y2)**2
@@ -132,8 +132,6 @@ contains
 
     real(rk), dimension(n_total) :: G, x0, y0  ! arrays of coords and Gamma vals
     integer :: i
-    integer :: num_vortons
-    real(rk), dimension(2,n_total) :: tends
     real(rk), dimension(n_total) :: xnew, ynew
 
     real(rk), dimension(n_total) :: x1, x2, x3, x4, &

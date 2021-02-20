@@ -3,7 +3,7 @@
 
 # Settings for gfortran
 FC = gfortran
-CFLAGS = -O3 -std=f2008
+CFLAGS = -O3 -std=f2008 -Wall
 LFLAGS =
 
 # Settings for ifort
