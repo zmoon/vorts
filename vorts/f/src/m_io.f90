@@ -91,7 +91,7 @@ contains
     type(simsettings_type) :: settings
 
     real(rk) :: dt
-    integer :: nt, n_vortons, n_tracers
+    integer :: nt
     character(len=50) :: time_stepper_name
     logical :: write_vortons, write_tracers, write_ps
 
@@ -136,7 +136,7 @@ contains
     !> Read the vortons input file
     n_vortons = 0
     n_tracers = 0
-    open(unit=10, file='./in/vortons.txt')
+    open(unit=10, file='./in/vortons.txt', iostat=ios)
     do iline = 1, n_total + skiprows
       if ( iline <= skiprows ) then
         read(10, *)
@@ -155,8 +155,9 @@ contains
 
         !> Check that vortons are first and then tracers only
         if ( n_tracers > 0 .and. Gamma /= 0 ) stop 'Tracers must come after true vortons in the input.'
-
       end if
+      !> If we have gone too far, there is a problem with `n_total` or `skiprows`
+      if ( ios /= 0 ) stop 'Problem with vorton input file format'
     end do
     close(10)
 
