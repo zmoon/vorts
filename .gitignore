@@ -10,6 +10,7 @@ html/
 # environments
 venv/
 
+.ipynb_checkpoints/
 *.pyc
 ps*.txt
 ps*.png
