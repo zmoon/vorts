@@ -13,6 +13,7 @@ import xarray as xr
 from . import plot
 
 
+# TODO: add global snippets dict but still allow `snippets` to override
 def _add_snippets(func=None, *, snippets=None):
     """Decorator for adding snippets to a docstring. This function
     uses ``%(name)s`` substitution rather than `str.format` substitution so
@@ -117,18 +118,33 @@ class Tracers:
         fig.set_tight_layout(True)
 
 
-def _add_to_tracers(points_method=None, *, short=None, params=None):
-    """Decorator for adding points fns to `Tracers`."""
-    from inspect import signature, getdoc
+def _extract_params_block(f):
+    """Extract params block from `f`'s docstring."""
+    lines = inspect.getdoc(f).splitlines()
 
+    # Beginning of block, skipping header
+    a = lines.index("Parameters") + 2
+
+    # Find end of the block
+    b = -1
+    for i, line in enumerate(lines[a:]):
+        if line.startswith("--"):  # new block header
+            b = a + i - 2
+            break
+
+    return "\n".join(lines[a:b+1])
+
+
+def _add_to_tracers(points_method=None, *, short=None):
+    """Decorator for adding points fns to `Tracers`."""
     if points_method is None:
-        return functools.partial(_add_to_tracers, short=short, params=params)
+        return functools.partial(_add_to_tracers, short=short)
 
     short = short if short else ""
-    params = params if params else ""
+    params = _extract_params_block(points_method)
 
     @staticmethod
-    @makefun.with_signature(signature(points_method))
+    @makefun.with_signature(inspect.signature(points_method))
     @_add_snippets(snippets=dict(params=params, short=short))
     def f(*args, **kwargs):
         """%(short)s
@@ -143,6 +159,7 @@ def _add_to_tracers(points_method=None, *, short=None, params=None):
         """
         return Tracers(*points_method(*args, **kwargs).T)
 
+    # Add method to `Tracers`, removing the `points_` part of the name
     setattr(Tracers, f"{points_method.__name__[7:]}", f)
 
     return points_method
@@ -154,23 +171,19 @@ numpy.ndarray
 """.strip()
 
 
-_points_randu_params = """
-n : int
-    Number of points.
-c : array_like
-    Coordinates of the center ($x_c$, $y_c$).
-dx, dy : float
-    $x$ positions will be sampled from $[$`-dx`, `dx`$)$, and $y$ similarly.
-""".strip()
-
-@_add_to_tracers(short="Create `Tracers` by sampling from uniform random distributions using `points_randu`.", params=_points_randu_params)
-@_add_snippets(snippets=dict(params=_points_randu_params, returns=_points_returns))
+@_add_to_tracers(short="Create `Tracers` by sampling from uniform random distributions using `points_randu`.")
+@_add_snippets(snippets=dict(returns=_points_returns))
 def points_randu(n, *, c=(0, 0), dx=2, dy=2):
     """Sample from 2-d uniform.
 
     Parameters
     ----------
-    %(params)s
+    n : int
+        Number of points.
+    c : array_like
+        Coordinates of the center ($x_c$, $y_c$).
+    dx, dy : float
+        $x$ positions will be sampled from $[$`-dx`, `dx`$)$, and $y$ similarly.
 
     Returns
     -------
@@ -182,27 +195,23 @@ def points_randu(n, *, c=(0, 0), dx=2, dy=2):
     return np.column_stack((x, y)) + c
 
 
-_points_spiral_params = """
-n : int
-    Number of points.
-c : array_like
-    Coordinates of the center ($x_c$, $y_c$).
-rmin : float
-    Minimum radius (distance from the center for the innermost point).
-rmax : float
-    Maximum radius (distance from the center for the outermost point).
-revs : float
-    Total number of revolutions in the spiral.
-""".strip()
-
-@_add_to_tracers(short="Create spiral arrangement of `Tracers` using `points_spiral`.", params=_points_spiral_params)
-@_add_snippets(snippets=dict(params=_points_spiral_params, returns=_points_returns))
+@_add_to_tracers(short="Create spiral arrangement of `Tracers` using `points_spiral`.")
+@_add_snippets(snippets=dict(returns=_points_returns))
 def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
     """Create spiral of points.
 
     Parameters
     ----------
-    %(params)s
+    n : int
+        Number of points.
+    c : array_like
+        Coordinates of the center ($x_c$, $y_c$).
+    rmin : float
+        Minimum radius (distance from the center for the innermost point).
+    rmax : float
+        Maximum radius (distance from the center for the outermost point).
+    revs : float
+        Total number of revolutions in the spiral.
 
     Returns
     -------
@@ -223,25 +232,21 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
     return rad[:, np.newaxis] * rhat + c
 
 
-_points_randn_params = """
-n : int
-    Number of points.
-mu_x, mu_y : float
-    Mean/center of the distribution in each direction.
-sig_x, sig_y : float
-    Standard deviation of the distribution in each direction.
-c : array_like
-    Coordinates of the center ($x_c$, $y_c$).
-""".strip()
-
-@_add_to_tracers(short="Create `Tracers` by sampling from normal distributions using `points_randn`.", params=_points_randn_params)
-@_add_snippets(snippets=dict(params=_points_randn_params, returns=_points_returns))
+@_add_to_tracers(short="Create `Tracers` by sampling from normal distributions using `points_randn`.")
+@_add_snippets(snippets=dict(returns=_points_returns))
 def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
     """Sample from normal distribution.
 
     Parameters
     ----------
-    %(params)s
+    n : int
+        Number of points.
+    mu_x, mu_y : float
+        Mean/center of the distribution in each direction.
+    sig_x, sig_y : float
+        Standard deviation of the distribution in each direction.
+    c : array_like
+        Coordinates of the center ($x_c$, $y_c$).
 
     Returns
     -------
@@ -256,23 +261,19 @@ def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
 # TODO: sample from any scipy dist, optionally different for x and y
 
 
-_points_grid_params = """
-nx, ny : int
-    Number of points in the grid in each direction.
-xbounds, ybounds : array_like
-    Inclusive bounds in each direction (lower, upper).
-c : array_like
-    Coordinates of the center ($x_c$, $y_c$).
-""".strip()
-
-@_add_to_tracers(short="Create gridded arrangement of `Tracers` using `points_grid`.", params=_points_grid_params)
-@_add_snippets(snippets=dict(params=_points_grid_params, returns=_points_returns))
+@_add_to_tracers(short="Create gridded arrangement of `Tracers` using `points_grid`.")
+@_add_snippets(snippets=dict(returns=_points_returns))
 def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), c=(0, 0)):
     """Points on a grid.
 
     Parameters
     ----------
-    %(params)s
+    nx, ny : int
+        Number of points in the grid in each direction.
+    xbounds, ybounds : array_like
+        Inclusive bounds in each direction (lower, upper).
+    c : array_like
+        Coordinates of the center ($x_c$, $y_c$).
 
     Returns
     -------
@@ -285,23 +286,19 @@ def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), c=(0, 0)):
     return np.column_stack((X.ravel(), Y.ravel())) + c
 
 
-_points_circles_params = """
-ns : array_like
-    Number of points in each circle.
-rs : array_like
-    Radii of each circle (one for each value of `ns`).
-c : array_like
-    Coordinates of the center ($x_c$, $y_c$).
-""".strip()
-
-@_add_to_tracers(short="Create concentric circle arrangement of `Tracers` using `points_circles`.", params=_points_circles_params)
-@_add_snippets(snippets=dict(params=_points_circles_params, returns=_points_returns))
+@_add_to_tracers(short="Create concentric circle arrangement of `Tracers` using `points_circles`.")
+@_add_snippets(snippets=dict(returns=_points_returns))
 def points_circles(ns=(10, 20, 34, 50), rs=(0.5, 1, 1.5, 2), *, c=(0, 0)):
     """Concentric circles.
 
     Parameters
     ----------
-    %(params)s
+    ns : array_like
+        Number of points in each circle.
+    rs : array_like
+        Radii of each circle (one for each value of `ns`).
+    c : array_like
+        Coordinates of the center ($x_c$, $y_c$).
 
     Returns
     -------
