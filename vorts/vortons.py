@@ -5,12 +5,132 @@ import functools
 from typing import NamedTuple
 import warnings
 
+import makefun
 import numpy as np
 import xarray as xr
 
 from . import plot
 
 
+class Tracers:
+    """Collection of `Tracer`s."""
+    def __init__(self, x, y):
+        """
+        Parameters
+        ----------
+        x, y : array_like
+            shape: `(n_vortons,)`
+
+            Tracer initial $x$ and $y$ positions.
+        """
+        x = np.asarray(x, dtype=float)
+        y = np.asarray(y, dtype=float)
+
+        assert x.shape == y.shape and x.ndim == 1
+
+        # TODO: change to private attr, `_xy` or somesuch
+        self.state_mat = np.column_stack((x, y))
+
+
+    def __repr__(self):
+        # unlike Vortons, might have many tracers
+        # so don't need to show all in the repr
+        n = self.n
+        return f"Tracers(n={n})"
+
+    @property
+    def n(self):
+        return self.state_mat.shape[0]
+
+    @property
+    def x(self):
+        return self.state_mat[:,0]
+
+    @property
+    def y(self):
+        return self.state_mat[:,1]
+
+    def state_vec(self):
+        return self.state_mat.T.flatten()
+
+    def state_mat_full(self):
+        """Full state mat for tracers doesn't include G."""
+        warnings.warn("Note that `state_mat_full` for tracers is the same as `state_mat` (no G).")
+        return self.state_mat
+
+    # Note: these should be `classmethod`, but that messes up the wrapped signature (first arg missing)
+    # @staticmethod
+    # @functools.wraps(points_spiral)
+    # def spiral(*args, **kwargs):
+    #     xy = points_spiral(*args, **kwargs).T
+    #     return Tracers(*xy)
+
+    # @staticmethod
+    # @functools.wraps(points_randn)
+    # def randn(*args, **kwargs):
+    #     xy = points_randn(*args, **kwargs).T
+    #     return Tracers(*xy)
+
+    # @staticmethod
+    # @functools.wraps(points_randu)
+    # def randu(*args, **kwargs):
+    #     xy = points_randu(*args, **kwargs).T
+    #     return Tracers(*xy)
+
+    # @staticmethod
+    # @functools.wraps(points_grid)
+    # def grid(*args, **kwargs):
+    #     xy = points_grid(*args, **kwargs).T
+    #     return Tracers(*xy)
+
+    # @staticmethod
+    # @functools.wraps(points_circles)
+    # def circles(*args, **kwargs):
+    #     xy = points_circles(*args, **kwargs).T
+    #     return Tracers(*xy)
+
+    def plot(self, *, connect=False, ax=None):
+        """Plot tracers, connected if `connect=True`."""
+        import matplotlib.pyplot as plt
+
+        fig, ax = plot.maybe_new_figure(ax)
+
+        x, y = self.x, self.y
+        fmt = "-o" if connect else "o"
+        ax.plot(x, y, fmt, c="0.5", ms=4, label="tracers")
+
+        ax.set(
+            xlabel="$x$",
+            ylabel="$y$",
+        )
+        ax.set_aspect("equal", "box")
+        fig.legend()
+        ax.grid(True)
+        fig.set_tight_layout(True)
+
+
+def _to_tracers(points_method):
+    """Decorator for adding points fns to `Tracers`."""
+    from inspect import signature
+
+    doc = points_method.__doc__.rstrip() + f"\n    See also\n    --------\n    {points_method.__name__}"
+    # doc = f"\n\nSee also\n--------\n{points_method.__name__}\n\n    Original function."
+
+    # functools.wraps(points_method)
+    @makefun.wraps(points_method, doc=doc, new_sig=signature(points_method))
+    # @makefun.with_signature(signature(points_method))
+    def f(*args, **kwargs):
+        return Tracers(*points_method(*args, **kwargs).T)
+
+    # pdoc doesn't catch this part but I guess that's ok
+    # f.__doc__ += f"\n\nSee also\n--------\n{points_method.__name__}\n    Original function."
+
+    setattr(Tracers, f"{points_method.__name__[7:]}", f)
+
+    return points_method
+
+
+@_to_tracers
 def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
     """Create spiral of points.
 
@@ -42,6 +162,7 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
     return rad[:, np.newaxis] * rhat + c
 
 
+# @_to_tracers
 def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
     """Sample from normal distribution.
 
@@ -62,6 +183,7 @@ def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
     return np.column_stack((x, y)) + c
 
 
+@_to_tracers
 def points_randu(n, *, c=(0, 0), dx=2, dy=2):
     """Sample from 2-d uniform.
 
@@ -83,6 +205,7 @@ def points_randu(n, *, c=(0, 0), dx=2, dy=2):
 # TODO: sample from any scipy dist, optionally different for x and y
 
 
+@_to_tracers
 def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), c=(0, 0)):
     """Points on a grid.
 
@@ -102,6 +225,7 @@ def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), c=(0, 0)):
     return np.column_stack((X.ravel(), Y.ravel())) + c
 
 
+@_to_tracers
 def points_circles(ns=(10, 20, 34, 50), rs=(0.5, 1, 1.5, 2), *, c=(0, 0)):
     """Concentric circles.
 
@@ -280,101 +404,101 @@ class Tracer(NamedTuple):
 #       also should add xy (state_mat for both) and xy_vec (state_vec)
 
 
-class Tracers:
-    """Collection of `Tracer`s."""
-    def __init__(self, x, y):
-        """
-        Parameters
-        ----------
-        x, y : array_like
-            shape: `(n_vortons,)`
+# class Tracers:
+#     """Collection of `Tracer`s."""
+#     def __init__(self, x, y):
+#         """
+#         Parameters
+#         ----------
+#         x, y : array_like
+#             shape: `(n_vortons,)`
 
-            Tracer initial $x$ and $y$ positions.
-        """
-        x = np.asarray(x, dtype=float)
-        y = np.asarray(y, dtype=float)
+#             Tracer initial $x$ and $y$ positions.
+#         """
+#         x = np.asarray(x, dtype=float)
+#         y = np.asarray(y, dtype=float)
 
-        assert x.shape == y.shape and x.ndim == 1
+#         assert x.shape == y.shape and x.ndim == 1
 
-        # TODO: change to private attr, `_xy` or somesuch
-        self.state_mat = np.column_stack((x, y))
+#         # TODO: change to private attr, `_xy` or somesuch
+#         self.state_mat = np.column_stack((x, y))
 
 
-    def __repr__(self):
-        # unlike Vortons, might have many tracers
-        # so don't need to show all in the repr
-        n = self.n
-        return f"Tracers(n={n})"
+#     def __repr__(self):
+#         # unlike Vortons, might have many tracers
+#         # so don't need to show all in the repr
+#         n = self.n
+#         return f"Tracers(n={n})"
 
-    @property
-    def n(self):
-        return self.state_mat.shape[0]
+#     @property
+#     def n(self):
+#         return self.state_mat.shape[0]
 
-    @property
-    def x(self):
-        return self.state_mat[:,0]
+#     @property
+#     def x(self):
+#         return self.state_mat[:,0]
 
-    @property
-    def y(self):
-        return self.state_mat[:,1]
+#     @property
+#     def y(self):
+#         return self.state_mat[:,1]
 
-    def state_vec(self):
-        return self.state_mat.T.flatten()
+#     def state_vec(self):
+#         return self.state_mat.T.flatten()
 
-    def state_mat_full(self):
-        """Full state mat for tracers doesn't include G."""
-        warnings.warn("Note that `state_mat_full` for tracers is the same as `state_mat` (no G).")
-        return self.state_mat
+#     def state_mat_full(self):
+#         """Full state mat for tracers doesn't include G."""
+#         warnings.warn("Note that `state_mat_full` for tracers is the same as `state_mat` (no G).")
+#         return self.state_mat
 
-    # Note: these should be `classmethod`, but that messes up the wrapped signature (first arg missing)
-    @staticmethod
-    @functools.wraps(points_spiral)
-    def spiral(*args, **kwargs):
-        xy = points_spiral(*args, **kwargs).T
-        return Tracers(*xy)
+#     # Note: these should be `classmethod`, but that messes up the wrapped signature (first arg missing)
+#     @staticmethod
+#     @functools.wraps(points_spiral)
+#     def spiral(*args, **kwargs):
+#         xy = points_spiral(*args, **kwargs).T
+#         return Tracers(*xy)
 
-    @staticmethod
-    @functools.wraps(points_randn)
-    def randn(*args, **kwargs):
-        xy = points_randn(*args, **kwargs).T
-        return Tracers(*xy)
+#     @staticmethod
+#     @functools.wraps(points_randn)
+#     def randn(*args, **kwargs):
+#         xy = points_randn(*args, **kwargs).T
+#         return Tracers(*xy)
 
-    @staticmethod
-    @functools.wraps(points_randu)
-    def randu(*args, **kwargs):
-        xy = points_randu(*args, **kwargs).T
-        return Tracers(*xy)
+#     @staticmethod
+#     @functools.wraps(points_randu)
+#     def randu(*args, **kwargs):
+#         xy = points_randu(*args, **kwargs).T
+#         return Tracers(*xy)
 
-    @staticmethod
-    @functools.wraps(points_grid)
-    def grid(*args, **kwargs):
-        xy = points_grid(*args, **kwargs).T
-        return Tracers(*xy)
+#     @staticmethod
+#     @functools.wraps(points_grid)
+#     def grid(*args, **kwargs):
+#         xy = points_grid(*args, **kwargs).T
+#         return Tracers(*xy)
 
-    @staticmethod
-    @functools.wraps(points_circles)
-    def circles(*args, **kwargs):
-        xy = points_circles(*args, **kwargs).T
-        return Tracers(*xy)
+#     @staticmethod
+#     @functools.wraps(points_circles)
+#     def circles(*args, **kwargs):
+#         xy = points_circles(*args, **kwargs).T
+#         return Tracers(*xy)
 
-    def plot(self, *, connect=False, ax=None):
-        """Plot tracers, connected if `connect=True`."""
-        import matplotlib.pyplot as plt
+#     def plot(self, *, connect=False, ax=None):
+#         """Plot tracers, connected if `connect=True`."""
+#         import matplotlib.pyplot as plt
 
-        fig, ax = plot.maybe_new_figure(ax)
+#         fig, ax = plot.maybe_new_figure(ax)
 
-        x, y = self.x, self.y
-        fmt = "-o" if connect else "o"
-        ax.plot(x, y, fmt, c="0.5", ms=4, label="tracers")
+#         x, y = self.x, self.y
+#         fmt = "-o" if connect else "o"
+#         ax.plot(x, y, fmt, c="0.5", ms=4, label="tracers")
 
-        ax.set(
-            xlabel="$x$",
-            ylabel="$y$",
-        )
-        ax.set_aspect("equal", "box")
-        fig.legend()
-        ax.grid(True)
-        fig.set_tight_layout(True)
+#         ax.set(
+#             xlabel="$x$",
+#             ylabel="$y$",
+#         )
+#         ax.set_aspect("equal", "box")
+#         fig.legend()
+#         ax.grid(True)
+#         fig.set_tight_layout(True)
 
 
 
