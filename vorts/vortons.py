@@ -2,6 +2,7 @@
 `Vorton`/`Tracer` classes and `Vortons`/`Tracers` container classes.
 """
 import functools
+import inspect
 from typing import NamedTuple
 import warnings
 
@@ -10,6 +11,26 @@ import numpy as np
 import xarray as xr
 
 from . import plot
+
+
+def _add_snippets(func=None, *, snippets=None):
+    """Decorator for adding snippets to a docstring. This function
+    uses ``%(name)s`` substitution rather than `str.format` substitution so
+    that the `snippets` keys can be invalid variable names.
+
+    Based on [this one](https://github.com/lukelbd/proplot/blob/master/proplot/internals/docstring.py),
+    but snippets passed as an argument instead of using a global dict.
+    """
+    if func is None:
+        return functools.partial(_add_snippets, snippets=snippets)
+
+    snippets = snippets if snippets else {}
+
+    func.__doc__ = inspect.getdoc(func)
+    if func.__doc__:
+        func.__doc__ %= {key: value.strip() for key, value in snippets.items()}
+
+    return func
 
 
 class Tracers:
@@ -58,35 +79,22 @@ class Tracers:
         warnings.warn("Note that `state_mat_full` for tracers is the same as `state_mat` (no G).")
         return self.state_mat
 
-    # Note: these should be `classmethod`, but that messes up the wrapped signature (first arg missing)
-    # @staticmethod
-    # @functools.wraps(points_spiral)
-    # def spiral(*args, **kwargs):
-    #     xy = points_spiral(*args, **kwargs).T
-    #     return Tracers(*xy)
+    # @classmethod
+    # @_add_snippets(snippets=dict(params=_points_randu_params))
+    # @makefun.with_signature(inspect.signature(points_randu))
+    # def randu(cls, *args, **kwargs):
+    #     """Return `Tracers` created by sampling from normal distributions, using `points_randu`.
 
-    # @staticmethod
-    # @functools.wraps(points_randn)
-    # def randn(*args, **kwargs):
-    #     xy = points_randn(*args, **kwargs).T
-    #     return Tracers(*xy)
+    #     Parameters
+    #     ----------
+    #     %(params)s
+    #     """
+    #     return cls(*points_randu(*args, **kwargs).T)
 
     # @staticmethod
     # @functools.wraps(points_randu)
     # def randu(*args, **kwargs):
     #     xy = points_randu(*args, **kwargs).T
-    #     return Tracers(*xy)
-
-    # @staticmethod
-    # @functools.wraps(points_grid)
-    # def grid(*args, **kwargs):
-    #     xy = points_grid(*args, **kwargs).T
-    #     return Tracers(*xy)
-
-    # @staticmethod
-    # @functools.wraps(points_circles)
-    # def circles(*args, **kwargs):
-    #     xy = points_circles(*args, **kwargs).T
     #     return Tracers(*xy)
 
     def plot(self, *, connect=False, ax=None):
@@ -109,43 +117,96 @@ class Tracers:
         fig.set_tight_layout(True)
 
 
-def _to_tracers(points_method):
+def _add_to_tracers(points_method=None, *, short=None, params=None):
     """Decorator for adding points fns to `Tracers`."""
-    from inspect import signature
+    from inspect import signature, getdoc
 
-    doc = points_method.__doc__.rstrip() + f"\n    See also\n    --------\n    {points_method.__name__}"
-    # doc = f"\n\nSee also\n--------\n{points_method.__name__}\n\n    Original function."
+    if points_method is None:
+        return functools.partial(_add_to_tracers, short=short, params=params)
 
-    # functools.wraps(points_method)
-    @makefun.wraps(points_method, doc=doc, new_sig=signature(points_method))
-    # @makefun.with_signature(signature(points_method))
+    short = short if short else ""
+    params = params if params else ""
+
+    @staticmethod
+    @makefun.with_signature(signature(points_method))
+    @_add_snippets(snippets=dict(params=params, short=short))
     def f(*args, **kwargs):
-        return Tracers(*points_method(*args, **kwargs).T)
+        """%(short)s
 
-    # pdoc doesn't catch this part but I guess that's ok
-    # f.__doc__ += f"\n\nSee also\n--------\n{points_method.__name__}\n    Original function."
+        Parameters
+        ----------
+        %(params)s
+
+        Returns
+        -------
+        Tracers
+        """
+        return Tracers(*points_method(*args, **kwargs).T)
 
     setattr(Tracers, f"{points_method.__name__[7:]}", f)
 
     return points_method
 
 
-@_to_tracers
+_points_returns = """
+numpy.ndarray
+    2-d array with first column $x$ and second column $y$.
+""".strip()
+
+
+_points_randu_params = """
+n : int
+    Number of points.
+c : array_like
+    Coordinates of the center ($x_c$, $y_c$).
+dx, dy : float
+    $x$ positions will be sampled from $[$`-dx`, `dx`$)$, and $y$ similarly.
+""".strip()
+
+@_add_to_tracers(short="Create `Tracers` by sampling from uniform random distributions using `points_randu`.", params=_points_randu_params)
+@_add_snippets(snippets=dict(params=_points_randu_params, returns=_points_returns))
+def points_randu(n, *, c=(0, 0), dx=2, dy=2):
+    """Sample from 2-d uniform.
+
+    Parameters
+    ----------
+    %(params)s
+
+    Returns
+    -------
+    %(returns)s
+    """
+    c = np.asarray(c)
+    x = np.random.uniform(-dx, dx, (n,))
+    y = np.random.uniform(-dy, dy, (n,))
+    return np.column_stack((x, y)) + c
+
+
+_points_spiral_params = """
+n : int
+    Number of points.
+c : array_like
+    Coordinates of the center ($x_c$, $y_c$).
+rmin : float
+    Minimum radius (distance from the center for the innermost point).
+rmax : float
+    Maximum radius (distance from the center for the outermost point).
+revs : float
+    Total number of revolutions in the spiral.
+""".strip()
+
+@_add_to_tracers(short="Create spiral arrangement of `Tracers` using `points_spiral`.", params=_points_spiral_params)
+@_add_snippets(snippets=dict(params=_points_spiral_params, returns=_points_returns))
 def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
     """Create spiral of points.
 
     Parameters
     ----------
-    n : int
-        Number of points.
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
-    rmin : float
-        Minimum radius (distance from the center for the innermost point).
-    rmax : float
-        Maximum radius (distance from the center for the outermost point).
-    revs : float
-        Total number of revolutions in the spiral.
+    %(params)s
+
+    Returns
+    -------
+    %(returns)s
     """
     # TODO: option for linear distance between consecutive points
     c = np.asarray(c)
@@ -162,20 +223,29 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
     return rad[:, np.newaxis] * rhat + c
 
 
-# @_to_tracers
+_points_randn_params = """
+n : int
+    Number of points.
+mu_x, mu_y : float
+    Mean/center of the distribution in each direction.
+sig_x, sig_y : float
+    Standard deviation of the distribution in each direction.
+c : array_like
+    Coordinates of the center ($x_c$, $y_c$).
+""".strip()
+
+@_add_to_tracers(short="Create `Tracers` by sampling from normal distributions using `points_randn`.", params=_points_randn_params)
+@_add_snippets(snippets=dict(params=_points_randn_params, returns=_points_returns))
 def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
     """Sample from normal distribution.
 
     Parameters
     ----------
-    n : int
-        Number of points.
-    mu_x, mu_y : float
-        Mean/center of the distribution in each direction.
-    sig_x, sig_y : float
-        Standard deviation of the distribution in each direction.
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
+    %(params)s
+
+    Returns
+    -------
+    %(returns)s
     """
     c = np.asarray(c)
     x = np.random.normal(mu_x, sig_x, (n,))
@@ -183,40 +253,30 @@ def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
     return np.column_stack((x, y)) + c
 
 
-@_to_tracers
-def points_randu(n, *, c=(0, 0), dx=2, dy=2):
-    """Sample from 2-d uniform.
-
-    Parameters
-    ----------
-    n : int
-        Number of points.
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
-    dx, dy : float
-        $x$ positions will be sampled from $[$`-dx`, `dx`$)$, and $y$ similarly.
-    """
-    c = np.asarray(c)
-    x = np.random.uniform(-dx, dx, (n,))
-    y = np.random.uniform(-dy, dy, (n,))
-    return np.column_stack((x, y)) + c
-
-
 # TODO: sample from any scipy dist, optionally different for x and y
 
 
-@_to_tracers
+_points_grid_params = """
+nx, ny : int
+    Number of points in the grid in each direction.
+xbounds, ybounds : array_like
+    Inclusive bounds in each direction (lower, upper).
+c : array_like
+    Coordinates of the center ($x_c$, $y_c$).
+""".strip()
+
+@_add_to_tracers(short="Create gridded arrangement of `Tracers` using `points_grid`.", params=_points_grid_params)
+@_add_snippets(snippets=dict(params=_points_grid_params, returns=_points_returns))
 def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), c=(0, 0)):
     """Points on a grid.
 
     Parameters
     ----------
-    nx, ny : int
-        Number of points in the grid in each direction.
-    xbounds, ybounds : array_like
-        Inclusive bounds in each direction (lower, upper).
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
+    %(params)s
+
+    Returns
+    -------
+    %(returns)s
     """
     c = np.asarray(c)
     x = np.linspace(*xbounds, nx)
@@ -225,18 +285,27 @@ def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), c=(0, 0)):
     return np.column_stack((X.ravel(), Y.ravel())) + c
 
 
-@_to_tracers
+_points_circles_params = """
+ns : array_like
+    Number of points in each circle.
+rs : array_like
+    Radii of each circle (one for each value of `ns`).
+c : array_like
+    Coordinates of the center ($x_c$, $y_c$).
+""".strip()
+
+@_add_to_tracers(short="Create concentric circle arrangement of `Tracers` using `points_circles`.", params=_points_circles_params)
+@_add_snippets(snippets=dict(params=_points_circles_params, returns=_points_returns))
 def points_circles(ns=(10, 20, 34, 50), rs=(0.5, 1, 1.5, 2), *, c=(0, 0)):
     """Concentric circles.
 
     Parameters
     ----------
-    ns : array_like
-        Number of points in each circle.
-    rs : array_like
-        Radii of each circle (one for each value of `ns`).
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
+    %(params)s
+
+    Returns
+    -------
+    %(returns)s
     """
     c = np.asarray(c)
     x = []
@@ -305,7 +374,7 @@ def rotate_2d(x, *, ang_deg=None, rotmat=None):
     return (rotmat @ x[:, np.newaxis]).squeeze()
 
 
-def regular_polygon_vertices(n, *, c=(0, 0), r_c=1):
+def vertices_regular_polygon(n, *, c=(0, 0), r_c=1):
     """Regular polygon vertices.
 
     Parameters
@@ -333,7 +402,7 @@ def regular_polygon_vertices(n, *, c=(0, 0), r_c=1):
     return verts + c
 
 
-def isos_triangle_vertices(*, theta_deg=None, Lambda=None):
+def vertices_isos_triangle(*, theta_deg=None, Lambda=None):
     r"""Isosceles triangle vertices.
     With fixed top point $(0, 1)$ and fixed left & right $y=-0.5$.
 
@@ -348,7 +417,7 @@ def isos_triangle_vertices(*, theta_deg=None, Lambda=None):
 
         $\theta = 72^{\circ} \to \Lambda_c$ (equal to $1/\sqrt{2}$)
 
-        $\theta = 60^{\circ} \to$ equilateral triangle (can also create with `regular_polygon_vertices`,
+        $\theta = 60^{\circ} \to$ equilateral triangle (can also create with `vertices_regular_polygon`,
         which gives control over size and location)
 
     Lambda : float
@@ -402,104 +471,6 @@ class Tracer(NamedTuple):
 # TODO: PointVortices ABC that implements adding, has position state_mat, n, x, y, state_vec, etc.
 #       Vortons and Tracers could both be based on it
 #       also should add xy (state_mat for both) and xy_vec (state_vec)
-
-
-# class Tracers:
-#     """Collection of `Tracer`s."""
-#     def __init__(self, x, y):
-#         """
-#         Parameters
-#         ----------
-#         x, y : array_like
-#             shape: `(n_vortons,)`
-
-#             Tracer initial $x$ and $y$ positions.
-#         """
-#         x = np.asarray(x, dtype=float)
-#         y = np.asarray(y, dtype=float)
-
-#         assert x.shape == y.shape and x.ndim == 1
-
-#         # TODO: change to private attr, `_xy` or somesuch
-#         self.state_mat = np.column_stack((x, y))
-
-
-#     def __repr__(self):
-#         # unlike Vortons, might have many tracers
-#         # so don't need to show all in the repr
-#         n = self.n
-#         return f"Tracers(n={n})"
-
-#     @property
-#     def n(self):
-#         return self.state_mat.shape[0]
-
-#     @property
-#     def x(self):
-#         return self.state_mat[:,0]
-
-#     @property
-#     def y(self):
-#         return self.state_mat[:,1]
-
-#     def state_vec(self):
-#         return self.state_mat.T.flatten()
-
-#     def state_mat_full(self):
-#         """Full state mat for tracers doesn't include G."""
-#         warnings.warn("Note that `state_mat_full` for tracers is the same as `state_mat` (no G).")
-#         return self.state_mat
-
-#     # Note: these should be `classmethod`, but that messes up the wrapped signature (first arg missing)
-#     @staticmethod
-#     @functools.wraps(points_spiral)
-#     def spiral(*args, **kwargs):
-#         xy = points_spiral(*args, **kwargs).T
-#         return Tracers(*xy)
-
-#     @staticmethod
-#     @functools.wraps(points_randn)
-#     def randn(*args, **kwargs):
-#         xy = points_randn(*args, **kwargs).T
-#         return Tracers(*xy)
-
-#     @staticmethod
-#     @functools.wraps(points_randu)
-#     def randu(*args, **kwargs):
-#         xy = points_randu(*args, **kwargs).T
-#         return Tracers(*xy)
-
-#     @staticmethod
-#     @functools.wraps(points_grid)
-#     def grid(*args, **kwargs):
-#         xy = points_grid(*args, **kwargs).T
-#         return Tracers(*xy)
-
-#     @staticmethod
-#     @functools.wraps(points_circles)
-#     def circles(*args, **kwargs):
-#         xy = points_circles(*args, **kwargs).T
-#         return Tracers(*xy)
-
-#     def plot(self, *, connect=False, ax=None):
-#         """Plot tracers, connected if `connect=True`."""
-#         import matplotlib.pyplot as plt
-
-#         fig, ax = plot.maybe_new_figure(ax)
-
-#         x, y = self.x, self.y
-#         fmt = "-o" if connect else "o"
-#         ax.plot(x, y, fmt, c="0.5", ms=4, label="tracers")
-
-#         ax.set(
-#             xlabel="$x$",
-#             ylabel="$y$",
-#         )
-#         ax.set_aspect("equal", "box")
-#         fig.legend()
-#         ax.grid(True)
-#         fig.set_tight_layout(True)
-
 
 
 # could exchange x,y for r at some point, to open 3-d option more easily
@@ -778,47 +749,48 @@ class Vortons:
             self.state_mat -= x_cm
 
 
-    @staticmethod
-    def regular_polygon(n, *, G=None, **kwargs):  # TODO: this and the below should be made classmethod since they return class instance
-        r"""Create Vortons with positions corresponding to regular polygon.
+    @classmethod
+    def regular_polygon(cls, n, *, G=None, **kwargs):
+        r"""Create Vortons with positions corresponding to the vertices of a regular polygon.
 
         Parameters
         ----------
         n : int
             Polygon order.
-        G : int, array-like, optional
+        G : int, array_like, optional
             $\Gamma$ value(s) to use.
 
-            Single value or array of values
+            Single value or size-$n$ array-like of values.
 
             default: 1.0
 
-        `**kwargs` are passed on to `regular_polygon_vertices`.
+        **kwargs
+            Passed on to `vertices_regular_polygon`.
         """
-        if G is None:
-            G = 1.0  # default
-        G = np.asarray(G)
-        if G.size == 1:  # single G provided, or using the default
-            G = np.full((n,), G)  # TODO: could also the constructor to accept single G
-        if G.size != n:
-            raise ValueError(f"`G` must have size `n` or 1, but is {G.size!r}")
-
-        xy = regular_polygon_vertices(n, **kwargs).T  # x, y cols-> rows (for unpacking)
-
-        return Vortons(G, *xy)
+        G = _maybe_fill_G(G, n)
+        xy = vertices_regular_polygon(n, **kwargs).T  # x, y cols-> rows (for unpacking)
+        return cls(G, *xy)
 
 
-    @staticmethod
-    def isos_triangle(*, G=None, **kwargs):
-        """Create Vortons with isosceles triangle vertices.
+    @classmethod
+    def isos_triangle(cls, *, G=None, **kwargs):
+        r"""Create Vortons with isosceles triangle vertices.
 
-        `**kwargs` are passed on to `isos_triangle_vertices`.
+        Parameters
+        ----------
+        G : int, array_like, optional
+            $\Gamma$ value(s) to use.
+
+            Single value or size-3 array-like of values.
+
+            default: 1.0
+
+        `**kwargs`
+            Passed on to `vertices_isos_triangle`.
         """
         G = _maybe_fill_G(G, 3)
-
-        xy = isos_triangle_vertices(**kwargs).T
-
-        return Vortons(G, *xy)
+        xy = vertices_isos_triangle(**kwargs).T
+        return cls(G, *xy)
 
 
     def maybe_with_tracers(self, tracers: Tracers = None):

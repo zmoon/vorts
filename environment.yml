@@ -7,6 +7,7 @@ dependencies:
   #
   # used by vorts
   - cycler
+  - makefun
   - matplotlib
   - numba
   - numpy
@@ -20,6 +21,7 @@ dependencies:
   #
   # dev
   - pytest
+  - rope
   #
   # for docs
   - pip
