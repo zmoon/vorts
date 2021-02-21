@@ -18,6 +18,7 @@ dependencies:
   # example nbs
   - ipympl
   - jupyterlab>=3
+  - jupytext
   #
   # dev
   - pytest
