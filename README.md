@@ -7,6 +7,9 @@ Integrate a system of *N* point vortices.
 * [pdoc3](https://pdoc3.github.io/pdoc/) documentation:
   [zmoon.github.io/vorts](https://zmoon.github.io/vorts)
 * GitHub: [zmoon/vorts](https://github.com/zmoon/vorts)
+* Examples:
+  - [![Launch Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/zmoon/vorts/binder?urlpath=lab%2Ftree%2Fexamples) – JupyterLab interface (need to right click on a `.py` to open as notebook)
+  - [![Launch Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/zmoon/vorts/binder?filepath=examples) – Jupyter Notebook interface (just double click on `.py` to open as notebook)
 
 ## Equations
 
