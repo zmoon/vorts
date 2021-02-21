@@ -27,12 +27,11 @@ yi = [-1, 0.5]
 vs = vorts.Vortons(G, xi, yi)
 vs.plot()  # plot initial state
 
-ts = vorts.Tracers.spiral(100, c=vs.cm())
+ts = vorts.Tracers.spiral(2, c=vs.cm())
 ts.plot()
 
 m = vorts.Model_py(
-    vs,
-    ts,
+    vs, ts,
     dt=0.1, nt=2000,
     # int_scheme_name="not-a-scheme",  # raises ValueError
     # int_scheme_name="FT",
@@ -41,6 +40,9 @@ m = vorts.Model_py(
     # int_scheme_name="RK4_1b1",
     # int_scheme_name="scipy_RK45",
     # int_scheme_name='scipy_DOP853',
+    # int_scheme_name='scipy_Radau',
+    # int_scheme_name='scipy_BDF',
+    # int_scheme_name='scipy_LSODA',
     # adapt_tstep=False,
     # adapt_tstep=True,
 )

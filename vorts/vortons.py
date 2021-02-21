@@ -1,19 +1,26 @@
 """
 `Vorton`/`Tracer` classes and `Vortons`/`Tracers` container classes.
+
+The module name is "vortons" because most of the focus is on the vorton collection.
+
+`Vortons` and `Tracers` can be added.
+Currently the result has the class of the one on the left in the addition.
 """
+import abc
 import functools
 import inspect
-from typing import NamedTuple
+from typing import NamedTuple #, NamedTupleMeta
 import warnings
 
 import makefun
 import numpy as np
-import xarray as xr
 
-from . import plot
+from .plot import maybe_new_figure as _maybe_new_fig
 
 
-# TODO: add global snippets dict but still allow `snippets` to override
+
+_SNIPPETS = {}
+
 def _add_snippets(func=None, *, snippets=None):
     """Decorator for adding snippets to a docstring. This function
     uses ``%(name)s`` substitution rather than `str.format` substitution so
@@ -25,7 +32,10 @@ def _add_snippets(func=None, *, snippets=None):
     if func is None:
         return functools.partial(_add_snippets, snippets=snippets)
 
-    snippets = snippets if snippets else {}
+    if snippets is None:
+        snippets = {}
+
+    snippets = {**_SNIPPETS, **snippets}
 
     func.__doc__ = inspect.getdoc(func)
     if func.__doc__:
@@ -34,8 +44,40 @@ def _add_snippets(func=None, *, snippets=None):
     return func
 
 
-class Tracers:
-    """Collection of `Tracer`s."""
+# class PointBase(NamedTupleMeta):
+#     """Point base class with $x$ and $y$."""
+#     x: float
+#     """$x$ position"""
+#     y: float
+#     """$y$ position"""
+
+
+class Vorton(NamedTuple):
+    """A vorton that knows its current state (position and strength).
+
+    See also
+    --------
+    Vortons : For a more detailed description.
+    """
+    G: float
+    r"""$\Gamma$, the strength of the circulation, with sign to indicate direction."""
+    x: float
+    """$x$ position"""
+    y: float
+    """$y$ position"""
+
+
+class Tracer(NamedTuple):
+    r"""Tracer -- a vorton with $\Gamma=0$ (no circulation/mass) that knows its current position."""
+    x: float
+    """$x$ position"""
+    y: float
+    """$y$ position"""
+
+
+class PointsBase(abc.ABC):
+    """Points base class with $x$ and $y$."""
+
     def __init__(self, x, y):
         """
         Parameters
@@ -43,66 +85,113 @@ class Tracers:
         x, y : array_like
             shape: `(n_vortons,)`
 
-            Tracer initial $x$ and $y$ positions.
+            Initial $x$ and $y$ positions.
         """
         x = np.asarray(x, dtype=float)
         y = np.asarray(y, dtype=float)
-
         assert x.shape == y.shape and x.ndim == 1
 
-        # TODO: change to private attr, `_xy` or somesuch
-        self.state_mat = np.column_stack((x, y))
+        self._xy = np.column_stack((x, y))
 
+        self._points = None
+
+    @abc.abstractmethod
+    def _update_points(self):
+        """Update `_points` list of corresponding point objects."""
+        ...
 
     def __repr__(self):
-        # unlike Vortons, might have many tracers
-        # so don't need to show all in the repr
-        n = self.n
-        return f"Tracers(n={n})"
+        self._update_points()  # ensure consistency
+        n_show = min(len(self._points), 10)
+        s_points = "\n".join(f"  {v}" for v in self._points[:n_show])
+        if n_show < self.n:
+            s_points += "\n  ..."
+        return f"{self.__class__.__name__}(\n{s_points}\n)"
 
     @property
     def n(self):
-        return self.state_mat.shape[0]
+        """Number of points."""
+        return self._xy.shape[0]
 
     @property
     def x(self):
-        return self.state_mat[:,0]
+        """Array of $x$ positions (should be a view)."""
+        return self._xy[:,0]
 
     @property
     def y(self):
-        return self.state_mat[:,1]
+        """Array of $y$ positions (should be a view)."""
+        return self._xy[:,1]
 
-    def state_vec(self):
-        return self.state_mat.T.flatten()
+    @property
+    def xy(self):
+        """2-d array of $(x, y)$ coordinates -- each row is the coordinate of one point.
+        This is the data array on which the others depend.
+        """
+        return self._xy
+
+    @xy.setter
+    def xy(self, xy):
+        warnings.warn("The coordinates are not intended to be modified this way. Doing nothing.")
+        # Elements can still be modified though! And through the other views to `_xy` as well.
+
+    @abc.abstractmethod
+    def state_mat_full(self):
+        """Full state matrix (could be same as `xy` but should return a copy)."""
+        ...
+
+    @abc.abstractmethod
+    def plot(self):
+        """Plot state."""
+        ...
+
+    def __add__(self, other):
+        try:
+            xy = np.append(self.xy, other.xy, axis=0)
+        except AttributeError:
+            raise TypeError(f"Addition to {type(other)!r} is unsupported.")
+        else:
+            return self.__class__(*xy.T)
+
+    # def __iadd__(self, other):
+
+
+class Tracers(PointsBase):
+    """Collection of `Tracer`s."""
+    def __init__(self, x, y):
+        """
+        Parameters
+        ----------
+        x, y : array_like
+            shape: `(n_tracers,)`
+
+            Tracer initial $x$ and $y$ positions.
+        """
+        super().__init__(x=x, y=y)
+
+    def _update_points(self):
+        self._points = [Tracer(x, y) for x, y in self._xy]
+
+    @property
+    def tracers(self):
+        """List of `Tracer` instances corresponding to the coordinates.
+
+        .. warning::
+           Modifying this will not update the `Tracers` data.
+        """
+        self._update_points()  # ensure consistency
+        return self._points
 
     def state_mat_full(self):
         """Full state mat for tracers doesn't include G."""
         warnings.warn("Note that `state_mat_full` for tracers is the same as `state_mat` (no G).")
-        return self.state_mat
-
-    # @classmethod
-    # @_add_snippets(snippets=dict(params=_points_randu_params))
-    # @makefun.with_signature(inspect.signature(points_randu))
-    # def randu(cls, *args, **kwargs):
-    #     """Return `Tracers` created by sampling from normal distributions, using `points_randu`.
-
-    #     Parameters
-    #     ----------
-    #     %(params)s
-    #     """
-    #     return cls(*points_randu(*args, **kwargs).T)
-
-    # @staticmethod
-    # @functools.wraps(points_randu)
-    # def randu(*args, **kwargs):
-    #     xy = points_randu(*args, **kwargs).T
-    #     return Tracers(*xy)
+        return self._xy
 
     def plot(self, *, connect=False, ax=None):
-        """Plot tracers, connected if `connect=True`."""
+        """Plot tracers, with points connected if `connect=True`."""
         import matplotlib.pyplot as plt
 
-        fig, ax = plot.maybe_new_figure(ax)
+        fig, ax = _maybe_new_fig(ax)
 
         x, y = self.x, self.y
         fmt = "-o" if connect else "o"
@@ -442,27 +531,7 @@ def vertices_isos_triangle(*, theta_deg=None, Lambda=None):
     return np.column_stack((xi, yi))
 
 
-class Vorton(NamedTuple):
-    """A vorton that knows its current state (position and strength)."""
-    G: float
-    r"""$\Gamma$, the strength of the circulation, with sign to indicate direction.
 
-    See also
-    --------
-    Vortons : For a more detailed description.
-    """
-    x: float
-    """$x$ position"""
-    y: float
-    """$y$ position"""
-
-
-class Tracer(NamedTuple):
-    r"""Tracer -- a vorton with $\Gamma=0$ (no circulation/mass) that knows its current position."""
-    x: float
-    """$x$ position"""
-    y: float
-    """$y$ position"""
 
 
 # TODO: PointVortices ABC that implements adding, has position state_mat, n, x, y, state_vec, etc.
@@ -471,7 +540,7 @@ class Tracer(NamedTuple):
 
 
 # could exchange x,y for r at some point, to open 3-d option more easily
-class Vortons:
+class Vortons(PointsBase):
     """Collection of `Vorton`s."""
     def __init__(self, G, x, y):
         r"""
@@ -492,13 +561,16 @@ class Vortons:
             `y`: $y$ positions
 
         """
+        super().__init__(x=x, y=y)
+
         self.G = np.asarray(G)
         r"""Array of vorton strengths ($\Gamma$)."""
-        if np.any(self.G == 0):
-            warnings.warn(
-                "Tracers should be in a `Tracers` instance. "
-                "The ability to add them here may be removed in the future."
-            )
+        # if np.any(self.G == 0):
+        #     warnings.warn(
+        #         "Tracers should be in a `Tracers` instance. "
+        #         "The ability to add them here may be removed in the future."
+        #     )
+        assert self.G.ndim == 1 and self.G.size == self.n  # n_vortons
 
         # the state matrix has shape (n_vortons, n_pos_dims) (G excluded since time-invariant)
         x = np.asarray(x, dtype=float)
@@ -506,64 +578,23 @@ class Vortons:
         self.state_mat = np.column_stack((x, y))
         """2-d array of $(x, y)$ coordinates -- each row is the coordinate of one vorton."""
 
-        assert self.G.ndim == 1 and self.state_mat.shape[1] == 2
-        assert self.G.size == self.state_mat.shape[0]  # n_vortons
+    def _update_points(self):
+        self._points = [Vorton(G, x, y) for G, x, y in self.state_mat_full()]
 
-        # create initial corresponding Vorton objects
-        self._update_vortons()
+    def vortons(self):
+        """List of corresponding `Vorton` objects."""
+        self._update_points()
+        return self._points
 
-
-    # these 2 don't really need to be property?
-    # maybe shouldn't be, to emphasize that state_mat is the real data
-    # @property
-    def state_vec(self):
-        """Return flattened state matrix (`Vortons.state_mat`; `Vortons.G` not included).
-
-        If using `vorts.py.integ.integrate_scipy`,
-        this is needed to feed to [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html),
-        which requires a 1-d array for its `y0` input.
-        """
-        return self.state_mat.T.flatten()  # TODO: change to ravel, to return view when possible
-
-    # @property
     def state_mat_full(self):
-        """Return full state matrix: (`Vortons.G`, `Vortons.x`, `Vortons.y`) as 3 columns."""
-        return np.column_stack((self.G, self.state_mat))
+        """Return full state matrix: ($G$, $x$, $y$ / `Vortons.G`, `Vortons.x`, `Vortons.y`) as 3 columns."""
+        return np.column_stack((self.G, self.xy))
 
-    # seems to return a view into self.G, so ok to be property
+    # Seems to return a view into self.G, so ok to be property
     @property
     def G_col(self):
         """`Vortons.G` as a column vector."""
         return self.G[:, np.newaxis]
-
-    @property
-    def x(self):
-        """Array of $x$ positions (a view into `Vortons.state_mat`)."""
-        # slice indexing should give just a view into `self.state_mat`
-        # thus `self.x.base` will return the state mat
-        # i.e., `vs.x.base is vs.state_mat`
-        return self.state_mat[:,0]
-
-    @property
-    def y(self):
-        """Array of $y$ positions (a view into `Vortons.state_mat`)."""
-        return self.state_mat[:,1]
-
-    @property
-    def n(self):
-        """Number of vortons."""
-        # numpy.ndarray size lookups are esentially free
-        return self.G.size  # will have to change if want to allow single G at some point
-
-    def __repr__(self):
-        # n_vortons shouldn't be too many, so let's show all
-        s_vorts = "\n".join(f"  {v}" for v in self._vortons)
-        return f"Vortons(\n{s_vorts}\n)"
-        # TODO: should this call `self._update_vortons`? so as to not be out-of-date if state changes?
-
-    def _update_vortons(self):
-        self._vortons = [Vorton(G, x, y) for G, x, y in self.state_mat_full()]
-
 
     def C(self):
         r"""Calculate $C$.
@@ -592,7 +623,6 @@ class Vortons:
 
         return C
 
-
     def H(self):
         r"""Calculate $H$, the Hamiltonian of the system.
 
@@ -613,7 +643,6 @@ class Vortons:
 
         return H
 
-
     def I(self):
         r"""Calculate $I$, the angular impulse of the system.
 
@@ -630,9 +659,7 @@ class Vortons:
 
         return (G * (x**2 + y**2)).sum()
 
-
     # TODO: P and Q (coordinates of the center-of-vorticity)
-
 
     # TODO: results are not right for equi tri... need to check formulas
     def theta(self):
@@ -646,14 +673,13 @@ class Vortons:
 
         return (2/(N-1))**(N*(N-1)/2) * I**(N*(N-1)) * np.exp(4*np.pi*H)
 
-
-    def plot(self):
+    def plot(self, *, ax=None):
         """Plot the vortons.
         (Only their current positions, which are all `Vortons` knows about.)
         """
         import matplotlib.pyplot as plt
 
-        fig, ax = plt.subplots()
+        fig, ax = _maybe_new_fig(ax)
 
         # plot vorton positions
         c_Gp = "cadetblue"
@@ -667,16 +693,16 @@ class Vortons:
         # plot center of mass
         x_cm, y_cm = self.cm()
         s_cm = f"({x_cm:.4g}, {y_cm:.4g})"
-        ax.plot(x_cm, y_cm, "*", ms=13, c="gold", label=f"center of mass\n{s_cm}")
+        ax.plot(x_cm, y_cm, "o", ms=13, c="gold", label=f"center of mass\n{s_cm}")
 
         # 2nd mom
-        x_cm2, y_cm2 = self.mom(2)
+        x_cm2, y_cm2 = self.moment(2)
         s_cm2 = f"({x_cm2:.4g}, {y_cm2:.4g})"
         ax.plot(x_cm2, y_cm2, "*", ms=13, c="0.4", label=f"mom2\n{s_cm2}")
 
         # 3nd mom
         # TODO: helper fn to DRY this
-        x_cm3, y_cm3 = self.mom(3)
+        x_cm3, y_cm3 = self.moment(3)
         s_cm3 = f"({x_cm3:.4g}, {y_cm3:.4g})"
         ax.plot(x_cm3, y_cm3, "*", ms=13, c="0.55", label=f"mom3\n{s_cm3}")
 
@@ -692,8 +718,7 @@ class Vortons:
 
         # return
 
-
-    def mom(self, n, *, abs_G=False, center=False):
+    def moment(self, n, *, abs_G=False, center=False):
         r"""Compute `n`-th moment.
 
         Parameters
@@ -722,15 +747,14 @@ class Vortons:
 
         return x_mom
 
-
     # Chamecki notes suggest this should be called "center of vorticity" or "linear impulse"
     def center_of_mass(self):
         r"""Compute [center of mass](https://en.wikipedia.org/wiki/Center_of_mass#A_system_of_particles)
         using $\Gamma$ (`Vortons.G`) as mass.
-        Equivalent to `Vortons.mom` with `n=1`, `abs_G=True` (currently), `center=False`.
+        Equivalent to `Vortons.moment` with `n=1`, `abs_G=True` (currently), `center=False`.
         """
         # TODO: what impact should sign of G have on cm? mass is always pos. but G can be neg.
-        return self.mom(1, abs_G=True, center=False)
+        return self.moment(1, abs_G=True, center=False)
 
     def cm(self):
         """Alias for `Vortons.center_of_mass`."""
@@ -744,7 +768,6 @@ class Vortons:
             return Vortons(self.G, self.x-x_cm, self.y-y_cm)
         else:
             self.state_mat -= x_cm
-
 
     @classmethod
     def regular_polygon(cls, n, *, G=None, **kwargs):
@@ -768,7 +791,6 @@ class Vortons:
         xy = vertices_regular_polygon(n, **kwargs).T  # x, y cols-> rows (for unpacking)
         return cls(G, *xy)
 
-
     @classmethod
     def isos_triangle(cls, *, G=None, **kwargs):
         r"""Create Vortons with isosceles triangle vertices.
@@ -789,36 +811,30 @@ class Vortons:
         xy = vertices_isos_triangle(**kwargs).T
         return cls(G, *xy)
 
+    def _add_vortons(self, vortons, inplace=False):
+        if inplace: raise NotImplementedError
+        Gxy = np.append(self.state_mat_full(), vortons.state_mat_full(), axis=0)
+        return self.__class__(*Gxy.T)
 
-    def maybe_with_tracers(self, tracers: Tracers = None):
-        """Return new `Vortons` with the tracers (maybe) included.
+    def _maybe_add_tracers(self, tracers, inplace=False):
+        if tracers is None: return self
+        if inplace: raise NotImplementedError
+        G = np.append(self.G, np.zeros((tracers.n,)))
+        x, y = np.append(self.xy, tracers.xy, axis=0).T
+        return self.__class__(G, x, y)
 
-        .. caution::
-           Temporary? hack to get full (combined) `state_vec` for the whole system.
-
-        If `Tracers` is `None`, just returns `self`.
-        """
-        if tracers is None:
-            return self
-
-        # TODO: add option to extend existing Vortons instead of creating a new. `inplace`?
-
-        G_v = self.G
-        xy_v = self.state_mat
-        xy_t = tracers.state_mat
-        G_t = np.zeros((tracers.n,))
-
-        G = np.append(G_v, G_t)
-        x, y = np.append(xy_v, xy_t, axis=0).T  # unpacking arrays goes by rows
-
-        return Vortons(G, x, y)
+    # Overriding base class so can treat tracers and vortons differently
+    def __add__(self, other):
+        if isinstance(other, self.__class__):
+            return self._add_vortons(other)
+        elif isinstance(other, Tracers):
+            return self._maybe_add_tracers(other)
+        else:
+            raise TypeError(f"Addition to {type(other)!r} is unsupported.")
 
     # TODO: indexing dunder methods
 
-    # TODO: overload addition and such
-
     # TODO: class method to take List[Vorton] and return a Vortons?
-
 
 
 def _maybe_fill_G(G, n):
@@ -831,29 +847,3 @@ def _maybe_fill_G(G, n):
         raise ValueError(f"`G` must have size `n` or 1, but is {G.size!r}")
 
     return G
-
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    plt.close("all")
-
-    vs = Vortons([1, 1], [0, 1], [0, 0])
-    vs.plot()
-
-    # G sum here is 0, messing up the mom's...
-    Vortons([1, -1], [0, 1], [0, 0]).plot()
-
-    Vortons.regular_polygon(3).plot()
-
-    Vortons.regular_polygon(10, c=(1, 0), r_c=0.5).plot()
-
-    Vortons.isos_triangle(theta_deg=72).plot()
-
-    Vortons.isos_triangle(Lambda=0.49).plot()
-
-    ts = Tracers.randu(50)
-
-    Tracers.spiral(100).plot()
-
-    Tracers.spiral(200, c=(1, 0), revs=10).plot(connect=True)
