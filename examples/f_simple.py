@@ -1,7 +1,22 @@
-# -*- coding: utf-8 -*-
-"""
-A test run with tracers.
-"""
+# ---
+# jupyter:
+#   jupytext:
+#     formats: ipynb,py:percent
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.10.2
+#   kernelspec:
+#     display_name: Python 3
+#     language: python
+#     name: python3
+# ---
+
+# %% [markdown]
+# # Fortran model
+
+# %%
 import sys
 sys.path.append("../")
 
@@ -10,19 +25,23 @@ import matplotlib.pyplot as plt
 
 import vorts
 
-plt.close("all")
+# %matplotlib widget
 
+
+# %% [markdown]
+# Note that on Binder we need to install `gfortran`. Could use a repo `postBuild` file for that. Or uncomment the below to install with `conda`:
+
+# %%
+# # !conda install -c conda-forge gfortran_linux-64 --yes
+
+# %% [markdown]
+# ## Create case
 
 # %% create
-
-# vs = vorts.Vortons.isos_triangle(G=1, Lambda=1)  # <-> equilateral triangle (theta_deg=60)
-
 vs = vorts.Vortons([1, 1], [0, 0], [-0.5, 1])  # <-> Lambda=0 (no longer a triangle)
-
 vs.plot()
 
 ts = vorts.Tracers.randu(100)
-
 ts.plot()
 
 m = vorts.Model_f(
@@ -35,26 +54,23 @@ m = vorts.Model_f(
 )
 
 
-# %% run
+# %% [markdown]
+# ## Run and plot
 
+# %% run
 m.run()
 
 
 # %% plot results
-
 m.plot()
-
 m.plot("tracers")
 
 
-# %% Poincare?
+# %% [markdown]
+# Since both have $x=0$, either one works to make a nice Poincare map.
 
+# %% Poincare?
 m.plot("poincare")
 
 m.plot("poincare", iv_ref=1)  # this is the one with initial position (0, 1)
-
-m.plot("poincare", iv_ref=1, xtol=1e-3)
-vorts.plot.frame_only()
-
-m.plot("poincare", iv_ref=1, xtol=1e-3)
-vorts.plot.remove_frame(keep_title=False)
+vorts.plot.remove_frame(keep_title=False)  # doesn't show up with `%matplotlib notebook`
