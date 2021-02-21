@@ -1,21 +1,28 @@
 # Conda environment
 name: vorts
 channels:
-  - conda-forge  # could just use defaults?
+  - conda-forge
 dependencies:
   - python
   #
   # used by vorts
-  - numpy
-  - scipy
+  - cycler
+  - makefun
   - matplotlib
   - numba
-  - xarray
-  - cycler
+  - numpy
+  - scipy
   - tqdm
+  - xarray
+  #
+  # example nbs
+  - ipympl
+  - jupyterlab>=3
+  - jupytext
   #
   # dev
   - pytest
+  - rope
   #
   # for docs
   - pip

@@ -103,7 +103,7 @@ class ModelBase(abc.ABC):
         """The number of vortons."""
 
         # initialize hist (an `xr.Dataset`)
-        v0 = self.vortons0.maybe_with_tracers(self.tracers0)  # TODO: change to `add_tracers` and/or overload addition (`__radd__`)
+        v0 = self.vortons0._maybe_add_tracers(self.tracers0)
         # self.hist = init_hist(G, x0, y0, self.nv, self.nt, self.dt)
         self.hist = init_hist(self.nv + self.n_tracers, self.nt, self.dt)
         """An `xr.Dataset` with coordinates `'t'` (time) and `'v'` (vorton),
@@ -176,7 +176,7 @@ class Model_py(ModelBase):
         dt=0.1,
         nt=1000,
         # above are passed to base
-        int_scheme_name='scipy_RK45',
+        int_scheme_name='RK4',
         **int_scheme_kwargs,
     ):
         r"""
@@ -199,15 +199,15 @@ class Model_py(ModelBase):
         int_scheme_name : str
             Time integration scheme name.
 
-            default: `'scipy_RK45'` (the default method of [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html))
+            default: `'RK4'` -- handwritten standard RK4, using Numba to calculate the tendencies
 
             Other currently valid options are:
 
-            * `'scipy_DOP853'` -- also from SciPy, higher-order RK method `'DOP853'` is written in Python like `'RK45'`
+            * `'scipy_*'` methods -- use [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
+
+                where the `*` can be `RK45`, `DOP854`, `Radau`, `BDF`, `LSODA`
 
             * `'FT'` -- handwritten 1st-order forward Euler
-
-            * `'RK4'` -- handwritten standard RK4
 
         **int_scheme_kwargs
             Passed on to `vorts.py.integ.integrate_manual` or `vorts.py.integ.integrate_scipy`.
@@ -238,7 +238,7 @@ class Model_py(ModelBase):
 
         # manual (handwritten) integrators
         if "scipy" not in self.int_scheme_name:
-            v0 = self.vortons0.maybe_with_tracers(self.tracers0)
+            v0 = self.vortons0._maybe_add_tracers(self.tracers0)
             x0 = v0.x
             y0 = v0.y
             G = v0.G
@@ -260,8 +260,8 @@ class Model_py(ModelBase):
 
         # integration using SciPy
         else:
-            v0 = self.vortons0.maybe_with_tracers(self.tracers0)
-            y0 = v0.state_vec()
+            v0 = self.vortons0._maybe_add_tracers(self.tracers0)
+            y0 = v0.xy.T.flatten()  # needs to be a 1-d array!
             G_col = v0.G_col
             data = integrate_scipy(
                 y0,
@@ -370,7 +370,7 @@ class Model_f(ModelBase):
         #            delimiter=' ', fmt='%.16f', header='xi yi')
 
         # Write combined vortons + tracers, with vortons first
-        mat = self.vortons0.maybe_with_tracers(self.tracers0).state_mat_full()
+        mat = self.vortons0._maybe_add_tracers(self.tracers0).state_mat_full()
         np.savetxt(FORT_BASE_DIR / 'in/vortons.txt', mat,
             delimiter=' ', fmt='%.16f', header='Gamma xi yi')
 
