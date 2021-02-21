@@ -163,7 +163,7 @@ def integrate_manual(
                 C_l = calc_C(G, x_l, y_l)
                 C_relerr = np.abs((C_l - C_lm1) / C_lm1)
 
-            print(f"tstep: {l:d}, min dt used: {dt:.1e}")
+            # print(f"tstep: {l:d}, min dt used: {dt:.1e}")
 
             # new C_lm1 for next main time step
             C_lm1 = C_l
