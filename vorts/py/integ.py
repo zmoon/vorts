@@ -32,7 +32,7 @@ def integrate_scipy(
     Parameters
     ----------
     y0 : array_like
-        Vorton state as a single column, e.g., from `vorts.vortons.Vortons.state_vec`.
+        Vorton state ($x$ and $y$ only) as a single column.
     G_col : array_like
         Array of $\Gamma$ values as a column vector, e.g., from `vorts.vortons.Vortons.G_col`.
     """
@@ -74,7 +74,7 @@ def integrate_scipy(
         t_eval=t_eval,
         #
         method=method,
-        vectorized=True,  # not sure what impact this has...
+        vectorized=method in ("RK45", "DOP853"),  # implicit ones don't work with `vectorized=True`
         args=(G_col,),  # additional arguments after `t, y` used in fun, jac, etc.
         max_step=max_step,
         **options,
@@ -163,7 +163,7 @@ def integrate_manual(
                 C_l = calc_C(G, x_l, y_l)
                 C_relerr = np.abs((C_l - C_lm1) / C_lm1)
 
-            print(f"tstep: {l:d}, min dt used: {dt:.1e}")
+            # print(f"tstep: {l:d}, min dt used: {dt:.1e}")
 
             # new C_lm1 for next main time step
             C_lm1 = C_l
@@ -459,7 +459,7 @@ TEND_FNS = {
 
 # keys are used to select integration method when creating model
 # values are used as `method` for `scipy.integrate.solve_ivp`'s
-SCIPY_METHODS = {  # could create this programatically
-    "scipy_RK45": "RK45",
-    "scipy_DOP853": "DOP853",
+SCIPY_METHODS = {
+    f"scipy_{method}" : method
+    for method in ["RK45", "DOP853", "Radau", "BDF", "LSODA"]
 }
