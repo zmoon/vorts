@@ -39,17 +39,11 @@ def plot_spiral(n=100, revs=2, connect=False):
 
 interact(plot_spiral, n=(1, 500), revs=(1, 10))
 
-# %%
-# vorts.Tracers.spiral?
-
 # %% [markdown]
 # ### Uniform random
 
 # %%
 vorts.Tracers.randu(200).plot()
-
-# %%
-# vorts.Tracers.randu?
 
 # %% [markdown]
 # ### Gaussian random
@@ -57,26 +51,17 @@ vorts.Tracers.randu(200).plot()
 # %%
 vorts.Tracers.randn(400, sig_y=0.5).plot()
 
-# %%
-# vorts.Tracers.randn?
-
 # %% [markdown]
 # ### Grid
 
 # %%
 vorts.Tracers.grid(10, 20).plot()  # x first, then y
 
-# %%
-# vorts.Tracers.grid?
-
 # %% [markdown]
 # ### Concentric circles
 
 # %%
 vorts.Tracers.circles().plot()
-
-# %%
-# vorts.Tracers.circles?
 
 # %% [markdown]
 # ## Vortons
@@ -86,9 +71,6 @@ vorts.Tracers.circles().plot()
 
 # %%
 vorts.Vortons.isos_triangle(theta_deg=72).plot()
-
-# %%
-# vorts.Vortons.isos_triangle?
 
 # %% [markdown]
 # ### Regular polygon
@@ -101,6 +83,3 @@ def plot_spiral(n=6):
     vorts.Vortons.regular_polygon(n=n).plot(ax=ax)
 
 interact(plot_spiral, n=(3, 20))
-
-# %%
-# vorts.Vortons.regular_polygon?
