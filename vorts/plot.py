@@ -28,7 +28,7 @@ _NEW_TAB10 = [
 
 # TODO: routine to determine system rotation; plot trajectories with respect to this rotating ref frame
 
-def plot_vorton_trajectories(ds, **kwargs):
+def plot_vorton_trajectories(ds, ax=None, **kwargs):
     """Plot lines: one for each vorton's trajectory.
 
     Parameters
@@ -42,7 +42,7 @@ def plot_vorton_trajectories(ds, **kwargs):
     iv = ds.G != 0
     ds = ds.sel(v=iv)
 
-    fig, ax = plt.subplots(**kwargs)
+    fig, ax = maybe_new_figure(ax=ax, **kwargs)
 
     color_cycle = cycler(color=_NEW_TAB10)
     ax.set_prop_cycle(color_cycle)
@@ -70,7 +70,7 @@ def plot_vorton_trajectories(ds, **kwargs):
 
 
 # note much shared with vorton traj plot
-def plot_tracer_trajectories(ds, **kwargs):
+def plot_tracer_trajectories(ds, ax=None, **kwargs):
     """Plot tracer trajectories.
 
     Parameters
@@ -84,7 +84,7 @@ def plot_tracer_trajectories(ds, **kwargs):
     it = ds.G == 0  # tracers boolean
     ds = ds.sel(v=it)
 
-    fig, ax = plt.subplots(**kwargs)
+    fig, ax = maybe_new_figure(ax=ax, **kwargs)
 
     nv = ds.v.size
     for i in range(nv):
@@ -144,7 +144,7 @@ def ps_data(ds, iv_ref=0, *, xtol=1e-2):
     return ds_ps
 
 
-def plot_ps(ds, *, iv_ref=0, **kwargs):
+def plot_ps(ds, *, iv_ref=0, ax=None, **kwargs):
     """Poincare section plot.
 
     Here using the data set of all data.
@@ -173,7 +173,7 @@ def plot_ps(ds, *, iv_ref=0, **kwargs):
     it = ds.G == 0
     ds = ds.sel(v=it)
 
-    fig, ax = plt.subplots(**kwargs)
+    fig, ax = maybe_new_figure(ax=ax, **kwargs)
 
     # TODO: (optionally?) plot vorton initial positions / positions at reference time?
 
@@ -234,9 +234,9 @@ def remove_frame(ax=None, *, keep_title=True):
         frame_on=False,
     )
 
-def maybe_new_figure(ax=None):
+def maybe_new_figure(ax=None, **kwargs):
     if ax is None:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(**kwargs)
     else:
         fig = ax.get_figure()
 

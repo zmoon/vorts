@@ -187,11 +187,11 @@ class Tracers(PointsBase):
         warnings.warn("Note that `state_mat_full` for tracers is the same as `state_mat` (no G).")
         return self._xy
 
-    def plot(self, *, connect=False, ax=None):
+    def plot(self, *, connect=False, adjustable="box", ax=None, **kwargs):
         """Plot tracers, with points connected if `connect=True`."""
         import matplotlib.pyplot as plt
 
-        fig, ax = _maybe_new_fig(ax)
+        fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
         x, y = self.x, self.y
         fmt = "-o" if connect else "o"
@@ -201,7 +201,7 @@ class Tracers(PointsBase):
             xlabel="$x$",
             ylabel="$y$",
         )
-        ax.set_aspect("equal", "box")
+        ax.set_aspect("equal", adjustable)
         fig.legend()
         ax.grid(True)
         fig.set_tight_layout(True)
@@ -673,13 +673,13 @@ class Vortons(PointsBase):
 
         return (2/(N-1))**(N*(N-1)/2) * I**(N*(N-1)) * np.exp(4*np.pi*H)
 
-    def plot(self, *, ax=None):
+    def plot(self, *, ax=None, adjustable="datalim", **kwargs):
         """Plot the vortons.
         (Only their current positions, which are all `Vortons` knows about.)
         """
         import matplotlib.pyplot as plt
 
-        fig, ax = _maybe_new_fig(ax)
+        fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
         # plot vorton positions
         c_Gp = "cadetblue"
@@ -711,7 +711,7 @@ class Vortons(PointsBase):
             xlabel="$x$",
             ylabel="$y$",
         )
-        ax.set_aspect("equal", "datalim")
+        ax.set_aspect("equal", adjustable)
         fig.legend()
         ax.grid(True)
         fig.tight_layout()
