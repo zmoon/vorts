@@ -24,8 +24,7 @@ vorts: $(OBJS)
 	$(FC) $(CFLAGS) -o $(EXE) $(LFLAGS) $(OBJS)
 
 # Rule to make objects
-.SUFFIXES: .f90
-.f90.o:
+%.o: %.f90
 	$(FC) $(CFLAGS) -c $<
 
 .PHONY: clean
