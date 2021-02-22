@@ -83,7 +83,7 @@ class PointsBase(abc.ABC):
         Parameters
         ----------
         x, y : array_like
-            shape: `(n_vortons,)`
+            shape: `(n_points,)`
 
             Initial $x$ and $y$ positions.
         """
