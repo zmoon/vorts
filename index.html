@@ -44,31 +44,47 @@ src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
 <li><a href="https://pdoc3.github.io/pdoc/">pdoc3</a> documentation:
 <a href="https://zmoon.github.io/vorts">zmoon.github.io/vorts</a></li>
 <li>GitHub: <a href="https://github.com/zmoon/vorts">zmoon/vorts</a></li>
-<li>Examples:</li>
-<li><a href="https://mybinder.org/v2/gh/zmoon/vorts/binder?urlpath=lab%2Ftree%2Fexamples"><img alt="Launch Binder" src="https://mybinder.org/badge_logo.svg"></a> – JupyterLab interface (need to right click on a <code>.<a title="vorts.py" href="py/index.html">vorts.py</a></code> to open as notebook)</li>
-<li><a href="https://mybinder.org/v2/gh/zmoon/vorts/binder?filepath=examples"><img alt="Launch Binder" src="https://mybinder.org/badge_logo.svg"></a> – Jupyter Notebook interface (just double click on <code>.<a title="vorts.py" href="py/index.html">vorts.py</a></code> to open as notebook)</li>
+<li>Examples:<ul>
+<li><a href="https://mybinder.org/v2/gh/zmoon/vorts/binder?urlpath=lab%2Ftree%2Fexamples"><img alt="Launch Binder" src="https://mybinder.org/badge_logo.svg"></a> – JupyterLab interface (need to right click on a <code>*.py</code> to open as notebook)</li>
+<li><a href="https://mybinder.org/v2/gh/zmoon/vorts/binder?filepath=examples"><img alt="Launch Binder" src="https://mybinder.org/badge_logo.svg"></a> – Jupyter Notebook interface (just double click on a <code>*.py</code> to open as notebook)</li>
+</ul>
+</li>
 </ul>
 <h2 id="equations">Equations</h2>
 <div align="center">
 <img src="https://raw.githubusercontent.com/zmoon/vorts/master/examples/img/N-vortex_evolution_equations.png"
-alt="N-vortex system of equations in 2 dimensions."
+alt="Point vortex equations"
+title="N-point-vortex system of equations in 2 dimensions"
 width=300>
 </div>
 <h2 id="example-visualizations">Example visualizations</h2>
-<p>Releasing tracers into the rotating <em>N</em>-vortex system:
-<!-- <div align="center"><img src="examples/tracer_art_1.jpg" width=300 alt="Tracer art example 1"></div> --></p>
-<p><img alt="tracer art example 1" src="https://raw.githubusercontent.com/zmoon/vorts/master/examples/img/tracer_art_1.jpg">
-<!-- <div align="center"><img src="examples/tracer_art_2.jpg" width=300 alt="Tracer art example 2"></div> --></p>
-<p><img alt="tracer art example 2" src="https://raw.githubusercontent.com/zmoon/vorts/master/examples/img/tracer_art_2.png"></p>
+<p>Releasing tracers into the rotating <em>N</em>-vortex system:</p>
+<div align="center">
+<img src="https://raw.githubusercontent.com/zmoon/vorts/master/examples/img/tracer_art_1.png"
+alt="Tracer art example 1"
+title="Tracer art example 1 – trajectories"
+width=700>
+</div>
+<div align="center">
+<img src="https://raw.githubusercontent.com/zmoon/vorts/master/examples/img/tracer_art_2.png"
+alt="Tracer art example 2"
+title="Tracer art example 2 – points"
+width=700>
+</div>
 <p>Poincaré plots. Given a sufficiently long run with a large number (e.g. 100) of tracers,
-you can make pretty pictures like this:
-<img alt="example Poincaré section plot" src="https://raw.githubusercontent.com/zmoon/vorts/master/examples/img/ps_theta60deg.png"></p>
+you can make pretty pictures like this:</p>
+<div align="center">
+<img src="https://raw.githubusercontent.com/zmoon/vorts/master/examples/img/ps_theta60deg.png"
+alt="Example Poincaré section plot"
+title="Example Poincaré section plot"
+width=500>
+</div>
 <h2 id="notes">Notes</h2>
 <p>Originally created for the PSU class METEO 523 – Modeling the climate system.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/322d8d3165a25f3cf82800d24172ca15c0688f56/vorts\__init__.py#L0-L7" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/2687c380267af5da8fdf913b4894daa27fdb8c1f/vorts\__init__.py#L0-L7" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 vorts -- point vortex models

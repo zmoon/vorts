@@ -42,7 +42,7 @@ directing input and collecting output, etc.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/322d8d3165a25f3cf82800d24172ca15c0688f56/vorts\model.py#L0-L457" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/2687c380267af5da8fdf913b4894daa27fdb8c1f/vorts\model.py#L0-L457" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 Model classes that act as drivers for the integration routines,
@@ -519,7 +519,7 @@ class Model_f(ModelBase):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/322d8d3165a25f3cf82800d24172ca15c0688f56/vorts\model.py#L287-L289" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/2687c380267af5da8fdf913b4894daa27fdb8c1f/vorts\model.py#L287-L289" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def fort_bool(b: bool):
     &#34;&#34;&#34;Convert Python boolean to a string of the corresponding Fortran logical (`.true.`/`.false.`).&#34;&#34;&#34;
@@ -534,7 +534,7 @@ class Model_f(ModelBase):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/322d8d3165a25f3cf82800d24172ca15c0688f56/vorts\model.py#L22-L62" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/2687c380267af5da8fdf913b4894daa27fdb8c1f/vorts\model.py#L22-L62" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def init_hist(  # TODO: could just be classmethod or staticmethod of ModelBase, maybe private
     n_vorton: int,
@@ -596,7 +596,7 @@ inheriting class defines a <code>_run</code> method that integrates the system a
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/322d8d3165a25f3cf82800d24172ca15c0688f56/vorts\model.py#L65-L161" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/2687c380267af5da8fdf913b4894daa27fdb8c1f/vorts\model.py#L65-L161" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ModelBase(abc.ABC):
     &#34;&#34;&#34;Abstract base class for the models.
@@ -760,7 +760,7 @@ created by <code><a title="vorts.model.init_hist" href="#vorts.model.init_hist">
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/322d8d3165a25f3cf82800d24172ca15c0688f56/vorts\model.py#L143-L161" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/2687c380267af5da8fdf913b4894daa27fdb8c1f/vorts\model.py#L143-L161" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def plot(self, which=&#34;vortons&#34;, **kwargs):
     &#34;&#34;&#34;Plot results stored in the history data set `hist`.
@@ -791,7 +791,7 @@ created by <code><a title="vorts.model.init_hist" href="#vorts.model.init_hist">
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/322d8d3165a25f3cf82800d24172ca15c0688f56/vorts\model.py#L131-L139" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/2687c380267af5da8fdf913b4894daa27fdb8c1f/vorts\model.py#L131-L139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run(self):
     &#34;&#34;&#34;Integrate and update the history dataset `hist`.&#34;&#34;&#34;
@@ -837,7 +837,7 @@ depending on the integration scheme.</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/322d8d3165a25f3cf82800d24172ca15c0688f56/vorts\model.py#L292-L458" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/2687c380267af5da8fdf913b4894daa27fdb8c1f/vorts\model.py#L292-L458" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Model_f(ModelBase):
     &#34;&#34;&#34;Thin wrapper for functionality of the Fortran model, whose source code is in `vorts/f/src/`.
@@ -1024,7 +1024,7 @@ and the simulation settings.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/322d8d3165a25f3cf82800d24172ca15c0688f56/vorts\model.py#L356-L387" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/2687c380267af5da8fdf913b4894daa27fdb8c1f/vorts\model.py#L356-L387" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_inputs(self):
     &#34;&#34;&#34;
@@ -1120,7 +1120,7 @@ depending on the integration scheme.</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/322d8d3165a25f3cf82800d24172ca15c0688f56/vorts\model.py#L164-L279" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/2687c380267af5da8fdf913b4894daa27fdb8c1f/vorts\model.py#L164-L279" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Model_py(ModelBase):
     &#34;&#34;&#34;Model in Python.&#34;&#34;&#34;
