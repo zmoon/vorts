@@ -32,18 +32,20 @@ _NEW_TAB10 = [
 
 # TODO: routine to determine system rotation; plot trajectories with respect to this rotating ref frame
 
-def plot_vorton_trajectories(ds, ax=None, **kwargs):
+def plot_vorton_trajectories(ds, title="Vortons", ax=None, **kwargs):
     """Plot lines: one for each vorton's trajectory.
 
     Parameters
     ----------
     ds : xarray.Dataset
         `hist` attribute of the model instance.
+    title: str
+        Plot title.
     **kwargs
         Passed on to [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
     """
-    # select vortons
-    iv = ds.G != 0
+    # Select vortons
+    iv = ds.G != 0  # TODO: move this to the ds creation in model
     ds = ds.sel(v=iv)
 
     fig, ax = _maybe_new_fig(ax=ax, **kwargs)
@@ -58,33 +60,26 @@ def plot_vorton_trajectories(ds, ax=None, **kwargs):
         x = ts_i.x
         y = ts_i.y
         l, = ax.plot(x, y, lw=0.5, alpha=0.5)
-        # highlight starting position
+        # Highlight starting position
         ax.plot(x[0], y[0], 'o', c=l.get_color())
 
-
-    ax.set(
-        xlabel="$x$",
-        ylabel="$y$",
-        title="Vortons",
-    )
-
-    ax.set_aspect("equal", "box")
-
-    fig.tight_layout()
+    _fig_post(fig, ax, title=title, frame="default")
 
 
-# note much shared with vorton traj plot
-def plot_tracer_trajectories(ds, ax=None, **kwargs):
+# Note much shared with vorton traj plot
+def plot_tracer_trajectories(ds, title="Tracers", ax=None, **kwargs):
     """Plot tracer trajectories.
 
     Parameters
     ----------
     ds : xarray.Dataset
         `hist` attribute of the model instance.
+    title : str
+        Plot title.
     **kwargs
         Passed on to [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
     """
-    # select tracers
+    # Select tracers
     it = ds.G == 0  # tracers boolean
     ds = ds.sel(v=it)
 
@@ -97,15 +92,7 @@ def plot_tracer_trajectories(ds, ax=None, **kwargs):
         y = ts_i.y
         ax.plot(x, y, c="0.5", lw=0.5, alpha=0.5)
 
-    ax.set(
-        xlabel="$x$",
-        ylabel="$y$",
-        title="Tracers",
-    )
-
-    ax.set_aspect("equal", "box")
-
-    fig.tight_layout()
+    _fig_post(fig, ax, title=title, frame="default")
 
 
 def ps_data(ds, iv_ref=0, *, xtol=1e-2):
@@ -211,7 +198,7 @@ def plot_ps(ds, *,
     # Subset data to approximate Poincare section
     ds = ps_data(ds, iv_ref, **ps_data_kwargs)
 
-    # select tracers
+    # Select tracers
     it = ds.G == 0
     ds = ds.sel(v=it)
 
