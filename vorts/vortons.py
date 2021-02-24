@@ -15,7 +15,7 @@ import warnings
 import makefun
 import numpy as np
 
-from .plot import maybe_new_figure as _maybe_new_fig
+from .plot import _maybe_new_fig
 
 
 

@@ -46,7 +46,7 @@ def plot_vorton_trajectories(ds, ax=None, **kwargs):
     iv = ds.G != 0
     ds = ds.sel(v=iv)
 
-    fig, ax = maybe_new_figure(ax=ax, **kwargs)
+    fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
     color_cycle = cycler(color=_NEW_TAB10)
     ax.set_prop_cycle(color_cycle)
@@ -88,7 +88,7 @@ def plot_tracer_trajectories(ds, ax=None, **kwargs):
     it = ds.G == 0  # tracers boolean
     ds = ds.sel(v=it)
 
-    fig, ax = maybe_new_figure(ax=ax, **kwargs)
+    fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
     nv = ds.v.size
     for i in range(nv):
@@ -215,11 +215,11 @@ def plot_ps(ds, *,
     it = ds.G == 0
     ds = ds.sel(v=it)
 
-    fig, ax = maybe_new_figure(ax=ax, **subplots_kwargs)
+    fig, ax = _maybe_new_fig(ax=ax, **subplots_kwargs)
 
     # TODO: (optionally?) plot vorton initial positions / positions at reference time?
 
-    # TODO: algo for choosing marker size and alpha (but also allow passing in)
+    # TODO: algo for choosing marker size and alpha based on total number of points (but also allow passing in)
 
     # Set up property cycling
     cyclers = [
@@ -304,7 +304,7 @@ def remove_frame(ax=None, *, keep_title=True):
         frame_on=False,
     )
 
-def maybe_new_figure(ax=None, **kwargs):
+def _maybe_new_fig(ax=None, **kwargs):
     """Return `fig, ax`, both new if `ax` is `None`. `**kwargs` passed to `plt.subplots()`."""
     if ax is None:
         fig, ax = plt.subplots(**kwargs)
