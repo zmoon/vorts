@@ -30,7 +30,7 @@ _NEW_TAB10 = [
 
 # TODO: should plotters return `fig, ax`, or just `ax`? or something else? xarray returns the set of matplotlib artists
 
-# TODO: routine to determine system rotation; plot trajectories with respect to this rotating ref frame
+# TODO: routine to determine system rotation (from data and/or theory); plot trajectories with respect to this rotating ref frame
 
 def plot_vorton_trajectories(ds, title="Vortons", ax=None, **kwargs):
     """Plot lines: one for each vorton's trajectory.
@@ -125,8 +125,8 @@ def select_poincare_times(ds, iv_ref=0, *, xtol=1e-2, ytol=1e-2):
     return ds.isel(t=is_ps.values)  # have to use `.values` since `v` dim does not match original
 
 
-_allowed_subplots_kwargs = ("figsize", "linewidth", "frameon", "tight_layout", "constrained_layout")
-_allowed_plot_kwargs = ("c", "color", "ms", "markersize", "alpha")
+_allowed_subplots_kwargs = ("figsize", "linewidth",)
+_allowed_plot_kwargs = ()
 
 
 def plot_ps(ds, *,
@@ -187,10 +187,18 @@ def plot_ps(ds, *,
     """
     # TODO: algo for choosing marker size and alpha based on total number of points (but also allow passing in)
 
-    # Separate kwargs
-    select_poincare_times_kwargs = {k: kwargs.pop(k) for k in inspect.getfullargspec(select_poincare_times).kwonlyargs if k in kwargs}
+    # Separate the kwargs
+    select_poincare_times_kwargs = {
+        k: kwargs.pop(k) for k in inspect.getfullargspec(select_poincare_times).kwonlyargs if k in kwargs
+    }
     subplots_kwargs = {k: kwargs.pop(k) for k in _allowed_subplots_kwargs if k in kwargs}
     plot_kwargs = {k: kwargs.pop(k) for k in _allowed_plot_kwargs if k in kwargs}
+    if kwargs:  # any left
+        warnings.warn(
+            "these kwargs were passed but won't be used: "
+            f"{', '.join(f'`k`' for k in kwargs)}. "
+            "Create your own figure and pass the `ax` in to have more control."
+        )
 
     # Subset data to approximate Poincare section
     ds = select_poincare_times(ds, iv_ref, **select_poincare_times_kwargs)
