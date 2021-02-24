@@ -129,7 +129,7 @@ _allowed_subplots_kwargs = ("figsize", "linewidth",)
 _allowed_plot_kwargs = ()
 
 
-def plot_ps(ds, *,
+def plot_poincare(ds, *,
     iv_ref=0,
     c="0.35",
     ms=0.2,
