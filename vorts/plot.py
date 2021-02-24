@@ -144,7 +144,7 @@ def ps_data(ds, iv_ref=0, *, xtol=1e-2):
     return ds_ps
 
 
-def plot_ps(ds, *, iv_ref=0, ax=None, **kwargs):
+def plot_ps(ds, *, iv_ref=0, c="0.35", ms=0.2, alpha=0.5, ax=None, **kwargs):
     """Poincare section plot.
 
     Here using the data set of all data.
@@ -155,6 +155,12 @@ def plot_ps(ds, *, iv_ref=0, ax=None, **kwargs):
         Output from `ps_data`.
     iv_ref : int
         Index of the vorton to use for reference.
+    c : str or array_like
+        Marker color.
+    ms : float
+        Marker size.
+    alpha : float
+        Marker alpha.
     **kwargs
         Passed on to either `ps_data()` (if applicable) or [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
 
@@ -182,7 +188,7 @@ def plot_ps(ds, *, iv_ref=0, ax=None, **kwargs):
     # plot all
     x = ds.x  # (nt, nv)
     y = ds.y
-    ax.plot(x, y, ".", c="0.35", ms=0.2, alpha=0.5, mew=0)
+    ax.plot(x, y, ".", c=c, ms=ms, alpha=alpha, mew=0)
 
     ax.set(
         xlabel="$x$",
