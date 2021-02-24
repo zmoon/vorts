@@ -95,44 +95,34 @@ def plot_tracer_trajectories(ds, title="Tracers", ax=None, **kwargs):
     _fig_post(fig, ax, title=title, frame="default")
 
 
-def ps_data(ds, iv_ref=0, *, xtol=1e-2):
-    """From full set of data, extract data corresponding to times for the Poincare Section.
+def select_poincare_times(ds, iv_ref=0, *, xtol=1e-2, ytol=1e-2):
+    """From a model output dataset, extract data corresponding to times to use for the Poincaré section.
 
-    We find the times when the reference vorton is in a certain place
-    or passing through a certain plane (TODO).
+    We find the times when the reference vorton (with index `iv_ref`) is in its original position.
 
     Parameters
     ----------
     ds : xarray.Dataset
-        `hist` attribute of the model instance.
+        For example, the `hist` attribute of the model instance.
     iv_ref : int
         Index of the vorton to use for reference.
-    xtol : float
-        Tolerance to use when searching for timesteps when the reference vorton is in its original position.
+    xtol, ytol : float
+        Tolerance in each direction to use when searching for timesteps
+        when the reference vorton is in its original position.
 
     Returns
     -------
     xarray.Dataset
-        Only consisting of the timesteps when the reference vorton is approximately in the desired position.
+        A selection (`.sel`) of the original `ds` consisting only of the timesteps
+        when the reference vorton is approximately in the desired position.
     """
-    # initial position
-    r0_ref = ds.isel(t=0, v=iv_ref)
-    x0 = r0_ref.x#.values
-    # y0 = r0_ref.y#.values
-
-    # xtol = 1e-2
-    # ytol = 1e-2
-
-    # TODO: need to be more careful. should make wrt. center-of-vort, ...
-    # cond = (np.abs(ds.x - x0) <= xtol) & (np.abs(ds.y - y0) <= ytol) & (ds.v == iv_ref)
-    # cond = (np.abs(ds.x - x0) <= xtol) & (ds.v == iv_ref)
-    cond = (np.abs(ds.x - x0) <= xtol) & (ds.y > 0) & (ds.v == iv_ref)
-    ds_ps_ref = ds.where(cond, drop=True)
-    t_ps = ds_ps_ref.t  # ps times
-
-    ds_ps = ds.sel(t=t_ps)
-
-    return ds_ps
+    ds_ref = ds.isel(v=iv_ref)  # selected vorton
+    ds_ref0 = ds_ref.isel(t=0)  # initial position
+    is_ps = (
+        (np.abs(ds_ref.x - ds_ref0.x) <= xtol) &
+        (np.abs(ds_ref.y - ds_ref0.y) <= ytol)
+    )
+    return ds.isel(t=is_ps.values)  # have to use `.values` since `v` dim does not match original
 
 
 _allowed_subplots_kwargs = ("figsize", "linewidth", "frameon", "tight_layout", "constrained_layout")
@@ -158,9 +148,9 @@ def plot_ps(ds, *,
     Parameters
     ----------
     ds : xarray.Dataset
-        Model output or output from `ps_data`.
+        Model output or output from `select_poincare_times`.
     iv_ref : int
-        Index of the vorton to use for reference (passed to `ps_data`).
+        Index of the vorton to use for reference (passed to `select_poincare_times`).
     c : str or array_like
         Marker color (any of [these formats](https://matplotlib.org/stable/tutorials/colors/colors.html)).
         OR iterable of individual colors, which will be cycled.
@@ -182,21 +172,21 @@ def plot_ps(ds, *,
     ax : matplotlib.axes.Axes, optional
         Optionally pass `ax` on which to plot. Otherwise a new figure will be created.
     **kwargs
-        Passed on to `ps_data` (if applicable)
+        Passed on to `select_poincare_times` (if applicable)
         or [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
         or [`ax.plot()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html)
 
     See also
     --------
-    ps_data
+    select_poincare_times
     """
     # Separate kwargs
-    ps_data_kwargs = {k: kwargs.pop(k) for k in inspect.getfullargspec(ps_data).kwonlyargs if k in kwargs}
+    select_poincare_times_kwargs = {k: kwargs.pop(k) for k in inspect.getfullargspec(select_poincare_times).kwonlyargs if k in kwargs}
     subplots_kwargs = {k: kwargs.pop(k) for k in _allowed_subplots_kwargs if k in kwargs}
     plot_kwargs = {k: kwargs.pop(k) for k in _allowed_plot_kwargs if k in kwargs}
 
     # Subset data to approximate Poincare section
-    ds = ps_data(ds, iv_ref, **ps_data_kwargs)
+    ds = select_poincare_times(ds, iv_ref, **select_poincare_times_kwargs)
 
     # Select tracers
     it = ds.G == 0
