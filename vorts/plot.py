@@ -2,6 +2,9 @@
 Plotting routines
 """
 import inspect
+import functools
+import operator
+import warnings
 
 from cycler import cycler
 import matplotlib.pyplot as plt
@@ -145,61 +148,121 @@ def ps_data(ds, iv_ref=0, *, xtol=1e-2):
     return ds_ps
 
 
-def plot_ps(ds, *, iv_ref=0, c="0.35", ms=0.2, alpha=0.5, ax=None, **kwargs):
-    """Poincare section plot.
+_allowed_subplots_kwargs = ("figsize", "linewidth", "frameon", "tight_layout", "constrained_layout")
+_allowed_plot_kwargs = ("c", "color", "ms", "markersize", "alpha")
+
+
+def plot_ps(ds, *,
+    iv_ref=0,
+    c="0.35",
+    ms=0.2,
+    alpha=0.5,
+    cycle_comp="add",
+    cycle_by="vorton",
+    title="Poincaré section (tracers)",
+    frame="none",
+    ax=None,
+    **kwargs
+):
+    """Poincaré section plot.
 
     Here using the data set of all data.
 
     Parameters
     ----------
     ds : xarray.Dataset
-        Output from `ps_data`.
+        Model output or output from `ps_data`.
     iv_ref : int
-        Index of the vorton to use for reference.
+        Index of the vorton to use for reference (passed to `ps_data`).
     c : str or array_like
         Marker color (any of [these formats](https://matplotlib.org/stable/tutorials/colors/colors.html)).
+        OR iterable of individual colors, which will be cycled.
     ms : float
         Marker size.
+        OR iterable of individual sizes, which will be cycled.
     alpha : float
         Marker alpha.
+        OR iterable of individual alpha values, which will be cycled.
+    cycle_comp : str, {'add', 'multiply'}
+        How to compose the property cyclers---[add](https://matplotlib.org/cycler/#addition)
+        or [multiply](https://matplotlib.org/cycler/#integer-multiplication).
+    cycle_by : str, {'vorton', 'time'}
+        Whether certain times will have certain properties, or certain vortons will.
+    title : str
+        Plot title.
+    frame : str {'none', 'only', 'default'}
+        No frame (using `remove_frame`), frame only (using `frame_only`), or default style (do nothing).
+    ax : matplotlib.axes.Axes, optional
+        Optionally pass `ax` on which to plot. Otherwise a new figure will be created.
     **kwargs
-        Passed on to either `ps_data()` (if applicable) or [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
+        Passed on to `ps_data` (if applicable)
+        or [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
+        or [`ax.plot()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html)
 
     See also
     --------
     ps_data
     """
-    # subset
-    # first take only the kwargs we want
-    # TODO: there's got to be a less awkward way to do this...
-    ps_data_kwarg_keys = inspect.getfullargspec(ps_data).kwonlyargs
-    ps_data_kwargs = {k: kwargs.pop(k) for k in ps_data_kwarg_keys if k in kwargs}
+    # Separate kwargs
+    ps_data_kwargs = {k: kwargs.pop(k) for k in inspect.getfullargspec(ps_data).kwonlyargs if k in kwargs}
+    subplots_kwargs = {k: kwargs.pop(k) for k in _allowed_subplots_kwargs if k in kwargs}
+    plot_kwargs = {k: kwargs.pop(k) for k in _allowed_plot_kwargs if k in kwargs}
+
+    # Subset data to approximate Poincare section
     ds = ps_data(ds, iv_ref, **ps_data_kwargs)
 
     # select tracers
     it = ds.G == 0
     ds = ds.sel(v=it)
 
-    fig, ax = maybe_new_figure(ax=ax, **kwargs)
+    fig, ax = maybe_new_figure(ax=ax, **subplots_kwargs)
 
     # TODO: (optionally?) plot vorton initial positions / positions at reference time?
 
     # TODO: algo for choosing marker size and alpha (but also allow passing in)
 
-    # plot all
-    x = ds.x  # (nt, nv)
-    y = ds.y
-    ax.plot(x, y, ".", c=c, ms=ms, alpha=alpha, mew=0)
+    # Set up property cycling
+    cyclers = [
+        cycler(color=_to_list(c)),
+        cycler(markersize=_to_list(ms)),
+        cycler(alpha=_to_list(alpha)),
+    ]
+    if cycle_comp == "add":
+        cyclers = _reconcile_cyclers_for_adding(cyclers)  # make all the same length
+        cycle = sum(cyclers[1:], start=cyclers[0])
+    elif cycle_comp == "multiply":
+        cycle = functools.reduce(operator.mul, cyclers[1:], cyclers[0])
+    else:
+        raise ValueError("invalid value for `cycle_comp`: {cycle_comp!r}")
+    ax.set_prop_cycle(cycle)
 
-    ax.set(
-        xlabel="$x$",
-        ylabel="$y$",
-        title="Poincaré map (tracers)",
-    )
+    # If not cycling properties, it should be more efficient to plot the flattened data.
+    if len(cycle) > 1:
+        if cycle_by == "vorton":
+            x = ds.x.values  # (nt, nv), columns are vorton time series, each plotted separately
+            y = ds.y.values
+            if ds.v.size < len(cycle):
+                warnings.warn(
+                    f"cycle length {len(cycle)} is longer than the number of vortons+tracers ({ds.v.size}).",
+                )
+        elif cycle_by == "time":
+            x = ds.x.values.T  # (nv, nt), columns are times, each plotted separately
+            y = ds.y.values.T
+            if ds.t.size < len(cycle):
+                warnings.warn(
+                    f"cycle length {len(cycle)} is longer than the number of times ({ds.t.size}).",
+                )
+        else:
+            raise ValueError
+    else:
+        x = ds.x.values.ravel()
+        y = ds.y.values.ravel()
 
-    ax.set_aspect("equal", "box")
+    # Plot points. Other marker attributes are included in the cycler.
+    ax.plot(x, y, ".", mew=0, **plot_kwargs)
 
-    fig.tight_layout()
+    # Set labels, title, frame settings
+    _fig_post(fig, ax, title=title, frame=frame)
 
 
 def frame_only(ax=None, *, keep_ax_labels=True, keep_title=True):
@@ -242,9 +305,61 @@ def remove_frame(ax=None, *, keep_title=True):
     )
 
 def maybe_new_figure(ax=None, **kwargs):
+    """Return `fig, ax`, both new if `ax` is `None`. `**kwargs` passed to `plt.subplots()`."""
     if ax is None:
         fig, ax = plt.subplots(**kwargs)
     else:
         fig = ax.get_figure()
 
     return fig, ax
+
+
+def _is_iterable(x):
+    """Check if `x` is iterable via duck typing."""
+    try:
+        _ = iter(x)
+    except TypeError:
+        return False
+    else:
+        return True
+
+
+def _to_list(v):
+    """Convert value(s) to list. If `v` is `str`, preserve it instead of returning a list of chars."""
+    return list(v) if (
+        _is_iterable(v) and not isinstance(v, (str,))
+    ) else [v]
+
+
+def _reconcile_cyclers_for_adding(cyclers):
+    """Make all cyclers in list `cyclers` the same length."""
+    max_len = max(len(c) for c in cyclers)
+    ret = []
+    for c in cyclers:
+        if not max_len % len(c) == 0:
+            raise ValueError(
+                "all property set lengths must be even multiples of the longest length, "
+                f"currently {max_len}"
+            )
+        ret.append(c * (max_len // len(c)))
+    return ret
+
+
+def _fig_post(fig, ax, *, title, frame, **kwargs):
+    """Set axis labels, title, aspect equal, frame settings, ..."""
+    ax.set_title(title)
+    frame = frame.lower()
+    if frame == "only":
+        frame_only(ax=ax, **kwargs)
+    elif frame in ("none", "remove"):
+        remove_frame(ax=ax, **kwargs)
+    elif frame == "default":
+        ax.set(
+            xlabel="$x$",
+            ylabel="$y$",
+        )
+    else:
+        raise ValueError("invalid value for `frame`: {frame!r}")
+
+    ax.set_aspect("equal", "box")
+    fig.set_tight_layout(True)
