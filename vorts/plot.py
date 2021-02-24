@@ -270,6 +270,7 @@ def frame_only(ax=None, *, keep_ax_labels=True, keep_title=True):
     if ax is None:
         ax = plt.gca()
 
+    # Remove all ticks and tick labels
     ax.tick_params(
         axis="both",
         which="both",  # 'major', 'minor', or 'both'
