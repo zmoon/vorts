@@ -143,7 +143,7 @@ def plot_poincare(ds, *,
     ax=None,
     **kwargs
 ):
-    """Poincaré section plot.
+    """Plot Poincaré section.
 
     Parameters
     ----------
@@ -168,7 +168,7 @@ def plot_poincare(ds, *,
     title : str
         Plot title.
     frame : str, {'none', 'only', 'default'}
-        No frame (using `remove_frame`), frame only (using `frame_only`), or default style (do nothing).
+        No frame (using `remove_frame`), frame only (using `remove_ticks`), or default style (do nothing).
     plot_vortons : bool
         Whether to plot the initial vorton positions on top.
     vorton_colors
@@ -261,7 +261,7 @@ def plot_poincare(ds, *,
     _fig_post(fig, ax, title=title, frame=frame)
 
 
-def frame_only(ax=None, *, keep_ax_labels=True, keep_title=True):
+def remove_ticks(ax=None, *, keep_ax_labels=True, keep_title=True):
     """Remove ticks and tick labels from `ax` (uses current by default)."""
     if ax is None:
         ax = plt.gca()
@@ -295,7 +295,7 @@ def remove_frame(ax=None, *, keep_title=True):
     if ax is None:
         ax = plt.gca()
 
-    frame_only(ax, keep_ax_labels=False, keep_title=keep_title)
+    remove_ticks(ax, keep_ax_labels=False, keep_title=keep_title)
 
     ax.set(
         frame_on=False,
@@ -347,7 +347,7 @@ def _fig_post(fig, ax, *, title, frame, **kwargs):
     ax.set_title(title)
     frame = frame.lower()
     if frame == "only":
-        frame_only(ax=ax, **kwargs)
+        remove_ticks(ax=ax, **kwargs)
     elif frame in ("none", "remove"):
         remove_frame(ax=ax, **kwargs)
     elif frame == "default":
