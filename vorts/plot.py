@@ -6,7 +6,7 @@ import functools
 import operator
 import warnings
 
-from cycler import cycler
+import cycler
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -50,7 +50,7 @@ def plot_vorton_trajectories(ds, title="Vortons", ax=None, **kwargs):
 
     fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
-    color_cycle = cycler(color=_NEW_TAB10)
+    color_cycle = cycler.cycler(color=_NEW_TAB10)
     ax.set_prop_cycle(color_cycle)
 
     # could be done with one plot command, but...
@@ -138,12 +138,12 @@ def plot_ps(ds, *,
     cycle_by="vorton",
     title="Poincaré section (tracers)",
     frame="none",
+    plot_vortons=False,
+    vorton_colors=None,
     ax=None,
     **kwargs
 ):
     """Poincaré section plot.
-
-    Here using the data set of all data.
 
     Parameters
     ----------
@@ -167,8 +167,13 @@ def plot_ps(ds, *,
         Whether certain times will have certain properties, or certain vortons will.
     title : str
         Plot title.
-    frame : str {'none', 'only', 'default'}
+    frame : str, {'none', 'only', 'default'}
         No frame (using `remove_frame`), frame only (using `frame_only`), or default style (do nothing).
+    plot_vortons : bool
+        Whether to plot the initial vorton positions on top.
+    vorton_colors
+        Colors, of valid format (like `c`). OR single color.
+        By default, cycles through new tab10.
     ax : matplotlib.axes.Axes, optional
         Optionally pass `ax` on which to plot. Otherwise a new figure will be created.
     **kwargs
@@ -180,6 +185,8 @@ def plot_ps(ds, *,
     --------
     select_poincare_times
     """
+    # TODO: algo for choosing marker size and alpha based on total number of points (but also allow passing in)
+
     # Separate kwargs
     select_poincare_times_kwargs = {k: kwargs.pop(k) for k in inspect.getfullargspec(select_poincare_times).kwonlyargs if k in kwargs}
     subplots_kwargs = {k: kwargs.pop(k) for k in _allowed_subplots_kwargs if k in kwargs}
@@ -190,19 +197,16 @@ def plot_ps(ds, *,
 
     # Select tracers
     it = ds.G == 0
+    ds_v0 = ds.sel(v=~it).isel(t=0)
     ds = ds.sel(v=it)
 
     fig, ax = _maybe_new_fig(ax=ax, **subplots_kwargs)
 
-    # TODO: (optionally?) plot vorton initial positions / positions at reference time?
-
-    # TODO: algo for choosing marker size and alpha based on total number of points (but also allow passing in)
-
     # Set up property cycling
     cyclers = [
-        cycler(color=_to_list(c)),
-        cycler(markersize=_to_list(ms)),
-        cycler(alpha=_to_list(alpha)),
+        cycler.cycler(color=_to_list(c)),
+        cycler.cycler(markersize=_to_list(ms)),
+        cycler.cycler(alpha=_to_list(alpha)),
     ]
     if cycle_comp == "add":
         cyclers = _reconcile_cyclers_for_adding(cyclers)  # make all the same length
@@ -235,8 +239,15 @@ def plot_ps(ds, *,
         x = ds.x.values.ravel()
         y = ds.y.values.ravel()
 
-    # Plot points. Other marker attributes are included in the cycler.
+    # Plot points. Other marker attributes are included in the property cycle.
     ax.plot(x, y, ".", mew=0, **plot_kwargs)
+
+    # Plot vortons?
+    if plot_vortons:
+        if not vorton_colors:
+            vorton_colors = _NEW_TAB10
+        for x_v, y_v, c_v in zip(ds_v0.x.values, ds_v0.y.values, cycler.cycle(_to_list(vorton_colors))):
+            ax.plot(x_v, y_v, "o", c=c_v, ms=10, alpha=1)
 
     # Set labels, title, frame settings
     _fig_post(fig, ax, title=title, frame=frame)
