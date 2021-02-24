@@ -1,6 +1,7 @@
 """
 Plotting routines
 """
+import inspect
 
 from cycler import cycler
 import matplotlib.pyplot as plt
@@ -156,7 +157,7 @@ def plot_ps(ds, *, iv_ref=0, c="0.35", ms=0.2, alpha=0.5, ax=None, **kwargs):
     iv_ref : int
         Index of the vorton to use for reference.
     c : str or array_like
-        Marker color.
+        Marker color (any of [these formats](https://matplotlib.org/stable/tutorials/colors/colors.html)).
     ms : float
         Marker size.
     alpha : float
@@ -171,7 +172,7 @@ def plot_ps(ds, *, iv_ref=0, c="0.35", ms=0.2, alpha=0.5, ax=None, **kwargs):
     # subset
     # first take only the kwargs we want
     # TODO: there's got to be a less awkward way to do this...
-    ps_data_kwarg_keys = ["xtol", ]  # TODO: could get using `inspect`
+    ps_data_kwarg_keys = inspect.getfullargspec(ps_data).kwonlyargs
     ps_data_kwargs = {k: kwargs.pop(k) for k in ps_data_kwarg_keys if k in kwargs}
     ds = ps_data(ds, iv_ref, **ps_data_kwargs)
 
