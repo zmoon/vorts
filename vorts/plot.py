@@ -173,7 +173,7 @@ def plot_poincare(ds, *,
         Whether to plot the initial vorton positions on top.
     vorton_colors
         Colors, of valid format (like `c`). OR single color.
-        By default, cycles through new tab10.
+        By default, cycles through [New Tableau 10](https://www.tableau.com/about/blog/2016/7/colors-upgrade-tableau-10-56782).
     ax : matplotlib.axes.Axes, optional
         Optionally pass `ax` on which to plot. Otherwise a new figure will be created.
     **kwargs
