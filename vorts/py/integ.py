@@ -145,8 +145,10 @@ def integrate_manual(
         iter_l = tqdm_notebook(iter_l)
 
     # pre-allocate return arrays
-    xhist = np.empty((nv, nt))
+    xhist = np.empty((nv, nt+1))
     yhist = np.empty_like(xhist)
+    xhist[:,0] = x0
+    yhist[:,0] = y0
 
     # iterate over time index `l`
     x_lm1 = x0  # l-1 starts at 0
@@ -181,13 +183,13 @@ def integrate_manual(
             # step
             x_l, y_l = stepper(G, x_lm1, y_lm1, dt=dt0)
 
+        # store
+        xhist[:, l] = x_l
+        yhist[:, l] = y_l
+
         # new lm1 terms
         x_lm1 = x_l
         y_lm1 = y_l
-
-        # store
-        xhist[:, l-1] = x_lm1
-        yhist[:, l-1] = y_lm1
 
     return xhist, yhist
 
