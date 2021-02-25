@@ -95,6 +95,8 @@ def plot_tracer_trajectories(ds, title="Tracers", ax=None, **kwargs):
     _fig_post(fig, ax, title=title, frame="default")
 
 
+# TODO: optionally take averages of positions next to each other in time (with weights based on deltas)
+
 def select_poincare_times(ds, iv_ref=0, *, xtol=1e-2, ytol=1e-2):
     """From a model output dataset, extract data corresponding to times to use for the Poincaré section.
 

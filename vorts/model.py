@@ -94,26 +94,26 @@ class ModelBase(abc.ABC):
         self.dt = float(dt)
         r"""Time step $\delta t$ for the model output."""
         self.nt = int(nt)
-        """The number of time steps to run for, such that `nt*dt` is the last time step."""
+        """The number of time steps to run for, such that `t=nt*dt` is the last time simulated."""
         self.nv = self.vortons0.n
         """Alias for `ModelBase.n_vortons`."""
         self.n_tracers = self.tracers0.n if self.tracers0 is not None else 0
         """The number of tracers."""
         self.n_vortons = self.nv
         """The number of vortons."""
+        self.n_points = self.n_vortons + self.n_tracers
+        """The number of vortons + tracers."""
+        self.n_timesteps = self.nt
+        """Alias for `ModelBase.nt`."""
 
-        # initialize hist (an `xr.Dataset`)
-        v0 = self.vortons0._maybe_add_tracers(self.tracers0)
-        # self.hist = init_hist(G, x0, y0, self.nv, self.nt, self.dt)
-        self.hist = init_hist(self.nv + self.n_tracers, self.nt, self.dt)
+        # combine vortons and tracers (used by some)
+        self._vt0 = self.vortons0._maybe_add_tracers(self.tracers0)
+
+        # initially no history
+        self.hist = None
         """An `xr.Dataset` with coordinates `'t'` (time) and `'v'` (vorton),
         created by `init_hist`.
         """
-        self.hist["G"].loc[:] = v0.G  # G doesn't change during the sim
-        # TODO: having to set the initial values this way is a bit awkward
-        t_hist = self.hist.t
-        self.hist["x"].loc[dict(t=t_hist[t_hist == 0])] = v0.x
-        self.hist["y"].loc[dict(t=t_hist[t_hist == 0])] = v0.y
 
         # initially, the model hasn't been run
         self._has_run = False
@@ -162,7 +162,7 @@ class ModelBase(abc.ABC):
         """Take full trajectory histories `xhist` and `yhist`
         in (t, v) dim order and create a model results dataset.
         """
-        vt0 = self.vortons0 + self.tracers0  # could make class attr
+        vt0 = self._vt0
 
         G = vt0.G
         t = np.arange(0, self.nt+1)*self.dt
@@ -259,10 +259,10 @@ class Model_py(ModelBase):
         dt, nt = self.dt, self.nt
         # t_eval = np.arange(dt, (nt+1)*dt, dt)
         t_eval = np.arange(1, nt+1)*dt  # could start at 0?
+        v0 = self._vt0
 
         # manual (handwritten) integrators
         if "scipy" not in self.int_scheme_name:
-            v0 = self.vortons0._maybe_add_tracers(self.tracers0)
             x0 = v0.x
             y0 = v0.y
             G = v0.G
@@ -281,7 +281,6 @@ class Model_py(ModelBase):
 
         # integration using SciPy
         else:
-            v0 = self.vortons0._maybe_add_tracers(self.tracers0)
             y0 = v0.xy.T.flatten()  # needs to be a 1-d array!
             G_col = v0.G_col
             data = integrate_scipy(
@@ -391,7 +390,7 @@ class Model_f(ModelBase):
         #            delimiter=' ', fmt='%.16f', header='xi yi')
 
         # Write combined vortons + tracers, with vortons first
-        mat = self.vortons0._maybe_add_tracers(self.tracers0).state_mat_full()
+        mat = self._vt0.state_mat_full()
         np.savetxt(FORT_BASE_DIR / 'in/vortons.txt', mat,
             delimiter=' ', fmt='%.16f', header='Gamma xi yi')
 
