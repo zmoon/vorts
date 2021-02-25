@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
-from .plot import plot_vorton_trajectories, plot_tracer_trajectories, plot_ps
+from .plot import plot_vorton_trajectories, plot_tracer_trajectories, plot_poincare
 from .py import integrate_manual, integrate_scipy, MANUAL_STEPPERS, SCIPY_METHODS
 from .vortons import Vortons, Tracers
 
@@ -143,20 +143,18 @@ class ModelBase(abc.ABC):
     def plot(self, which="vortons", **kwargs):
         """Plot results stored in the history data set `hist`.
 
-        `**kwargs` are passed through to the corresponding plotting function.
+        `**kwargs` are passed through to the corresponding plotting function
+        (see `vorts.plot`).
         """
         if not self._has_run:
             raise Exception("The model has not yet been run.")
 
         if which == "vortons":
             plot_vorton_trajectories(self.hist, **kwargs)
-
         elif which == "tracers":
             plot_tracer_trajectories(self.hist, **kwargs)
-
         elif which == "poincare":
-            plot_ps(self.hist, **kwargs)
-
+            plot_poincare(self.hist, **kwargs)
         else:
             raise NotImplementedError(f"which={which!r}")
 
