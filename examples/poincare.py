@@ -39,7 +39,7 @@ m = vorts.Model_py(
     vortons=vorts.Vortons.regular_polygon(5),
     tracers=vorts.Tracers.grid(20, 20, dxy=1.7),
     dt=0.05,
-    nt=1e4,
+    nt=2e4,
 ).run()
 
 # %% [markdown]
@@ -51,8 +51,14 @@ m = vorts.Model_py(
 # With the default settings, we get grayscale with small partially-transparent markers.
 
 # %%
-shared = dict(figsize=(6, 6), xtol=0.02, title=None)
+shared = dict(figsize=(6, 6), xtol=0.02, ytol=0.02, title=None)
 m.plot("poincare", ms=2, **shared)
+
+# %% [markdown]
+# We can add vortons to the plot to spice it up a bit (like the one shown in the readme).
+
+# %%
+m.plot("poincare", ms=2, plot_vortons=True, **shared)
 
 # %% [markdown]
 # ### Color cycling
@@ -66,11 +72,14 @@ m.plot("poincare", ms=2.5, alpha=0.8, c=["g", "b"], **shared)
 # The default is to cycle the marker properties by tracer. If we cycle by time instead, the properties are more evenly distributed in space.
 
 # %%
-for cycle_by in ["vorton", "time"]:
+fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+
+for ax, cycle_by in zip(axs.flat, ["vorton", "time"]):
     m.plot("poincare",
         ms=[1, 2, 4],
         c=plt.cm.rainbow(np.linspace(0, 1, 30)),
         alpha=[0.6, 0.85],
         cycle_by=cycle_by,
+        ax=ax,
         **shared
     )
