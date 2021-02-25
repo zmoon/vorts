@@ -55,6 +55,7 @@ ts.plot(ax=ax2)
 m = vorts.Model_py(
     vs, ts,
     dt=0.1, nt=20000,
+    use_tqdm="notebook",
 )
 
 # %% [markdown]
