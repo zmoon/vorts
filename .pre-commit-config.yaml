@@ -12,16 +12,16 @@ repos:
     hooks:
       - id: isort
 
-  - repo: https://gitlab.com/pycqa/flake8
-    rev: '3.8.4'
-    hooks:
-      - id: flake8
-
   - repo: https://github.com/psf/black
     rev: '20.8b1'
     hooks:
       - id: black
         exclude: ^examples/
+
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: '3.8.4'
+    hooks:
+      - id: flake8
 
   - repo: https://github.com/kynan/nbstripout
     rev: '0.3.9'
