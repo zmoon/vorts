@@ -4,13 +4,11 @@ Integration routines and time steppers in Python.
 In addition to the sub-par handwritten RK and FT schemes,
 SciPy RK routines (which are written in Python as well) are also available.
 """
-from typing import List, Tuple
-
 import numba
 import numpy as np
 from tqdm import tqdm
 
-from ..vortons import Vorton
+from ..vortons import Vorton  # noqa: F401
 
 _TEND_PRE = 1/(2*np.pi)
 
@@ -137,7 +135,7 @@ def integrate_manual(
 
     # optionally use tqdm
     iter_l = range(1, nt+1)  # note starting at 1, not 0
-    if use_tqdm == True or use_tqdm == "console":
+    if use_tqdm is True or use_tqdm == "console":
         iter_l = tqdm(iter_l)
     elif use_tqdm == "notebook":
         from tqdm import tqdm_notebook
@@ -146,13 +144,13 @@ def integrate_manual(
     # pre-allocate return arrays
     xhist = np.empty((nv, nt+1))
     yhist = np.empty_like(xhist)
-    xhist[:,0] = x0
-    yhist[:,0] = y0
+    xhist[:, 0] = x0
+    yhist[:, 0] = y0
 
     # iterate over time index `l`
     x_lm1 = x0  # l-1 starts at 0
     y_lm1 = y0
-    for l in iter_l:
+    for l in iter_l:  # noqa: E741
         # adaptive time stepping
         if adapt_tstep:
             C_relerr = 100
@@ -191,7 +189,6 @@ def integrate_manual(
         y_lm1 = y_l
 
     return xhist, yhist
-
 
 
 # TODO: try numba (especially for the looping ones) (wrapping in njit could be a model option)
@@ -250,12 +247,13 @@ def calc_tend_vec(G, x, y):
 
     # avoid dividing by lsqd=0 by adding I
     lsqd = calc_lsqd_diff(dx, dy) + 1e-10 * np.eye(*xarr.shape)
-    #lsqd = xdiff**2 + ydiff**2
+    # // lsqd = xdiff**2 + ydiff**2
 
     return (
-        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1), # x-tend
-        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0) # y-tend
+        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1),  # x-tend
+        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0)  # y-tend
     )
+
 
 @numba.njit
 def calc_tend_vec_premesh(G, X, Y):
@@ -274,8 +272,8 @@ def calc_tend_vec_premesh(G, X, Y):
     lsqd = dx**2 + dy**2 + 1e-10 * np.eye(*X.shape)
 
     return (
-        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1), # x-tend
-        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0) # y-tend
+        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1),  # x-tend
+        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0)  # y-tend
     )
 
 
@@ -444,7 +442,6 @@ def RK4_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
     ynew = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
 
     return xnew, ynew
-
 
 
 # these two dicts are used by model_py to select integration method

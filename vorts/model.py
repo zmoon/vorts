@@ -151,8 +151,7 @@ class ModelBase(abc.ABC):
                 "is_t": (("v",), is_t, {
                     "long_name": "Tracer mask",
                     "description": (
-                        r"Vortons have nonzero $\Gamma$ values. "
-                        r"Tracers have no $\Gamma$."
+                        r"Vortons have nonzero $\Gamma$ values. Tracers have no $\Gamma$."
                     )
                 }),
             },
@@ -276,7 +275,7 @@ class Model_py(ModelBase):
             self.hist = self._res_to_xr(data[:nv, :].T, data[nv:, :].T)
 
 
-FORT_BASE_DIR = Path(__file__).parent / "f" #.absolute()
+FORT_BASE_DIR = Path(__file__).parent / "f"  # .absolute()
 # ^ the one that `bin`, `in`, `out`, `src` are in
 assert (FORT_BASE_DIR / "src").exists()  # make sure that this is the right spot
 
@@ -368,8 +367,13 @@ class Model_f(ModelBase):
 
         # Write combined vortons + tracers, with vortons first
         mat = self._vt0.state_mat_full()
-        np.savetxt(FORT_BASE_DIR / 'in/vortons.txt', mat,
-            delimiter=' ', fmt='%.16f', header='Gamma xi yi')
+        np.savetxt(
+            FORT_BASE_DIR / 'in/vortons.txt',
+            mat,
+            delimiter=' ',
+            fmt='%.16f',
+            header='Gamma xi yi'
+        )
 
         # write model options
         mat = [
@@ -393,7 +397,7 @@ class Model_f(ModelBase):
                 subprocess.run("make")
             except Exception as e:
                 raise Exception(
-                    f"Attempted `make` failed with exception (see above). "
+                    "Attempted `make` failed with exception (see above). "
                     "The Fortran code must be compiled before running!"
                 ) from e
             finally:
@@ -444,7 +448,8 @@ class Model_f(ModelBase):
             nrows = data.shape[0]
             i1 = np.arange(0, nrows-1, 2)
             i2 = np.arange(1, nrows, 2)
-            self.hist["x"].loc[dict(v=is_v)] = data[i1, :].T  # need to swap dims because t is first in hist
+            # need to swap dims because t is first in hist
+            self.hist["x"].loc[dict(v=is_v)] = data[i1, :].T
             self.hist["y"].loc[dict(v=is_v)] = data[i2, :].T
 
         if self.f_write_out_tracers:

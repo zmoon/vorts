@@ -19,6 +19,7 @@ from .plot import _maybe_new_fig
 
 _SNIPPETS = {}
 
+
 def _add_snippets(func=None, *, snippets=None):
     """Decorator for adding snippets to a docstring. This function
     uses ``%(name)s`` substitution rather than `str.format` substitution so
@@ -114,12 +115,12 @@ class PointsBase(abc.ABC):
     @property
     def x(self):
         """Array of $x$ positions (should be a view)."""
-        return self._xy[:,0]
+        return self._xy[:, 0]
 
     @property
     def y(self):
         """Array of $y$ positions (should be a view)."""
-        return self._xy[:,1]
+        return self._xy[:, 1]
 
     @property
     def xy(self):
@@ -187,8 +188,6 @@ class Tracers(PointsBase):
 
     def plot(self, *, connect=False, adjustable="box", ax=None, **kwargs):
         """Plot tracers, with points connected if `connect=True`."""
-        import matplotlib.pyplot as plt
-
         fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
         x, y = self.x, self.y
@@ -526,10 +525,10 @@ def vertices_isos_triangle(*, theta_deg=None, Lambda=None):
 
     xb = 1.5/np.tan(theta)  # one half of x base
 
-    xi = [-xb,  0,  xb]
+    xi = [-xb, 0, xb]
     yi = [-0.5, 1, -0.5]
 
-    Lambda = np.sqrt( (180-2*theta_deg) / float(theta_deg) )  # Marcelo eqns 17--19
+    Lambda = np.sqrt((180-2*theta_deg) / float(theta_deg))  # Marcelo eqns 17--19
 
     return np.column_stack((xi, yi))
 
@@ -638,7 +637,7 @@ class Vortons(PointsBase):
 
         return H
 
-    def I(self):
+    def I(self):  # noqa: 743,741
         r"""Calculate $I$, the angular impulse of the system.
 
         $$
@@ -663,7 +662,7 @@ class Vortons(PointsBase):
         Chamecki eq. 19
         """
         N = self.n
-        I = self.I()
+        I = self.I()  # noqa: 741
         H = self.H()
 
         return (2/(N-1))**(N*(N-1)/2) * I**(N*(N-1)) * np.exp(4*np.pi*H)
@@ -672,8 +671,6 @@ class Vortons(PointsBase):
         """Plot the vortons.
         (Only their current positions, which are all `Vortons` knows about.)
         """
-        import matplotlib.pyplot as plt
-
         fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
         # plot vorton positions
@@ -710,8 +707,6 @@ class Vortons(PointsBase):
         fig.legend()
         ax.grid(True)
         fig.tight_layout()
-
-        # return
 
     def moment(self, n, *, abs_G=False, center=False):
         r"""Compute `n`-th moment.
@@ -807,13 +802,16 @@ class Vortons(PointsBase):
         return cls(G, *xy)
 
     def _add_vortons(self, vortons, inplace=False):
-        if inplace: raise NotImplementedError
+        if inplace:
+            raise NotImplementedError
         Gxy = np.append(self.state_mat_full(), vortons.state_mat_full(), axis=0)
         return self.__class__(*Gxy.T)
 
     def _maybe_add_tracers(self, tracers, inplace=False):
-        if tracers is None: return self
-        if inplace: raise NotImplementedError
+        if tracers is None:
+            return self
+        if inplace:
+            raise NotImplementedError
         G = np.append(self.G, np.zeros((tracers.n,)))
         x, y = np.append(self.xy, tracers.xy, axis=0).T
         return self.__class__(G, x, y)
