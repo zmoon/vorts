@@ -17,12 +17,8 @@
 # # Built-in configurations
 
 # %%
-import sys
-
 import matplotlib.pyplot as plt
 from ipywidgets import interact
-
-sys.path.append("../")
 
 import vorts
 

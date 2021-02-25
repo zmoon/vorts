@@ -18,17 +18,15 @@
 # # Simple cases using the Python integrator(s)
 
 # %%
-import sys
 import warnings
 from timeit import default_timer as timer
 
 import matplotlib.pyplot as plt
 from ipywidgets import interact
 
-sys.path.append("../")
-warnings.filterwarnings("ignore")  # TODO: warned about passing un-needed kwargs to solve_ivp
-
 import vorts
+
+warnings.filterwarnings("ignore")  # TODO: warned about passing un-needed kwargs to solve_ivp
 
 # %matplotlib widget
 

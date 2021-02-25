@@ -3,7 +3,7 @@ name: vorts
 channels:
   - conda-forge
 dependencies:
-  - python
+  - python=3.8
   #
   # used by vorts
   - cycler
@@ -24,7 +24,12 @@ dependencies:
   - pytest>=6  # pyproject.toml support
   - rope
   #
-  # for docs
+  # pip
   - pip
   - pip:
-    - pdoc3
+      #
+      # for docs
+      - pdoc3
+      #
+      # the package as an editable install
+      - '-e .'
