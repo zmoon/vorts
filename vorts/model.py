@@ -19,53 +19,12 @@ from .py import integrate_manual, integrate_scipy, MANUAL_STEPPERS, SCIPY_METHOD
 from .vortons import Vortons, Tracers
 
 
-def init_hist(  # TODO: could just be classmethod or staticmethod of ModelBase, maybe private
-    n_vorton: int,
-    n_time: int,  # in addition to t=0
-    dt: float,
-    #
-    n_tracer=None,
-    *,
-    ds_attrs=None,
-):
-    """Create and return initial history `xr.Dataset`, with coordinates `'t'` (time) and `'v'` (vorton)."""
-
-    # if n_tracer is not None:
-    if ds_attrs is None:
-        ds_attrs = {}
-
-    t = np.arange(0, n_time+1)*dt
-    nt = t.size
-
-    v = np.arange(0, n_vorton)
-    nv = n_vorton
-
-    def emp_v():
-        return np.empty((nv,))
-
-    def emp_tv():
-        return np.empty((nt, nv))
-
-    ds = xr.Dataset(
-        coords={
-            "t": ("t", t, {"long_name": "unitless time"}),
-            "v": ("v", v, {"long_name": "vorton num"}),
-        },
-        data_vars={
-            "G": (("v",), emp_v(), {"long_name": r"Vorton strength $\Gamma$ (circulation)"}),
-            "x": (("t", "v"), emp_tv(), {"long_name": "Vorton $x$ position"}),
-            "y": (("t", "v"), emp_tv(), {"long_name": "Vorton $y4 position"}),
-        },
-        attrs=ds_attrs,
-    )
-
-    return ds
-
-
 class ModelBase(abc.ABC):
     """Abstract base class for the models.
+
     Provides concrete methods `ModelBase.run` and `ModelBase.plot`, which work properly if the
-    inheriting class defines a `_run` method that integrates the system and updates the `hist`.
+    inheriting class defines a `_run` method that integrates the system and updates `ModelBase.hist`,
+    populating it with the run's output data.
     """
     def __init__(
         self,
@@ -75,7 +34,10 @@ class ModelBase(abc.ABC):
         dt=0.1,
         nt=1000,
     ):
-        """Set up vortons, tracers, etc., initialize history dataset using `init_hist`,..."""
+        """
+        * `vortons` default to equilateral triangle (`vorts.vortons.Vortons.regular_polygon` with `3, G=1`)
+        * `tracers` default to `None` (no tracers used)
+        """
         # vortons (default to equilateral triangle)
         if vortons is None:
             vortons = Vortons.regular_polygon(3, G=1)
@@ -94,26 +56,27 @@ class ModelBase(abc.ABC):
         self.dt = float(dt)
         r"""Time step $\delta t$ for the model output."""
         self.nt = int(nt)
-        """The number of time steps to run for, such that `nt*dt` is the last time step."""
-        self.nv = self.vortons0.n
-        """Alias for `ModelBase.n_vortons`."""
+        """The number of time steps to run for, such that `t=nt*dt` is the last time simulated
+        and we have a total of `nt+1` times when including the initial state.
+        """
         self.n_tracers = self.tracers0.n if self.tracers0 is not None else 0
         """The number of tracers."""
-        self.n_vortons = self.nv
-        """The number of vortons."""
+        self.n_vortons = self.vortons0.n
+        """The number of vortons (tracers not included!)."""
+        self.n_points = self.n_vortons + self.n_tracers
+        """The number of vortons + tracers."""
+        self.n_timesteps = self.nt
+        """Alias for `ModelBase.nt`."""
 
-        # initialize hist (an `xr.Dataset`)
-        v0 = self.vortons0._maybe_add_tracers(self.tracers0)
-        # self.hist = init_hist(G, x0, y0, self.nv, self.nt, self.dt)
-        self.hist = init_hist(self.nv + self.n_tracers, self.nt, self.dt)
-        """An `xr.Dataset` with coordinates `'t'` (time) and `'v'` (vorton),
-        created by `init_hist`.
+        # combine vortons and tracers (used by some models to feed combined initial states to integrators)
+        self._vt0 = self.vortons0._maybe_add_tracers(self.tracers0)
+
+        # initially no history
+        self.hist = None
+        """An [`xr.Dataset`](http://xarray.pydata.org/en/stable/generated/xarray.Dataset.html)
+        with coordinates `'t'` (time) and `'v'` (vorton index, including any tracers).
+        Equal to `None` before the model has run.
         """
-        self.hist["G"].loc[:] = v0.G  # G doesn't change during the sim
-        # TODO: having to set the initial values this way is a bit awkward
-        t_hist = self.hist.t
-        self.hist["x"].loc[dict(t=t_hist[t_hist == 0])] = v0.x
-        self.hist["y"].loc[dict(t=t_hist[t_hist == 0])] = v0.y
 
         # initially, the model hasn't been run
         self._has_run = False
@@ -157,6 +120,48 @@ class ModelBase(abc.ABC):
             plot_poincare(self.hist, **kwargs)
         else:
             raise NotImplementedError(f"which={which!r}")
+
+    def _res_to_xr(self, xhist, yhist):
+        """Take full trajectory histories `xhist` and `yhist`
+        in $(t, v)$ dim order and create a model results `xr.dataset`.
+        """
+        vt0 = self._vt0
+
+        G = vt0.G
+        t = np.arange(0, self.nt+1)*self.dt
+        v = np.arange(0, vt0.n)
+
+        is_t = G == 0
+
+        ds = xr.Dataset(
+            coords={
+                "t": ("t", t, {"long_name": "Unitless elapsed time"}),
+                "v": ("v", v, {
+                    "long_name": "Vorton index",
+                    "description": (
+                        r"This includes true vortons (with nonzero $\Gamma$, coming first) "
+                        r"and may also include tracers ($\Gamma = 0$, coming after)."
+                    )
+                }),
+            },
+            data_vars={
+                "G": (("v",), G, {"long_name": r"Vorton strength $\Gamma$ (circulation)"}),
+                "x": (("t", "v"), xhist, {"long_name": "Vorton $x$ position"}),
+                "y": (("t", "v"), yhist, {"long_name": "Vorton $y$ position"}),
+                "is_t": (("v",), is_t, {
+                    "long_name": "Tracer mask",
+                    "description": (
+                        r"Vortons have nonzero $\Gamma$ values. "
+                        r"Tracers have no $\Gamma$."
+                    )
+                }),
+            },
+            attrs={
+                "model_class": self.__class__.__name__,
+                "int_scheme_name": getattr(self, "int_scheme_name", "?"),
+            },
+        )
+        return ds
 
 
 class Model_py(ModelBase):
@@ -232,11 +237,11 @@ class Model_py(ModelBase):
     def _run(self):
         dt, nt = self.dt, self.nt
         # t_eval = np.arange(dt, (nt+1)*dt, dt)
-        t_eval = np.arange(1, nt+1)*dt  # could start at 0?
+        t_eval = np.arange(0, nt+1)*dt
+        v0 = self._vt0
 
         # manual (handwritten) integrators
         if "scipy" not in self.int_scheme_name:
-            v0 = self.vortons0._maybe_add_tracers(self.tracers0)
             x0 = v0.x
             y0 = v0.y
             G = v0.G
@@ -251,14 +256,10 @@ class Model_py(ModelBase):
                 **self.int_scheme_kwargs
             )
             # returned data have shape (nv, nt)
-            nv = v0.n
-            t = self.hist.t
-            self.hist["x"].loc[dict(t=t[t > 0])] = xhist.T
-            self.hist["y"].loc[dict(t=t[t > 0])] = yhist.T
+            self.hist = self._res_to_xr(xhist.T, yhist.T)
 
         # integration using SciPy
         else:
-            v0 = self.vortons0._maybe_add_tracers(self.tracers0)
             y0 = v0.xy.T.flatten()  # needs to be a 1-d array!
             G_col = v0.G_col
             data = integrate_scipy(
@@ -272,9 +273,7 @@ class Model_py(ModelBase):
             )
             # returned data has shape (2nv, nt), where n is number of vortons and nt number of time steps
             nv = v0.n
-            t = self.hist.t
-            self.hist["x"].loc[dict(t=t[t > 0])] = data[:nv, :].T  # need to swap dims because t is first in hist
-            self.hist["y"].loc[dict(t=t[t > 0])] = data[nv:, :].T
+            self.hist = self._res_to_xr(data[:nv, :].T, data[nv:, :].T)
 
 
 FORT_BASE_DIR = Path(__file__).parent / "f" #.absolute()
@@ -368,7 +367,7 @@ class Model_f(ModelBase):
         #            delimiter=' ', fmt='%.16f', header='xi yi')
 
         # Write combined vortons + tracers, with vortons first
-        mat = self.vortons0._maybe_add_tracers(self.tracers0).state_mat_full()
+        mat = self._vt0.state_mat_full()
         np.savetxt(FORT_BASE_DIR / 'in/vortons.txt', mat,
             delimiter=' ', fmt='%.16f', header='Gamma xi yi')
 
@@ -415,6 +414,10 @@ class Model_f(ModelBase):
         for f in glob.glob('./out/*'):  # non-hidden files
             os.remove(f)
         self.oe = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        # Note: could instead use `error stop` in the Fortran to get non-zero exit code and CalledProcessError
+        s_oe = str(self.oe, "utf-8")
+        if s_oe.startswith("STOP"):
+            raise Exception(f"the model stopped early, with message:\n{str(s_oe)}")
         os.chdir(cwd)
         # ^ hack for now, but could instead pass FORT_BASE_DIR into the Fortran program
         #   using vorts_sim_in.txt
@@ -426,9 +429,14 @@ class Model_f(ModelBase):
         """Load results from a run of the Fortran model."""
         sf = 0  # there may be blank line at end of the files?
 
-        G = self.hist.G
+        nt = self.nt  # time steps taken
+        nv = self._vt0.n
+        G = self._vt0.G
         is_t = G == 0
         is_v = ~ is_t
+
+        # TODO: was trying avoid pre-allocating empty array, but for now gonna do it...
+        self.hist = self._res_to_xr(np.empty((nt+1, nv)), np.empty((nt+1, nv)))
 
         if self.f_write_out_vortons:
             vortons_file = FORT_BASE_DIR / 'out/vortons.csv'
