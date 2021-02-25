@@ -19,49 +19,6 @@ from .py import integrate_manual, integrate_scipy, MANUAL_STEPPERS, SCIPY_METHOD
 from .vortons import Vortons, Tracers
 
 
-def init_hist(  # TODO: could just be classmethod or staticmethod of ModelBase, maybe private
-    n_vorton: int,
-    n_time: int,  # in addition to t=0
-    dt: float,
-    #
-    n_tracer=None,
-    *,
-    ds_attrs=None,
-):
-    """Create and return initial history `xr.Dataset`, with coordinates `'t'` (time) and `'v'` (vorton)."""
-
-    # if n_tracer is not None:
-    if ds_attrs is None:
-        ds_attrs = {}
-
-    t = np.arange(0, n_time+1)*dt
-    nt = t.size
-
-    v = np.arange(0, n_vorton)
-    nv = n_vorton
-
-    def emp_v():
-        return np.empty((nv,))
-
-    def emp_tv():
-        return np.empty((nt, nv))
-
-    ds = xr.Dataset(
-        coords={
-            "t": ("t", t, {"long_name": "unitless time"}),
-            "v": ("v", v, {"long_name": "vorton num"}),
-        },
-        data_vars={
-            "G": (("v",), emp_v(), {"long_name": r"Vorton strength $\Gamma$ (circulation)"}),
-            "x": (("t", "v"), emp_tv(), {"long_name": "Vorton $x$ position"}),
-            "y": (("t", "v"), emp_tv(), {"long_name": "Vorton $y$ position"}),
-        },
-        attrs=ds_attrs,
-    )
-
-    return ds
-
-
 class ModelBase(abc.ABC):
     """Abstract base class for the models.
     Provides concrete methods `ModelBase.run` and `ModelBase.plot`, which work properly if the
@@ -160,7 +117,7 @@ class ModelBase(abc.ABC):
 
     def _res_to_xr(self, xhist, yhist):
         """Take full trajectory histories `xhist` and `yhist`
-        in (t, v) dim order and create a model results dataset.
+        in $(t, v)$ dim order and create a model results `xr.dataset`.
         """
         vt0 = self._vt0
 
@@ -168,17 +125,33 @@ class ModelBase(abc.ABC):
         t = np.arange(0, self.nt+1)*self.dt
         v = np.arange(0, vt0.n)
 
+        is_t = G == 0
+
         ds = xr.Dataset(
             coords={
                 "t": ("t", t, {"long_name": "Unitless elapsed time"}),
-                "v": ("v", v, {"long_name": "Vorton index"}),
+                "v": ("v", v, {
+                    "long_name": "Vorton index",
+                    "description": (
+                        "This includes true vortons (with nonzero $\Gamma$, coming first) "
+                        r"and may also include tracers ($\Gamma = 0$, coming after)."
+                    )
+                }),
             },
             data_vars={
                 "G": (("v",), G, {"long_name": r"Vorton strength $\Gamma$ (circulation)"}),
                 "x": (("t", "v"), xhist, {"long_name": "Vorton $x$ position"}),
                 "y": (("t", "v"), yhist, {"long_name": "Vorton $y$ position"}),
+                "is_t": (("v",), is_t, {
+                    "long_name": "Tracer mask",
+                    "description": (
+                        r"Vortons have nonzero $\Gamma$ values. "
+                        r"Tracers have no $\Gamma$. "
+                    )
+                }),
             },
             attrs={
+                "model_class": self.__class__.__name__,
                 "int_scheme_name": getattr(self, "int_scheme_name", ""),
             },
         )

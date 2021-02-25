@@ -44,9 +44,8 @@ def plot_vorton_trajectories(ds, title="Vortons", ax=None, **kwargs):
     **kwargs
         Passed on to [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
     """
-    # Select vortons
-    iv = ds.G != 0  # TODO: move this to the ds creation in model
-    ds = ds.sel(v=iv)
+    # Select vortons only
+    ds = ds.isel(v=~ds.is_t)
 
     fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
@@ -79,9 +78,8 @@ def plot_tracer_trajectories(ds, title="Tracers", ax=None, **kwargs):
     **kwargs
         Passed on to [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
     """
-    # Select tracers
-    it = ds.G == 0  # tracers boolean
-    ds = ds.sel(v=it)
+    # Select tracers only
+    ds = ds.isel(v=ds.is_t)
 
     fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
@@ -205,10 +203,9 @@ def plot_poincare(ds, *,
     # Subset data to approximate Poincare section
     ds = select_poincare_times(ds, iv_ref, **select_poincare_times_kwargs)
 
-    # Select tracers
-    it = ds.G == 0
-    ds_v0 = ds.sel(v=~it).isel(t=0)
-    ds = ds.sel(v=it)
+    # Select tracers and initial vortons
+    ds_v0 = ds.sel(v=~ds.is_t).isel(t=0)
+    ds = ds.sel(v=ds.is_t)
 
     fig, ax = _maybe_new_fig(ax=ax, **subplots_kwargs)
 
