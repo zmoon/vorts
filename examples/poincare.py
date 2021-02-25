@@ -40,6 +40,7 @@ m = vorts.Model_py(
     tracers=vorts.Tracers.grid(20, 20, dxy=1.7),
     dt=0.05,
     nt=2e4,
+    use_tqdm="notebook",
 ).run()
 
 # %% [markdown]

@@ -196,8 +196,8 @@ def plot_poincare(ds, *,
     if kwargs:  # any left
         warnings.warn(
             "these kwargs were passed but won't be used: "
-            f"{', '.join(f'`k`' for k in kwargs)}. "
-            "Create your own figure and pass the `ax` in to have more control."
+            f"{', '.join(f'`{k}`' for k in kwargs)}. "
+            "Create your own figure and pass the `ax` to have more control over figure properties."
         )
 
     # Subset data to approximate Poincare section

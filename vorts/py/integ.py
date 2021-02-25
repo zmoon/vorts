@@ -113,6 +113,11 @@ def integrate_manual(
     stepper
         A time stepping function that returns new positions after one step,
         e.g., one from the `vorts.py.integ.MANUAL_STEPPERS` dict.
+    adapt_tstep: bool
+        Whether to apply adaptive time-stepping.
+    use_tqdm: bool, str
+        If `True`, or `'console'`, the console version of tqdm is used.
+        Pass `'notebook'` to activate the Jupyter widget version of tqdm.
     """
     if adapt_tstep:
         use_tqdm = False  # override this for now
@@ -133,8 +138,11 @@ def integrate_manual(
 
     # optionally use tqdm
     iter_l = range(1, nt+1)  # note starting at 1, not 0
-    if use_tqdm:
+    if use_tqdm == True or use_tqdm == "console":
         iter_l = tqdm(iter_l)
+    elif use_tqdm == "notebook":
+        from tqdm import tqdm_notebook
+        iter_l = tqdm_notebook(iter_l)
 
     # pre-allocate return arrays
     xhist = np.empty((nv, nt))
