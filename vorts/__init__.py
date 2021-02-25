@@ -3,6 +3,6 @@ vorts -- point vortex models
 
 .. include:: ../README.md
 """
-from .model import Model_py, Model_f
-from .vortons import Vortons, Tracers
 from . import plot
+from .model import Model_f, Model_py
+from .vortons import Tracers, Vortons

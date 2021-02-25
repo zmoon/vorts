@@ -12,7 +12,6 @@ from tqdm import tqdm
 
 from ..vortons import Vorton
 
-
 _TEND_PRE = 1/(2*np.pi)
 
 

@@ -19,14 +19,15 @@
 
 # %%
 import sys
-sys.path.append("../")
 import warnings
-warnings.filterwarnings("ignore")  # TODO: warned about passing un-needed kwargs to solve_ivp
+from timeit import default_timer as timer
 
-from ipywidgets import interact
 import matplotlib.pyplot as plt
 import numpy as np
-from timeit import default_timer as timer
+from ipywidgets import interact
+
+sys.path.append("../")
+warnings.filterwarnings("ignore")  # TODO: warned about passing un-needed kwargs to solve_ivp
 
 import vorts
 

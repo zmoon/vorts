@@ -5,7 +5,6 @@ import pytest
 
 import vorts
 
-
 NT = 10  # number of time steps to run for
 
 

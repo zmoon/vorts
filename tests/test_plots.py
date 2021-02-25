@@ -5,7 +5,6 @@ import pytest
 
 import vorts
 
-
 # Run case to plot
 m = vorts.Model_py(tracers=vorts.Tracers.grid(7, 7)).run()
 

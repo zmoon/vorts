@@ -1,15 +1,14 @@
 """
 Plotting routines
 """
-import inspect
 import functools
+import inspect
 import operator
 import warnings
 
 import cycler
 import matplotlib.pyplot as plt
 import numpy as np
-
 
 # Tableau's newer version of tab10
 # https://www.tableau.com/about/blog/2016/7/colors-upgrade-tableau-10-56782
