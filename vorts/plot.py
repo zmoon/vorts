@@ -31,6 +31,7 @@ _NEW_TAB10 = [
 
 # TODO: routine to determine system rotation (from data and/or theory); plot trajectories with respect to this rotating ref frame
 
+
 def plot_vorton_trajectories(ds, title="Vortons", ax=None, **kwargs):
     """Plot lines: one for each vorton's trajectory.
 
@@ -117,18 +118,17 @@ def select_poincare_times(ds, iv_ref=0, *, xtol=1e-2, ytol=1e-2):
     """
     ds_ref = ds.isel(v=iv_ref)  # selected vorton
     ds_ref0 = ds_ref.isel(t=0)  # initial position
-    is_ps = (
-        (np.abs(ds_ref.x - ds_ref0.x) <= xtol) &
-        (np.abs(ds_ref.y - ds_ref0.y) <= ytol)
-    )
+    is_ps = (np.abs(ds_ref.x - ds_ref0.x) <= xtol) & (np.abs(ds_ref.y - ds_ref0.y) <= ytol)
     return ds.isel(t=is_ps.values)  # have to use `.values` since `v` dim does not match original
 
 
-_allowed_subplots_kwargs = ("figsize", "linewidth",)
+_allowed_subplots_kwargs = ("figsize", "linewidth")
 _allowed_plot_kwargs = ()
 
 
-def plot_poincare(ds, *,
+def plot_poincare(
+    ds,
+    *,
     iv_ref=0,
     c="0.35",
     ms=0.2,
@@ -298,6 +298,7 @@ def remove_frame(ax=None, *, keep_title=True):
     ax.set(
         frame_on=False,
     )
+
 
 def _maybe_new_fig(ax=None, **kwargs):
     """Return `fig, ax`, both new if `ax` is `None`. `**kwargs` passed to `plt.subplots()`."""

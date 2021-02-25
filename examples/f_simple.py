@@ -19,8 +19,6 @@
 # %%
 import sys
 
-import matplotlib.pyplot as plt
-
 sys.path.append("../")
 
 import vorts
