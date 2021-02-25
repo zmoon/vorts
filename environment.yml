@@ -21,7 +21,7 @@ dependencies:
   - jupytext
   #
   # dev
-  - pytest
+  - pytest>=6  # pyproject.toml support
   - rope
   #
   # for docs
