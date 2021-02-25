@@ -133,7 +133,7 @@ class ModelBase(abc.ABC):
                 "v": ("v", v, {
                     "long_name": "Vorton index",
                     "description": (
-                        "This includes true vortons (with nonzero $\Gamma$, coming first) "
+                        r"This includes true vortons (with nonzero $\Gamma$, coming first) "
                         r"and may also include tracers ($\Gamma = 0$, coming after)."
                     )
                 }),
@@ -408,6 +408,10 @@ class Model_f(ModelBase):
         for f in glob.glob('./out/*'):  # non-hidden files
             os.remove(f)
         self.oe = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        # Note: could instead use `error stop` in the Fortran to get non-zero exit code and CalledProcessError
+        s_oe = str(self.oe, "utf-8")
+        if s_oe.startswith("STOP"):
+            raise Exception(f"the model stopped early, with message:\n{str(s_oe)}")
         os.chdir(cwd)
         # ^ hack for now, but could instead pass FORT_BASE_DIR into the Fortran program
         #   using vorts_sim_in.txt
