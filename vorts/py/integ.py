@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from ..vortons import Vorton  # noqa: F401
 
-_TEND_PRE = 1/(2*np.pi)
+_TEND_PRE = 1 / (2 * np.pi)
 
 
 def integrate_scipy(
@@ -38,7 +38,9 @@ def integrate_scipy(
     def calc_lsqd(xarr, yarr):
         # avoid dividing by 0 by adding I
         # taken from RK4_2_step
+        # fmt: off
         return (xarr - xarr.T)**2 + (yarr - yarr.T)**2 + 1e-13*np.eye(*xarr.shape)
+        # fmt: on
 
     def fun(t, y, G):
         """Calculate both x- and y-tend."""
@@ -55,10 +57,12 @@ def integrate_scipy(
 
         lsqd = calc_lsqd(xarr, yarr)
 
-        return np.concatenate((
-            -1/(2*np.pi) * np.sum(G.T * ydiff / lsqd, axis=1),  # x-tend
-            1/(2*np.pi) * np.sum(G * xdiff / lsqd, axis=0)  # y-tend
-        ))
+        return np.concatenate(
+            (
+                -1 / (2 * np.pi) * np.sum(G.T * ydiff / lsqd, axis=1),  # x-tend
+                1 / (2 * np.pi) * np.sum(G * xdiff / lsqd, axis=0),  # y-tend
+            )
+        )
 
     t_span = 0, t_eval[-1]
 
@@ -92,7 +96,6 @@ def integrate_manual(
     use_tqdm: bool = True,
     C_err_reltol: float = 1.0e-9,
     dt_min: float = 1.0e-4,
-
 ):
     r"""Integration routine for use with my handwritten FT/RK4 steppers.
 
@@ -134,15 +137,16 @@ def integrate_manual(
         raise NotImplementedError("non-constant dt in `t_eval`")
 
     # optionally use tqdm
-    iter_l = range(1, nt+1)  # note starting at 1, not 0
+    iter_l = range(1, nt + 1)  # note starting at 1, not 0
     if use_tqdm is True or use_tqdm == "console":
         iter_l = tqdm(iter_l)
     elif use_tqdm == "notebook":
         from tqdm import tqdm_notebook
+
         iter_l = tqdm_notebook(iter_l)
 
     # pre-allocate return arrays
-    xhist = np.empty((nv, nt+1))
+    xhist = np.empty((nv, nt + 1))
     yhist = np.empty_like(xhist)
     xhist[:, 0] = x0
     yhist[:, 0] = y0
@@ -159,7 +163,7 @@ def integrate_manual(
                 # sub-steps
                 x_l = x_lm1.copy()
                 y_l = y_lm1.copy()
-                for _ in range(int(np.round(dt0/dt))):
+                for _ in range(int(np.round(dt0 / dt))):
                     # step
                     x_l, y_l = stepper(G, x_l, y_l, dt=dt)
 
@@ -201,12 +205,12 @@ def integrate_manual(
 
 def calc_lsqd_xy(x1, y1, x2, y2):
     """Calculate intervortical distance $l^2$, using positions to compute `dx` and `dy`."""
-    return (x1-x2)**2 + (y1-y2)**2
+    return (x1 - x2) ** 2 + (y1 - y2) ** 2
 
 
 def calc_lsqd_diff(dx, dy):
     """Calculate intervortical distance $l^2$, passing in already-computed `dx` and `dy`."""
-    return dx**2 + dy**2
+    return dx ** 2 + dy ** 2
 
 
 def calc_C(G, x, y):
@@ -223,7 +227,7 @@ def calc_C(G, x, y):
         xi, yi = x[i], y[i]
         xj, yj = x[j], y[j]
 
-        lij_sqd = (xi-xj)**2 + (yi-yj)**2
+        lij_sqd = (xi - xj) ** 2 + (yi - yj) ** 2
 
         Gi = G[i]
         Gj = G[j]
@@ -246,13 +250,15 @@ def calc_tend_vec(G, x, y):
     dy = yarr - yarr.T
 
     # avoid dividing by lsqd=0 by adding I
-    lsqd = calc_lsqd_diff(dx, dy) + 1e-10 * np.eye(*xarr.shape)
+    # fmt: off
+    lsqd = calc_lsqd_diff(dx, dy) + 1e-10*np.eye(*xarr.shape)
     # // lsqd = xdiff**2 + ydiff**2
 
     return (
         -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1),  # x-tend
         1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0)  # y-tend
     )
+    # fmt: on
 
 
 @numba.njit
@@ -269,12 +275,14 @@ def calc_tend_vec_premesh(G, X, Y):
     dy = Y - Y.T
 
     # avoid dividing by lsqd=0 by adding I
-    lsqd = dx**2 + dy**2 + 1e-10 * np.eye(*X.shape)
+    # fmt: off
+    lsqd = dx**2 + dy**2 + 1e-10*np.eye(*X.shape)
 
     return (
         -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1),  # x-tend
         1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0)  # y-tend
     )
+    # fmt: on
 
 
 @numba.njit
@@ -299,7 +307,7 @@ def calc_tend(G, x, y):
             if i != j and Gj != 0:
                 dx = xi - xj
                 dy = yi - yj
-                lij_sqd = dx**2 + dy**2
+                lij_sqd = dx ** 2 + dy ** 2
                 # add the contributions of j to i's tends
                 dxdt[i] += -_TEND_PRE * Gj * dy / lij_sqd
                 dydt[i] += _TEND_PRE * Gj * dx / lij_sqd
@@ -316,7 +324,7 @@ def calc_tend_one(xi, yi, Gn, xn, yn):
         if Gj != 0:  # tracers don't contribute
             dx = xi - xj
             dy = yi - yj
-            lij_sqd = dx**2 + dy**2
+            lij_sqd = dx ** 2 + dy ** 2
             # add contribution of j to i's tends
             dxdt += -_TEND_PRE * Gj * dy / lij_sqd
             dydt += _TEND_PRE * Gj * dx / lij_sqd
@@ -347,8 +355,8 @@ def FT_step_1b1(G, x0, y0, dt: float):
         # calc tends
         dxdt, dydt = calc_tend_one(xi, yi, Gn, xn, yn)
         # increment and store
-        xnew[i] = xi + dxdt*dt
-        ynew[i] = yi + dydt*dt
+        xnew[i] = xi + dxdt * dt
+        ynew[i] = yi + dydt * dt
 
     return xnew, ynew
 
@@ -361,8 +369,8 @@ def FT_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
     # calc tends
     dxdt, dydt = tend_fn(G, x0, y0)
     # increment
-    xnew = x0 + dxdt*dt
-    ynew = y0 + dydt*dt
+    xnew = x0 + dxdt * dt
+    ynew = y0 + dydt * dt
 
     return xnew, ynew
 
@@ -394,6 +402,7 @@ def RK4_step_1b1(G, x0_all, y0_all, dt: float):
         yn = y0_all[iothers]
 
         # RK4
+        # fmt: off
         x1 = x0
         y1 = y0
         k1x, k1y = calc_tend_one(x1, y1, Gn, xn, yn)
@@ -412,6 +421,7 @@ def RK4_step_1b1(G, x0_all, y0_all, dt: float):
 
         xnew[i] = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
         ynew[i] = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
+        # fmt: on
 
     return xnew, ynew
 
@@ -426,6 +436,7 @@ def RK4_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
     y1 = y0
     k1x, k1y = tend_fn(G, x1, y1)
 
+    # fmt: off
     x2 = x0 + dt/2*k1x
     y2 = y0 + dt/2*k1y
     k2x, k2y = tend_fn(G, x2, y2)
@@ -440,16 +451,17 @@ def RK4_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
 
     xnew = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
     ynew = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
+    # fmt: on
 
     return xnew, ynew
 
 
 # these two dicts are used by model_py to select integration method
 MANUAL_STEPPERS = {
-    'FT': FT_step,
-    'FT_1b1': FT_step_1b1,
-    'RK4': RK4_step,
-    'RK4_1b1': RK4_step_1b1,
+    "FT": FT_step,
+    "FT_1b1": FT_step_1b1,
+    "RK4": RK4_step,
+    "RK4_1b1": RK4_step_1b1,
 }
 """Time steppers (return new positions after stepping forward in time once)."""
 
@@ -466,6 +478,5 @@ TEND_FNS = {
 # keys are used to select integration method when creating model
 # values are used as `method` for `scipy.integrate.solve_ivp`'s
 SCIPY_METHODS = {
-    f"scipy_{method}" : method
-    for method in ["RK45", "DOP853", "Radau", "BDF", "LSODA"]
+    f"scipy_{method}": method for method in ["RK45", "DOP853", "Radau", "BDF", "LSODA"]
 }

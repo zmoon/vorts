@@ -26,6 +26,7 @@ class ModelBase(abc.ABC):
     inheriting class defines a `_run` method that integrates the system and updates `ModelBase.hist`,
     populating it with the run's output data.
     """
+
     def __init__(
         self,
         vortons: Vortons = None,
@@ -128,7 +129,7 @@ class ModelBase(abc.ABC):
         vt0 = self._vt0
 
         G = vt0.G
-        t = np.arange(0, self.nt+1)*self.dt
+        t = np.arange(0, self.nt + 1) * self.dt
         v = np.arange(0, vt0.n)
 
         is_t = G == 0
@@ -136,24 +137,32 @@ class ModelBase(abc.ABC):
         ds = xr.Dataset(
             coords={
                 "t": ("t", t, {"long_name": "Unitless elapsed time"}),
-                "v": ("v", v, {
-                    "long_name": "Vorton index",
-                    "description": (
-                        r"This includes true vortons (with nonzero $\Gamma$, coming first) "
-                        r"and may also include tracers ($\Gamma = 0$, coming after)."
-                    )
-                }),
+                "v": (
+                    "v",
+                    v,
+                    {
+                        "long_name": "Vorton index",
+                        "description": (
+                            r"This includes true vortons (with nonzero $\Gamma$, coming first) "
+                            r"and may also include tracers ($\Gamma = 0$, coming after)."
+                        ),
+                    },
+                ),
             },
             data_vars={
                 "G": (("v",), G, {"long_name": r"Vorton strength $\Gamma$ (circulation)"}),
                 "x": (("t", "v"), xhist, {"long_name": "Vorton $x$ position"}),
                 "y": (("t", "v"), yhist, {"long_name": "Vorton $y$ position"}),
-                "is_t": (("v",), is_t, {
-                    "long_name": "Tracer mask",
-                    "description": (
-                        r"Vortons have nonzero $\Gamma$ values. Tracers have no $\Gamma$."
-                    )
-                }),
+                "is_t": (
+                    ("v",),
+                    is_t,
+                    {
+                        "long_name": "Tracer mask",
+                        "description": (
+                            r"Vortons have nonzero $\Gamma$ values. Tracers have no $\Gamma$."
+                        ),
+                    },
+                ),
             },
             attrs={
                 "model_class": self.__class__.__name__,
@@ -165,6 +174,7 @@ class ModelBase(abc.ABC):
 
 class Model_py(ModelBase):
     """Model in Python."""
+
     _manual_steppers = MANUAL_STEPPERS
     _scipy_methods = SCIPY_METHODS
     _allowed_int_scheme_names = list(_manual_steppers) + list(_scipy_methods)
@@ -178,7 +188,7 @@ class Model_py(ModelBase):
         dt=0.1,
         nt=1000,
         # above are passed to base
-        int_scheme_name='RK4',
+        int_scheme_name="RK4",
         **int_scheme_kwargs,
     ):
         r"""
@@ -236,7 +246,7 @@ class Model_py(ModelBase):
     def _run(self):
         dt, nt = self.dt, self.nt
         # t_eval = np.arange(dt, (nt+1)*dt, dt)
-        t_eval = np.arange(0, nt+1)*dt
+        t_eval = np.arange(0, nt + 1) * dt
         v0 = self._vt0
 
         # manual (handwritten) integrators
@@ -252,7 +262,7 @@ class Model_py(ModelBase):
                 self.C_0,
                 t_eval,
                 stepper=self._manual_steppers[self.int_scheme_name],
-                **self.int_scheme_kwargs
+                **self.int_scheme_kwargs,
             )
             # returned data have shape (nv, nt)
             self.hist = self._res_to_xr(xhist.T, yhist.T)
@@ -268,7 +278,7 @@ class Model_py(ModelBase):
                 #
                 method=self._scipy_methods[self.int_scheme_name],
                 max_step=dt,
-                **self.int_scheme_kwargs
+                **self.int_scheme_kwargs,
             )
             # returned data has shape (2nv, nt), where n is number of vortons and nt number of time steps
             nv = v0.n
@@ -291,6 +301,7 @@ class Model_f(ModelBase):
     .. note::
        In this implementation we communicate with the Fortran program via text files.
     """
+
     # _allowed_int_scheme_names = ("FT", "RK4")
 
     def __init__(
@@ -301,7 +312,7 @@ class Model_f(ModelBase):
         dt=0.1,
         nt=1000,
         # above are passed to base
-        int_scheme_name='RK4',
+        int_scheme_name="RK4",
         #
         write_vortons=True,  # maybe should put `flag` or something in these names
         write_tracers=False,
@@ -342,9 +353,9 @@ class Model_f(ModelBase):
         self.f_write_out_ps = write_ps
 
         # executing the model
-        exe_name = 'vorts.exe' if platform.system() == 'Windows' else 'vorts'
-        self.vorts_exe_path = FORT_BASE_DIR / 'bin' / exe_name
-        self.oe = ''  # we will store standard output and error here
+        exe_name = "vorts.exe" if platform.system() == "Windows" else "vorts"
+        self.vorts_exe_path = FORT_BASE_DIR / "bin" / exe_name
+        self.oe = ""  # we will store standard output and error here
 
         # write the text input files to directory `vorts/f/in`
         self.create_inputs()
@@ -368,11 +379,7 @@ class Model_f(ModelBase):
         # Write combined vortons + tracers, with vortons first
         mat = self._vt0.state_mat_full()
         np.savetxt(
-            FORT_BASE_DIR / 'in/vortons.txt',
-            mat,
-            delimiter=' ',
-            fmt='%.16f',
-            header='Gamma xi yi'
+            FORT_BASE_DIR / "in/vortons.txt", mat, delimiter=" ", fmt="%.16f", header="Gamma xi yi"
         )
 
         # write model options
@@ -384,8 +391,7 @@ class Model_f(ModelBase):
             fort_bool(self.f_write_out_tracers),
             fort_bool(self.f_write_out_ps),
         ]
-        np.savetxt(FORT_BASE_DIR / 'in/settings.txt', mat,
-                   delimiter=' ', fmt='%s')
+        np.savetxt(FORT_BASE_DIR / "in/settings.txt", mat, delimiter=" ", fmt="%s")
 
     def _maybe_try_compile(self):
         """Try to run `make` if the executable is missing."""
@@ -415,7 +421,7 @@ class Model_f(ModelBase):
         # invoke the Fortran model's executable
         cwd = os.getcwd()
         os.chdir(FORT_BASE_DIR)
-        for f in glob.glob('./out/*'):  # non-hidden files
+        for f in glob.glob("./out/*"):  # non-hidden files
             os.remove(f)
         self.oe = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
         # Note: could instead use `error stop` in the Fortran to get non-zero exit code and CalledProcessError
@@ -437,26 +443,26 @@ class Model_f(ModelBase):
         nv = self._vt0.n
         G = self._vt0.G
         is_t = G == 0
-        is_v = ~ is_t
+        is_v = ~is_t
 
         # TODO: was trying avoid pre-allocating empty array, but for now gonna do it...
-        self.hist = self._res_to_xr(np.empty((nt+1, nv)), np.empty((nt+1, nv)))
+        self.hist = self._res_to_xr(np.empty((nt + 1, nv)), np.empty((nt + 1, nv)))
 
         if self.f_write_out_vortons:
-            vortons_file = FORT_BASE_DIR / 'out/vortons.csv'
-            data = np.genfromtxt(vortons_file, delimiter=',', skip_header=1, skip_footer=sf)
+            vortons_file = FORT_BASE_DIR / "out/vortons.csv"
+            data = np.genfromtxt(vortons_file, delimiter=",", skip_header=1, skip_footer=sf)
             nrows = data.shape[0]
-            i1 = np.arange(0, nrows-1, 2)
+            i1 = np.arange(0, nrows - 1, 2)
             i2 = np.arange(1, nrows, 2)
             # need to swap dims because t is first in hist
             self.hist["x"].loc[dict(v=is_v)] = data[i1, :].T
             self.hist["y"].loc[dict(v=is_v)] = data[i2, :].T
 
         if self.f_write_out_tracers:
-            tracers_file = FORT_BASE_DIR / 'out/tracers.csv'
-            data = np.genfromtxt(tracers_file, delimiter=',', skip_header=1, skip_footer=sf)
+            tracers_file = FORT_BASE_DIR / "out/tracers.csv"
+            data = np.genfromtxt(tracers_file, delimiter=",", skip_header=1, skip_footer=sf)
             nrows = data.shape[0]
-            i1 = np.arange(0, nrows-1, 2)
+            i1 = np.arange(0, nrows - 1, 2)
             i2 = np.arange(1, nrows, 2)
             self.hist["x"].loc[dict(v=is_t)] = data[i1, :].T
             self.hist["y"].loc[dict(v=is_t)] = data[i2, :].T
