@@ -258,7 +258,7 @@ class Model_py(ModelBase):
     def _run(self):
         dt, nt = self.dt, self.nt
         # t_eval = np.arange(dt, (nt+1)*dt, dt)
-        t_eval = np.arange(1, nt+1)*dt  # could start at 0?
+        t_eval = np.arange(0, nt+1)*dt
         v0 = self._vt0
 
         # manual (handwritten) integrators
@@ -294,9 +294,7 @@ class Model_py(ModelBase):
             )
             # returned data has shape (2nv, nt), where n is number of vortons and nt number of time steps
             nv = v0.n
-            t = self.hist.t
-            self.hist["x"].loc[dict(t=t[t > 0])] = data[:nv, :].T  # need to swap dims because t is first in hist
-            self.hist["y"].loc[dict(t=t[t > 0])] = data[nv:, :].T
+            self.hist = self._res_to_xr(data[:nv, :].T, data[nv:, :].T)
 
 
 FORT_BASE_DIR = Path(__file__).parent / "f" #.absolute()
@@ -448,9 +446,14 @@ class Model_f(ModelBase):
         """Load results from a run of the Fortran model."""
         sf = 0  # there may be blank line at end of the files?
 
-        G = self.hist.G
+        nt = self.nt  # time steps taken
+        nv = self._vt0.n
+        G = self._vt0.G
         is_t = G == 0
         is_v = ~ is_t
+
+        # TODO: was trying avoid pre-allocating empty array, but for now gonna do it...
+        self.hist = self._res_to_xr(np.empty((nt+1, nv)), np.empty((nt+1, nv)))
 
         if self.f_write_out_vortons:
             vortons_file = FORT_BASE_DIR / 'out/vortons.csv'

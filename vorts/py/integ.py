@@ -122,7 +122,7 @@ def integrate_manual(
     if adapt_tstep:
         use_tqdm = False  # override this for now
 
-    nt = t_eval.size  # number of integration steps
+    nt = t_eval.size - 1  # number of integration steps
     nv = x0.size  # number of vortons
 
     # initial previous C val is C_0
