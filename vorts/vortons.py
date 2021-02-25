@@ -9,17 +9,16 @@ Currently the result has the class of the one on the left in the addition.
 import abc
 import functools
 import inspect
-from typing import NamedTuple #, NamedTupleMeta
 import warnings
+from typing import NamedTuple
 
 import makefun
 import numpy as np
 
 from .plot import _maybe_new_fig
 
-
-
 _SNIPPETS = {}
+
 
 def _add_snippets(func=None, *, snippets=None):
     """Decorator for adding snippets to a docstring. This function
@@ -59,6 +58,7 @@ class Vorton(NamedTuple):
     --------
     Vortons : For a more detailed description.
     """
+
     G: float
     r"""$\Gamma$, the strength of the circulation, with sign to indicate direction."""
     x: float
@@ -116,12 +116,12 @@ class PointsBase(abc.ABC):
     @property
     def x(self):
         """Array of $x$ positions (should be a view)."""
-        return self._xy[:,0]
+        return self._xy[:, 0]
 
     @property
     def y(self):
         """Array of $y$ positions (should be a view)."""
-        return self._xy[:,1]
+        return self._xy[:, 1]
 
     @property
     def xy(self):
@@ -158,6 +158,7 @@ class PointsBase(abc.ABC):
 
 class Tracers(PointsBase):
     """Collection of `Tracer`s."""
+
     def __init__(self, x, y):
         """
         Parameters
@@ -189,8 +190,6 @@ class Tracers(PointsBase):
 
     def plot(self, *, connect=False, adjustable="box", ax=None, **kwargs):
         """Plot tracers, with points connected if `connect=True`."""
-        import matplotlib.pyplot as plt
-
         fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
         x, y = self.x, self.y
@@ -221,7 +220,7 @@ def _extract_params_block(f):
             b = a + i - 2
             break
 
-    return "\n".join(lines[a:b+1])
+    return "\n".join(lines[a : b + 1])
 
 
 def _add_to_tracers(points_method=None, *, short=None):
@@ -260,7 +259,9 @@ numpy.ndarray
 """.strip()
 
 
-@_add_to_tracers(short="Create `Tracers` by sampling from uniform random distributions using `points_randu`.")
+@_add_to_tracers(
+    short="Create `Tracers` by sampling from uniform random distributions using `points_randu`."
+)
 @_add_snippets(snippets=dict(returns=_points_returns))
 def points_randu(n, *, c=(0, 0), dx=2, dy=2):
     """Sample from 2-d uniform.
@@ -311,17 +312,19 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
 
     rad = np.linspace(rmin, rmax, n)  # radius
 
-    deg_tot = revs*360
-    rotmat = rotmat_2d(deg_tot/n)
+    deg_tot = revs * 360
+    rotmat = rotmat_2d(deg_tot / n)
     rhat = np.full((n, 2), (0, 1), dtype=float)  # rhat: unit vectors
     for i in range(1, n):
-        rhat[i, :] = rotate_2d(rhat[i-1, :], rotmat=rotmat)
+        rhat[i, :] = rotate_2d(rhat[i - 1, :], rotmat=rotmat)
     # TODO: here would be simpler to do polar coords first then convert to x,y
 
     return rad[:, np.newaxis] * rhat + c
 
 
-@_add_to_tracers(short="Create `Tracers` by sampling from normal distributions using `points_randn`.")
+@_add_to_tracers(
+    short="Create `Tracers` by sampling from normal distributions using `points_randn`."
+)
 @_add_snippets(snippets=dict(returns=_points_returns))
 def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
     """Sample from normal distribution.
@@ -403,9 +406,9 @@ def points_circles(ns=(10, 20, 34, 50), rs=(0.5, 1, 1.5, 2), *, c=(0, 0)):
     y = []
     for n, r in zip(ns, rs):
         dtheta = 360 / n
-        thetas = np.deg2rad(np.linspace(0, 360-dtheta, n))
-        x = np.append(x, r*np.cos(thetas))
-        y = np.append(y, r*np.sin(thetas))
+        thetas = np.deg2rad(np.linspace(0, 360 - dtheta, n))
+        x = np.append(x, r * np.cos(thetas))
+        y = np.append(y, r * np.sin(thetas))
 
     return np.column_stack((x, y)) + c
 
@@ -420,10 +423,7 @@ def rotmat_2d(ang_deg):  # TODO: could lru_cache?
     """
     ang = np.deg2rad(ang_deg)
     c, s = np.cos(ang), np.sin(ang)
-    R = np.array([
-        [c, -s],
-        [s, c]
-    ])
+    R = np.array([[c, -s], [s, c]])
     return R
 
 
@@ -483,12 +483,12 @@ def vertices_regular_polygon(n, *, c=(0, 0), r_c=1):
     vert0 = np.r_[0, r_c]
 
     # rotation matrix -- left-multiplies a column position vector to give rotated position
-    rotmat = rotmat_2d(360/n)
+    rotmat = rotmat_2d(360 / n)
 
     verts = np.full((n, 2), vert0, dtype=float)
     # successive rotations
     for i in range(1, n):
-        verts[i, :] = rotate_2d(verts[i-1, :], rotmat=rotmat)
+        verts[i, :] = rotate_2d(verts[i - 1, :], rotmat=rotmat)
 
     return verts + c
 
@@ -522,16 +522,16 @@ def vertices_isos_triangle(*, theta_deg=None, Lambda=None):
 
     if Lambda:
         assert Lambda > 0 and Lambda <= 1
-        theta_deg = 180 / (Lambda**2 + 2)
+        theta_deg = 180 / (Lambda ** 2 + 2)
 
     theta = np.deg2rad(theta_deg)
 
-    xb = 1.5/np.tan(theta)  # one half of x base
+    xb = 1.5 / np.tan(theta)  # one half of x base
 
-    xi = [-xb,  0,  xb]
+    xi = [-xb, 0, xb]
     yi = [-0.5, 1, -0.5]
 
-    Lambda = np.sqrt( (180-2*theta_deg) / float(theta_deg) )  # Marcelo eqns 17--19
+    Lambda = np.sqrt((180 - 2 * theta_deg) / float(theta_deg))  # Marcelo eqns 17--19
 
     return np.column_stack((xi, yi))
 
@@ -539,6 +539,7 @@ def vertices_isos_triangle(*, theta_deg=None, Lambda=None):
 # Note: could exchange x,y for r at some point, to open 3-d option more easily
 class Vortons(PointsBase):
     """Collection of `Vorton`s."""
+
     def __init__(self, G, x, y):
         r"""
 
@@ -612,7 +613,7 @@ class Vortons(PointsBase):
             xi, yi = self.x[i], self.y[i]
             xj, yj = self.x[j], self.y[j]
 
-            lij_sqd = (xi-xj)**2 + (yi-yj)**2
+            lij_sqd = (xi - xj) ** 2 + (yi - yj) ** 2
 
             Gi, Gj = G[i], G[j]
 
@@ -636,11 +637,11 @@ class Vortons(PointsBase):
         for a, b in zip(*np.triu_indices(nv, 1)):
             ra, rb = r[a], r[b]
             Ga, Gb = G[a], G[b]
-            H += -1/(4*np.pi) * Ga * Gb * np.log(np.linalg.norm(ra - rb))
+            H += -1 / (4 * np.pi) * Ga * Gb * np.log(np.linalg.norm(ra - rb))
 
         return H
 
-    def I(self):
+    def I(self):  # noqa: 743,741
         r"""Calculate $I$, the angular impulse of the system.
 
         $$
@@ -654,7 +655,7 @@ class Vortons(PointsBase):
 
         # r_hat_sqd =
 
-        return (G * (x**2 + y**2)).sum()
+        return (G * (x ** 2 + y ** 2)).sum()
 
     # TODO: P and Q (coordinates of the center-of-vorticity)
 
@@ -665,17 +666,17 @@ class Vortons(PointsBase):
         Chamecki eq. 19
         """
         N = self.n
-        I = self.I()
+        I = self.I()  # noqa: 741
         H = self.H()
 
+        # fmt: off
         return (2/(N-1))**(N*(N-1)/2) * I**(N*(N-1)) * np.exp(4*np.pi*H)
+        # fmt: on
 
     def plot(self, *, ax=None, adjustable="datalim", **kwargs):
         """Plot the vortons.
         (Only their current positions, which are all `Vortons` knows about.)
         """
-        import matplotlib.pyplot as plt
-
         fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
         # plot vorton positions
@@ -713,8 +714,6 @@ class Vortons(PointsBase):
         ax.grid(True)
         fig.tight_layout()
 
-        # return
-
     def moment(self, n, *, abs_G=False, center=False):
         r"""Compute `n`-th moment.
 
@@ -739,7 +738,7 @@ class Vortons(PointsBase):
 
         c = self.cm() if center else 0
 
-        x_mom = (G * (x-c)**n).sum(axis=0) / G_tot  # sum along vortons dim, giving a position
+        x_mom = (G * (x - c) ** n).sum(axis=0) / G_tot  # sum along vortons dim, giving a position
         # ^ maybe this should be x - x_cm here...
 
         return x_mom
@@ -762,7 +761,7 @@ class Vortons(PointsBase):
         xy_cm = self.cm()
         x_cm, y_cm = xy_cm
         if not inplace:
-            return Vortons(self.G, self.x-x_cm, self.y-y_cm)
+            return Vortons(self.G, self.x - x_cm, self.y - y_cm)
         else:
             self.state_mat -= x_cm
 
@@ -809,13 +808,16 @@ class Vortons(PointsBase):
         return cls(G, *xy)
 
     def _add_vortons(self, vortons, inplace=False):
-        if inplace: raise NotImplementedError
+        if inplace:
+            raise NotImplementedError
         Gxy = np.append(self.state_mat_full(), vortons.state_mat_full(), axis=0)
         return self.__class__(*Gxy.T)
 
     def _maybe_add_tracers(self, tracers, inplace=False):
-        if tracers is None: return self
-        if inplace: raise NotImplementedError
+        if tracers is None:
+            return self
+        if inplace:
+            raise NotImplementedError
         G = np.append(self.G, np.zeros((tracers.n,)))
         x, y = np.append(self.xy, tracers.xy, axis=0).T
         return self.__class__(G, x, y)

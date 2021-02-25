@@ -18,17 +18,15 @@
 # # Simple cases using the Python integrator(s)
 
 # %%
-import sys
-sys.path.append("../")
 import warnings
-warnings.filterwarnings("ignore")  # TODO: warned about passing un-needed kwargs to solve_ivp
-
-from ipywidgets import interact
-import matplotlib.pyplot as plt
-import numpy as np
 from timeit import default_timer as timer
 
+import matplotlib.pyplot as plt
+from ipywidgets import interact
+
 import vorts
+
+warnings.filterwarnings("ignore")  # TODO: warned about passing un-needed kwargs to solve_ivp
 
 # %matplotlib widget
 
@@ -80,8 +78,9 @@ m.plot("tracers")
 # %%
 fig1 = plt.figure(figsize=(5, 5))
 
+
 def run_plot(dt=0.1, int_scheme="RK4", adapt_tstep=False):
-    fig = plt.figure(fig1.number); fig.clf(); ax = fig.add_subplot()
+    fig = plt.figure(fig1.number); fig.clf(); ax = fig.add_subplot()  # noqa: E702
     m = vorts.Model_py(dt=dt, nt=int(100/dt), int_scheme_name=int_scheme, adapt_tstep=adapt_tstep, use_tqdm=False)
     start = timer()
     m.run()
@@ -89,6 +88,7 @@ def run_plot(dt=0.1, int_scheme="RK4", adapt_tstep=False):
     m.plot(ax=ax)
     ax.set_title(f"Model time: {m.hist.t.isel(t=-1).values}\nWall time: {finish-start:.4g} s\n", loc="left")
     fig.tight_layout()
+
 
 interact(run_plot, dt=[0.01, 0.1, 1.0, 2.0, 5.0], int_scheme=[n for n in vorts.Model_py._allowed_int_scheme_names if "1b1" not in n])
 

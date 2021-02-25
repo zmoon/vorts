@@ -5,7 +5,6 @@ import pytest
 
 import vorts
 
-
 NT = 10  # number of time steps to run for
 
 
@@ -27,8 +26,7 @@ def test_model_py_default_runs():
 
 
 @pytest.mark.parametrize(
-    "int_scheme_name",
-    [n for n in vorts.Model_py._allowed_int_scheme_names if n != "RK4"]
+    "int_scheme_name", [n for n in vorts.Model_py._allowed_int_scheme_names if n != "RK4"]
 )
 def test_model_py_other_integ_runs(int_scheme_name):
     m = vorts.Model_py(nt=NT, int_scheme_name=int_scheme_name)

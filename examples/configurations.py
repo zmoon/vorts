@@ -20,7 +20,7 @@
 import matplotlib.pyplot as plt
 from ipywidgets import interact
 
-import sys; sys.path.append("../"); import vorts
+import vorts
 
 # %matplotlib widget
 
@@ -33,9 +33,11 @@ import sys; sys.path.append("../"); import vorts
 # %%
 fig1 = plt.figure()
 
+
 def plot_spiral(n=100, revs=2, connect=False):
-    fig = plt.figure(fig1.number); fig.clf(); ax = fig.add_subplot()
+    fig = plt.figure(fig1.number); fig.clf(); ax = fig.add_subplot()  # noqa: E702
     vorts.Tracers.spiral(n=n, revs=revs).plot(ax=ax, connect=connect)
+
 
 interact(plot_spiral, n=(1, 500), revs=(1, 10))
 
@@ -78,8 +80,10 @@ vorts.Vortons.isos_triangle(theta_deg=72).plot()
 # %%
 fig2 = plt.figure()
 
+
 def plot_spiral(n=6):
-    fig = plt.figure(fig2.number); fig.clf(); ax = fig.add_subplot()
+    fig = plt.figure(fig2.number); fig.clf(); ax = fig.add_subplot()  # noqa: E702
     vorts.Vortons.regular_polygon(n=n).plot(ax=ax)
+
 
 interact(plot_spiral, n=(3, 20))
