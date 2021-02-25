@@ -152,7 +152,7 @@ class ModelBase(abc.ABC):
             },
             attrs={
                 "model_class": self.__class__.__name__,
-                "int_scheme_name": getattr(self, "int_scheme_name", ""),
+                "int_scheme_name": getattr(self, "int_scheme_name", "?"),
             },
         )
         return ds
