@@ -536,15 +536,7 @@ def vertices_isos_triangle(*, theta_deg=None, Lambda=None):
     return np.column_stack((xi, yi))
 
 
-
-
-
-# TODO: PointVortices ABC that implements adding, has position state_mat, n, x, y, state_vec, etc.
-#       Vortons and Tracers could both be based on it
-#       also should add xy (state_mat for both) and xy_vec (state_vec)
-
-
-# could exchange x,y for r at some point, to open 3-d option more easily
+# Note: could exchange x,y for r at some point, to open 3-d option more easily
 class Vortons(PointsBase):
     """Collection of `Vorton`s."""
     def __init__(self, G, x, y):
