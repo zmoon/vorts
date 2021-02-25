@@ -21,8 +21,10 @@ from .vortons import Vortons, Tracers
 
 class ModelBase(abc.ABC):
     """Abstract base class for the models.
+
     Provides concrete methods `ModelBase.run` and `ModelBase.plot`, which work properly if the
-    inheriting class defines a `_run` method that integrates the system and updates the `hist`.
+    inheriting class defines a `_run` method that integrates the system and updates `ModelBase.hist`,
+    populating it with the run's output data.
     """
     def __init__(
         self,
@@ -32,7 +34,10 @@ class ModelBase(abc.ABC):
         dt=0.1,
         nt=1000,
     ):
-        """Set up vortons, tracers, etc., initialize history dataset using `init_hist`,..."""
+        """
+        * `vortons` default to equilateral triangle (`vorts.vortons.Vortons.regular_polygon` with `3, G=1`)
+        * `tracers` default to `None` (no tracers used)
+        """
         # vortons (default to equilateral triangle)
         if vortons is None:
             vortons = Vortons.regular_polygon(3, G=1)
@@ -51,25 +56,26 @@ class ModelBase(abc.ABC):
         self.dt = float(dt)
         r"""Time step $\delta t$ for the model output."""
         self.nt = int(nt)
-        """The number of time steps to run for, such that `t=nt*dt` is the last time simulated."""
-        self.nv = self.vortons0.n
-        """Alias for `ModelBase.n_vortons`."""
+        """The number of time steps to run for, such that `t=nt*dt` is the last time simulated
+        and we have a total of `nt+1` times when including the initial state.
+        """
         self.n_tracers = self.tracers0.n if self.tracers0 is not None else 0
         """The number of tracers."""
-        self.n_vortons = self.nv
-        """The number of vortons."""
+        self.n_vortons = self.vortons0.n
+        """The number of vortons (tracers not included!)."""
         self.n_points = self.n_vortons + self.n_tracers
         """The number of vortons + tracers."""
         self.n_timesteps = self.nt
         """Alias for `ModelBase.nt`."""
 
-        # combine vortons and tracers (used by some)
+        # combine vortons and tracers (used by some models to feed combined initial states to integrators)
         self._vt0 = self.vortons0._maybe_add_tracers(self.tracers0)
 
         # initially no history
         self.hist = None
-        """An `xr.Dataset` with coordinates `'t'` (time) and `'v'` (vorton),
-        created by `init_hist`.
+        """An [`xr.Dataset`](http://xarray.pydata.org/en/stable/generated/xarray.Dataset.html)
+        with coordinates `'t'` (time) and `'v'` (vorton index, including any tracers).
+        Equal to `None` before the model has run.
         """
 
         # initially, the model hasn't been run
