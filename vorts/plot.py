@@ -1,15 +1,14 @@
 """
 Plotting routines
 """
-import inspect
 import functools
+import inspect
 import operator
 import warnings
 
 import cycler
 import matplotlib.pyplot as plt
 import numpy as np
-
 
 # Tableau's newer version of tab10
 # https://www.tableau.com/about/blog/2016/7/colors-upgrade-tableau-10-56782
@@ -31,6 +30,7 @@ _NEW_TAB10 = [
 # TODO: should plotters return `fig, ax`, or just `ax`? or something else? xarray returns the set of matplotlib artists
 
 # TODO: routine to determine system rotation (from data and/or theory); plot trajectories with respect to this rotating ref frame
+
 
 def plot_vorton_trajectories(ds, title="Vortons", ax=None, **kwargs):
     """Plot lines: one for each vorton's trajectory.
@@ -58,9 +58,9 @@ def plot_vorton_trajectories(ds, title="Vortons", ax=None, **kwargs):
         ts_i = ds.isel(v=i)
         x = ts_i.x
         y = ts_i.y
-        l, = ax.plot(x, y, lw=0.5, alpha=0.5)
+        (l,) = ax.plot(x, y, lw=0.5, alpha=0.5)
         # Highlight starting position
-        ax.plot(x[0], y[0], 'o', c=l.get_color())
+        ax.plot(x[0], y[0], "o", c=l.get_color())
 
     _fig_post(fig, ax, title=title, frame="default")
 
@@ -95,6 +95,7 @@ def plot_tracer_trajectories(ds, title="Tracers", ax=None, **kwargs):
 
 # TODO: optionally take averages of positions next to each other in time (with weights based on deltas)
 
+
 def select_poincare_times(ds, iv_ref=0, *, xtol=1e-2, ytol=1e-2):
     """From a model output dataset, extract data corresponding to times to use for the Poincaré section.
 
@@ -118,18 +119,17 @@ def select_poincare_times(ds, iv_ref=0, *, xtol=1e-2, ytol=1e-2):
     """
     ds_ref = ds.isel(v=iv_ref)  # selected vorton
     ds_ref0 = ds_ref.isel(t=0)  # initial position
-    is_ps = (
-        (np.abs(ds_ref.x - ds_ref0.x) <= xtol) &
-        (np.abs(ds_ref.y - ds_ref0.y) <= ytol)
-    )
+    is_ps = (np.abs(ds_ref.x - ds_ref0.x) <= xtol) & (np.abs(ds_ref.y - ds_ref0.y) <= ytol)
     return ds.isel(t=is_ps.values)  # have to use `.values` since `v` dim does not match original
 
 
-_allowed_subplots_kwargs = ("figsize", "linewidth",)
+_allowed_subplots_kwargs = ("figsize", "linewidth")
 _allowed_plot_kwargs = ()
 
 
-def plot_poincare(ds, *,
+def plot_poincare(
+    ds,
+    *,
     iv_ref=0,
     c="0.35",
     ms=0.2,
@@ -141,7 +141,7 @@ def plot_poincare(ds, *,
     plot_vortons=False,
     vorton_colors=None,
     ax=None,
-    **kwargs
+    **kwargs,
 ):
     """Plot Poincaré section.
 
@@ -189,7 +189,9 @@ def plot_poincare(ds, *,
 
     # Separate the kwargs
     select_poincare_times_kwargs = {
-        k: kwargs.pop(k) for k in inspect.getfullargspec(select_poincare_times).kwonlyargs if k in kwargs
+        k: kwargs.pop(k)
+        for k in inspect.getfullargspec(select_poincare_times).kwonlyargs
+        if k in kwargs
     }
     subplots_kwargs = {k: kwargs.pop(k) for k in _allowed_subplots_kwargs if k in kwargs}
     plot_kwargs = {k: kwargs.pop(k) for k in _allowed_plot_kwargs if k in kwargs}
@@ -253,7 +255,9 @@ def plot_poincare(ds, *,
     if plot_vortons:
         if not vorton_colors:
             vorton_colors = _NEW_TAB10
-        for x_v, y_v, c_v in zip(ds_v0.x.values, ds_v0.y.values, cycler.cycle(_to_list(vorton_colors))):
+        for x_v, y_v, c_v in zip(
+            ds_v0.x.values, ds_v0.y.values, cycler.cycle(_to_list(vorton_colors))
+        ):
             ax.plot(x_v, y_v, "o", c=c_v, ms=10, alpha=1)
 
     # Set labels, title, frame settings
@@ -300,6 +304,7 @@ def remove_frame(ax=None, *, keep_title=True):
         frame_on=False,
     )
 
+
 def _maybe_new_fig(ax=None, **kwargs):
     """Return `fig, ax`, both new if `ax` is `None`. `**kwargs` passed to `plt.subplots()`."""
     if ax is None:
@@ -322,9 +327,7 @@ def _is_iterable(x):
 
 def _to_list(v):
     """Convert value(s) to list. If `v` is `str`, preserve it instead of returning a list of chars."""
-    return list(v) if (
-        _is_iterable(v) and not isinstance(v, (str,))
-    ) else [v]
+    return list(v) if (_is_iterable(v) and not isinstance(v, (str,))) else [v]
 
 
 def _reconcile_cyclers_for_adding(cyclers):

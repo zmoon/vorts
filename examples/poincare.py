@@ -20,10 +20,6 @@
 # The Poincaré section plotting routine has many fun options for making cool-looking figures.
 
 # %%
-import sys
-sys.path.append("../")
-
-from ipywidgets import interact
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -76,7 +72,8 @@ m.plot("poincare", ms=2.5, alpha=0.8, c=["g", "b"], **shared)
 fig, axs = plt.subplots(1, 2, figsize=(12, 6))
 
 for ax, cycle_by in zip(axs.flat, ["vorton", "time"]):
-    m.plot("poincare",
+    m.plot(
+        "poincare",
         ms=[1, 2, 4],
         c=plt.cm.rainbow(np.linspace(0, 1, 30)),
         alpha=[0.6, 0.85],
