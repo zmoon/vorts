@@ -152,7 +152,7 @@ class ModelBase(abc.ABC):
                     "long_name": "Tracer mask",
                     "description": (
                         r"Vortons have nonzero $\Gamma$ values. "
-                        r"Tracers have no $\Gamma$. "
+                        r"Tracers have no $\Gamma$."
                     )
                 }),
             },
