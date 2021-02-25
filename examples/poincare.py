@@ -21,11 +21,12 @@
 
 # %%
 import sys
-sys.path.append("../")
 
-from ipywidgets import interact
 import matplotlib.pyplot as plt
 import numpy as np
+from ipywidgets import interact
+
+sys.path.append("../")
 
 import vorts
 

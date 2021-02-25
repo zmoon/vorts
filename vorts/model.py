@@ -14,9 +14,9 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
-from .plot import plot_vorton_trajectories, plot_tracer_trajectories, plot_poincare
-from .py import integrate_manual, integrate_scipy, MANUAL_STEPPERS, SCIPY_METHODS
-from .vortons import Vortons, Tracers
+from .plot import plot_poincare, plot_tracer_trajectories, plot_vorton_trajectories
+from .py import MANUAL_STEPPERS, SCIPY_METHODS, integrate_manual, integrate_scipy
+from .vortons import Tracers, Vortons
 
 
 class ModelBase(abc.ABC):

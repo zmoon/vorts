@@ -9,15 +9,13 @@ Currently the result has the class of the one on the left in the addition.
 import abc
 import functools
 import inspect
-from typing import NamedTuple #, NamedTupleMeta
 import warnings
+from typing import NamedTuple
 
 import makefun
 import numpy as np
 
 from .plot import _maybe_new_fig
-
-
 
 _SNIPPETS = {}
 

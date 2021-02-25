@@ -6,6 +6,12 @@ repos:
         args: ['--markdown-linebreak-ext=md,markdown']
       - id: end-of-file-fixer
 
+  # isort should run before black as black sometimes tweaks the isort output
+  - repo: https://github.com/PyCQA/isort
+    rev: '5.7.0'
+    hooks:
+      - id: isort
+
   - repo: https://github.com/kynan/nbstripout
     rev: '0.3.9'
     hooks:
