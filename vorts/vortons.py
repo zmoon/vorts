@@ -15,7 +15,7 @@ import warnings
 import makefun
 import numpy as np
 
-from .plot import maybe_new_figure as _maybe_new_fig
+from .plot import _maybe_new_fig
 
 
 
@@ -352,7 +352,7 @@ def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
 
 @_add_to_tracers(short="Create gridded arrangement of `Tracers` using `points_grid`.")
 @_add_snippets(snippets=dict(returns=_points_returns))
-def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), c=(0, 0)):
+def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), dxy=None, c=(0, 0)):
     """Points on a grid.
 
     Parameters
@@ -361,6 +361,9 @@ def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), c=(0, 0)):
         Number of points in the grid in each direction.
     xbounds, ybounds : array_like
         Inclusive bounds in each direction (lower, upper).
+    dxy : float, optional
+        Overrides `xbounds` and `ybounds`, setting both to `(-dxy, dxy)`;
+        more convenient if finer-grained control is not needed.
     c : array_like
         Coordinates of the center ($x_c$, $y_c$).
 
@@ -369,6 +372,8 @@ def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), c=(0, 0)):
     %(returns)s
     """
     c = np.asarray(c)
+    if dxy:
+        xbounds = ybounds = (-dxy, dxy)
     x = np.linspace(*xbounds, nx)
     y = np.linspace(*ybounds, ny)
     X, Y = np.meshgrid(x, y)
