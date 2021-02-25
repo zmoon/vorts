@@ -54,7 +54,7 @@ def init_hist(  # TODO: could just be classmethod or staticmethod of ModelBase, 
         data_vars={
             "G": (("v",), emp_v(), {"long_name": r"Vorton strength $\Gamma$ (circulation)"}),
             "x": (("t", "v"), emp_tv(), {"long_name": "Vorton $x$ position"}),
-            "y": (("t", "v"), emp_tv(), {"long_name": "Vorton $y4 position"}),
+            "y": (("t", "v"), emp_tv(), {"long_name": "Vorton $y$ position"}),
         },
         attrs=ds_attrs,
     )
@@ -158,6 +158,32 @@ class ModelBase(abc.ABC):
         else:
             raise NotImplementedError(f"which={which!r}")
 
+    def _res_to_xr(self, xhist, yhist):
+        """Take full trajectory histories `xhist` and `yhist`
+        in (t, v) dim order and create a model results dataset.
+        """
+        vt0 = self.vortons0 + self.tracers0  # could make class attr
+
+        G = vt0.G
+        t = np.arange(0, self.nt+1)*self.dt
+        v = np.arange(0, vt0.n)
+
+        ds = xr.Dataset(
+            coords={
+                "t": ("t", t, {"long_name": "Unitless elapsed time"}),
+                "v": ("v", v, {"long_name": "Vorton index"}),
+            },
+            data_vars={
+                "G": (("v",), G, {"long_name": r"Vorton strength $\Gamma$ (circulation)"}),
+                "x": (("t", "v"), xhist, {"long_name": "Vorton $x$ position"}),
+                "y": (("t", "v"), yhist, {"long_name": "Vorton $y$ position"}),
+            },
+            attrs={
+                "int_scheme_name": getattr(self, "int_scheme_name", ""),
+            },
+        )
+        return ds
+
 
 class Model_py(ModelBase):
     """Model in Python."""
@@ -251,10 +277,7 @@ class Model_py(ModelBase):
                 **self.int_scheme_kwargs
             )
             # returned data have shape (nv, nt)
-            nv = v0.n
-            t = self.hist.t
-            self.hist["x"].loc[dict(t=t[t > 0])] = xhist.T
-            self.hist["y"].loc[dict(t=t[t > 0])] = yhist.T
+            self.hist = self._res_to_xr(xhist.T, yhist.T)
 
         # integration using SciPy
         else:
