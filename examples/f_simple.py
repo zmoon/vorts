@@ -17,10 +17,6 @@
 # # Fortran model
 
 # %%
-import sys
-
-sys.path.append("../")
-
 import vorts
 
 # %matplotlib widget

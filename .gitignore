@@ -10,6 +10,8 @@ html/
 # environments
 venv/
 
+pip-wheel-metadata/
+*.egg-info/
 *.ipynb
 .ipynb_checkpoints/
 *.pyc

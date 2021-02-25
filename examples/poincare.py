@@ -20,12 +20,8 @@
 # The Poincaré section plotting routine has many fun options for making cool-looking figures.
 
 # %%
-import sys
-
 import matplotlib.pyplot as plt
 import numpy as np
-
-sys.path.append("../")
 
 import vorts
 
