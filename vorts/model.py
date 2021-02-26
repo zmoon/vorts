@@ -3,6 +3,7 @@ Model classes that act as drivers for the integration routines,
 directing input and collecting output, etc.
 """
 import abc
+import contextlib
 import copy
 import glob
 import os
@@ -294,6 +295,18 @@ def fort_bool(b: bool):
     return ".true." if b else ".false."
 
 
+@contextlib.contextmanager
+def _out_and_back(p):
+    """Context manager: change working directory to path `p` but return to original cwd after."""
+    # ref: https://stackoverflow.com/a/170174
+    cwd = os.getcwd()
+    os.chdir(p)
+    try:
+        yield
+    finally:
+        os.chdir(cwd)
+
+
 class Model_f(ModelBase):
     """Thin wrapper for functionality of the Fortran model, whose source code is in `vorts/f/src/`.
 
@@ -402,43 +415,34 @@ class Model_f(ModelBase):
     def _maybe_try_compile(self):
         """Try to run `make` if the executable is missing."""
         if not self.vorts_exe_path.exists():
-            cwd = os.getcwd()
-            os.chdir(FORT_BASE_DIR / "src")
-            print(f"{self.vorts_exe_path!r} doesn't exist, attempting to `make`.\n")
-            try:
-                subprocess.run("make")
-            except Exception as e:
-                raise Exception(
-                    "Attempted `make` failed with exception (see above). "
-                    "The Fortran code must be compiled before running!"
-                ) from e
-            finally:
-                os.chdir(cwd)
+            with _out_and_back(FORT_BASE_DIR / "src"):
+                print(f"{self.vorts_exe_path!r} doesn't exist, attempting to `make`.\n")
+                try:
+                    subprocess.run("make")
+                except Exception as e:
+                    raise Exception(
+                        "Attempted `make` failed with exception (see above). "
+                        "The Fortran code must be compiled before running!"
+                    ) from e
 
     # implement abstract method `_run`
     def _run(self):
         """Invoke the Fortran model's executable and load the results."""
         self._maybe_try_compile()
-        # exe_abs = str(self.vorts_exe_path)
-        exe_rel = str(self.vorts_exe_path.relative_to(FORT_BASE_DIR))
-        cmd = exe_rel
-        # print(cmd)
 
-        # invoke the Fortran model's executable
-        cwd = os.getcwd()
-        os.chdir(FORT_BASE_DIR)
-        for f in glob.glob("./out/*"):  # non-hidden files
-            os.remove(f)
-        self.oe = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-        # Note: could instead use `error stop` in the Fortran to get non-zero exit code and CalledProcessError
-        s_oe = str(self.oe, "utf-8")
-        if s_oe.startswith("STOP"):
-            raise Exception(f"the model stopped early, with message:\n{str(s_oe)}")
-        os.chdir(cwd)
-        # ^ hack for now, but could instead pass FORT_BASE_DIR into the Fortran program
-        #   using vorts_sim_in.txt
+        # Invoke the Fortran model's executable
+        # Note: could instead pass FORT_BASE_DIR into the Fortran program so could run from anywhere
+        cmd = str(self.vorts_exe_path.relative_to(FORT_BASE_DIR))
+        with _out_and_back(FORT_BASE_DIR):
+            for f in glob.glob("./out/*"):  # non-hidden files
+                os.remove(f)
+            self.oe = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+            # Note: could instead use `error stop` in the Fortran to get non-zero exit code and `CalledProcessError`
+            s_oe = str(self.oe, "utf-8")
+            if s_oe.startswith("STOP"):
+                raise Exception(f"the model stopped early, with message:\n{str(s_oe)}")
 
-        # load results from the text file outputs into `self.hist` (an `xr.Dataset`)
+        # Load results from the text file outputs into `self.hist` (an `xr.Dataset`)
         self._load_results()
 
     def _load_results(self):
