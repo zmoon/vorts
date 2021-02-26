@@ -287,7 +287,6 @@ class Model_py(ModelBase):
 
 FORT_BASE_DIR = Path(__file__).parent / "f"  # .absolute()
 # ^ the one that `bin`, `in`, `out`, `src` are in
-assert (FORT_BASE_DIR / "src").exists()  # make sure that this is the right spot
 
 
 def fort_bool(b: bool):
@@ -353,9 +352,16 @@ class Model_f(ModelBase):
         self.f_write_out_ps = write_ps
 
         # executing the model
+        assert (FORT_BASE_DIR / "src").exists(), "Fortran source directory not found!"
         exe_name = "vorts.exe" if platform.system() == "Windows" else "vorts"
         self.vorts_exe_path = FORT_BASE_DIR / "bin" / exe_name
         self.oe = ""  # we will store standard output and error here
+
+        # create the needed subdirs if they don't exist (pip install)
+        for sub in ("bin", "in", "out"):
+            p = FORT_BASE_DIR / sub
+            if not p.exists():
+                p.mkdir()
 
         # write the text input files to directory `vorts/f/in`
         self.create_inputs()
