@@ -42,7 +42,7 @@ SciPy RK routines (which are written in Python as well) are also available.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\integ.py#L0-L464" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/integ.py#L0-L481" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 Integration routines and time steppers in Python.
@@ -50,16 +50,13 @@ Integration routines and time steppers in Python.
 In addition to the sub-par handwritten RK and FT schemes,
 SciPy RK routines (which are written in Python as well) are also available.
 &#34;&#34;&#34;
-from typing import List, Tuple
-
 import numba
 import numpy as np
 from tqdm import tqdm
 
-from ..vortons import Vorton
+from ..vortons import Vorton  # noqa: F401
 
-
-_TEND_PRE = 1/(2*np.pi)
+_TEND_PRE = 1 / (2 * np.pi)
 
 
 def integrate_scipy(
@@ -87,7 +84,9 @@ def integrate_scipy(
     def calc_lsqd(xarr, yarr):
         # avoid dividing by 0 by adding I
         # taken from RK4_2_step
+        # fmt: off
         return (xarr - xarr.T)**2 + (yarr - yarr.T)**2 + 1e-13*np.eye(*xarr.shape)
+        # fmt: on
 
     def fun(t, y, G):
         &#34;&#34;&#34;Calculate both x- and y-tend.&#34;&#34;&#34;
@@ -104,10 +103,12 @@ def integrate_scipy(
 
         lsqd = calc_lsqd(xarr, yarr)
 
-        return np.concatenate((
-            -1/(2*np.pi) * np.sum(G.T * ydiff / lsqd, axis=1),  # x-tend
-            1/(2*np.pi) * np.sum(G * xdiff / lsqd, axis=0)  # y-tend
-        ))
+        return np.concatenate(
+            (
+                -1 / (2 * np.pi) * np.sum(G.T * ydiff / lsqd, axis=1),  # x-tend
+                1 / (2 * np.pi) * np.sum(G * xdiff / lsqd, axis=0),  # y-tend
+            )
+        )
 
     t_span = 0, t_eval[-1]
 
@@ -141,7 +142,6 @@ def integrate_manual(
     use_tqdm: bool = True,
     C_err_reltol: float = 1.0e-9,
     dt_min: float = 1.0e-4,
-
 ):
     r&#34;&#34;&#34;Integration routine for use with my handwritten FT/RK4 steppers.
 
@@ -159,11 +159,16 @@ def integrate_manual(
     stepper
         A time stepping function that returns new positions after one step,
         e.g., one from the `vorts.py.integ.MANUAL_STEPPERS` dict.
+    adapt_tstep: bool
+        Whether to apply adaptive time-stepping.
+    use_tqdm: bool, str
+        If `True`, or `&#39;console&#39;`, the console version of tqdm is used.
+        Pass `&#39;notebook&#39;` to activate the Jupyter widget version of tqdm.
     &#34;&#34;&#34;
     if adapt_tstep:
         use_tqdm = False  # override this for now
 
-    nt = t_eval.size  # number of integration steps
+    nt = t_eval.size - 1  # number of integration steps
     nv = x0.size  # number of vortons
 
     # initial previous C val is C_0
@@ -178,18 +183,24 @@ def integrate_manual(
         raise NotImplementedError(&#34;non-constant dt in `t_eval`&#34;)
 
     # optionally use tqdm
-    iter_l = range(1, nt+1)  # note starting at 1, not 0
-    if use_tqdm:
+    iter_l = range(1, nt + 1)  # note starting at 1, not 0
+    if use_tqdm is True or use_tqdm == &#34;console&#34;:
         iter_l = tqdm(iter_l)
+    elif use_tqdm == &#34;notebook&#34;:
+        from tqdm import tqdm_notebook
+
+        iter_l = tqdm_notebook(iter_l)
 
     # pre-allocate return arrays
-    xhist = np.empty((nv, nt))
+    xhist = np.empty((nv, nt + 1))
     yhist = np.empty_like(xhist)
+    xhist[:, 0] = x0
+    yhist[:, 0] = y0
 
     # iterate over time index `l`
     x_lm1 = x0  # l-1 starts at 0
     y_lm1 = y0
-    for l in iter_l:
+    for l in iter_l:  # noqa: E741
         # adaptive time stepping
         if adapt_tstep:
             C_relerr = 100
@@ -198,7 +209,7 @@ def integrate_manual(
                 # sub-steps
                 x_l = x_lm1.copy()
                 y_l = y_lm1.copy()
-                for _ in range(int(np.round(dt0/dt))):
+                for _ in range(int(np.round(dt0 / dt))):
                     # step
                     x_l, y_l = stepper(G, x_l, y_l, dt=dt)
 
@@ -219,16 +230,15 @@ def integrate_manual(
             # step
             x_l, y_l = stepper(G, x_lm1, y_lm1, dt=dt0)
 
+        # store
+        xhist[:, l] = x_l
+        yhist[:, l] = y_l
+
         # new lm1 terms
         x_lm1 = x_l
         y_lm1 = y_l
 
-        # store
-        xhist[:, l-1] = x_lm1
-        yhist[:, l-1] = y_lm1
-
     return xhist, yhist
-
 
 
 # TODO: try numba (especially for the looping ones) (wrapping in njit could be a model option)
@@ -241,12 +251,12 @@ def integrate_manual(
 
 def calc_lsqd_xy(x1, y1, x2, y2):
     &#34;&#34;&#34;Calculate intervortical distance $l^2$, using positions to compute `dx` and `dy`.&#34;&#34;&#34;
-    return (x1-x2)**2 + (y1-y2)**2
+    return (x1 - x2) ** 2 + (y1 - y2) ** 2
 
 
 def calc_lsqd_diff(dx, dy):
     &#34;&#34;&#34;Calculate intervortical distance $l^2$, passing in already-computed `dx` and `dy`.&#34;&#34;&#34;
-    return dx**2 + dy**2
+    return dx ** 2 + dy ** 2
 
 
 def calc_C(G, x, y):
@@ -263,7 +273,7 @@ def calc_C(G, x, y):
         xi, yi = x[i], y[i]
         xj, yj = x[j], y[j]
 
-        lij_sqd = (xi-xj)**2 + (yi-yj)**2
+        lij_sqd = (xi - xj) ** 2 + (yi - yj) ** 2
 
         Gi = G[i]
         Gj = G[j]
@@ -286,13 +296,16 @@ def calc_tend_vec(G, x, y):
     dy = yarr - yarr.T
 
     # avoid dividing by lsqd=0 by adding I
-    lsqd = calc_lsqd_diff(dx, dy) + 1e-10 * np.eye(*xarr.shape)
-    #lsqd = xdiff**2 + ydiff**2
+    # fmt: off
+    lsqd = calc_lsqd_diff(dx, dy) + 1e-10*np.eye(*xarr.shape)
+    # // lsqd = xdiff**2 + ydiff**2
 
     return (
-        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1), # x-tend
-        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0) # y-tend
+        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1),  # x-tend
+        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0)  # y-tend
     )
+    # fmt: on
+
 
 @numba.njit
 def calc_tend_vec_premesh(G, X, Y):
@@ -308,12 +321,14 @@ def calc_tend_vec_premesh(G, X, Y):
     dy = Y - Y.T
 
     # avoid dividing by lsqd=0 by adding I
-    lsqd = dx**2 + dy**2 + 1e-10 * np.eye(*X.shape)
+    # fmt: off
+    lsqd = dx**2 + dy**2 + 1e-10*np.eye(*X.shape)
 
     return (
-        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1), # x-tend
-        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0) # y-tend
+        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1),  # x-tend
+        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0)  # y-tend
     )
+    # fmt: on
 
 
 @numba.njit
@@ -338,7 +353,7 @@ def calc_tend(G, x, y):
             if i != j and Gj != 0:
                 dx = xi - xj
                 dy = yi - yj
-                lij_sqd = dx**2 + dy**2
+                lij_sqd = dx ** 2 + dy ** 2
                 # add the contributions of j to i&#39;s tends
                 dxdt[i] += -_TEND_PRE * Gj * dy / lij_sqd
                 dydt[i] += _TEND_PRE * Gj * dx / lij_sqd
@@ -355,7 +370,7 @@ def calc_tend_one(xi, yi, Gn, xn, yn):
         if Gj != 0:  # tracers don&#39;t contribute
             dx = xi - xj
             dy = yi - yj
-            lij_sqd = dx**2 + dy**2
+            lij_sqd = dx ** 2 + dy ** 2
             # add contribution of j to i&#39;s tends
             dxdt += -_TEND_PRE * Gj * dy / lij_sqd
             dydt += _TEND_PRE * Gj * dx / lij_sqd
@@ -386,8 +401,8 @@ def FT_step_1b1(G, x0, y0, dt: float):
         # calc tends
         dxdt, dydt = calc_tend_one(xi, yi, Gn, xn, yn)
         # increment and store
-        xnew[i] = xi + dxdt*dt
-        ynew[i] = yi + dydt*dt
+        xnew[i] = xi + dxdt * dt
+        ynew[i] = yi + dydt * dt
 
     return xnew, ynew
 
@@ -400,8 +415,8 @@ def FT_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
     # calc tends
     dxdt, dydt = tend_fn(G, x0, y0)
     # increment
-    xnew = x0 + dxdt*dt
-    ynew = y0 + dydt*dt
+    xnew = x0 + dxdt * dt
+    ynew = y0 + dydt * dt
 
     return xnew, ynew
 
@@ -433,6 +448,7 @@ def RK4_step_1b1(G, x0_all, y0_all, dt: float):
         yn = y0_all[iothers]
 
         # RK4
+        # fmt: off
         x1 = x0
         y1 = y0
         k1x, k1y = calc_tend_one(x1, y1, Gn, xn, yn)
@@ -451,6 +467,7 @@ def RK4_step_1b1(G, x0_all, y0_all, dt: float):
 
         xnew[i] = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
         ynew[i] = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
+        # fmt: on
 
     return xnew, ynew
 
@@ -465,6 +482,7 @@ def RK4_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
     y1 = y0
     k1x, k1y = tend_fn(G, x1, y1)
 
+    # fmt: off
     x2 = x0 + dt/2*k1x
     y2 = y0 + dt/2*k1y
     k2x, k2y = tend_fn(G, x2, y2)
@@ -479,17 +497,17 @@ def RK4_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
 
     xnew = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
     ynew = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
+    # fmt: on
 
     return xnew, ynew
 
 
-
 # these two dicts are used by model_py to select integration method
 MANUAL_STEPPERS = {
-    &#39;FT&#39;: FT_step,
-    &#39;FT_1b1&#39;: FT_step_1b1,
-    &#39;RK4&#39;: RK4_step,
-    &#39;RK4_1b1&#39;: RK4_step_1b1,
+    &#34;FT&#34;: FT_step,
+    &#34;FT_1b1&#34;: FT_step_1b1,
+    &#34;RK4&#34;: RK4_step,
+    &#34;RK4_1b1&#34;: RK4_step_1b1,
 }
 &#34;&#34;&#34;Time steppers (return new positions after stepping forward in time once).&#34;&#34;&#34;
 
@@ -506,8 +524,7 @@ TEND_FNS = {
 # keys are used to select integration method when creating model
 # values are used as `method` for `scipy.integrate.solve_ivp`&#39;s
 SCIPY_METHODS = {
-    f&#34;scipy_{method}&#34; : method
-    for method in [&#34;RK45&#34;, &#34;DOP853&#34;, &#34;Radau&#34;, &#34;BDF&#34;, &#34;LSODA&#34;]
+    f&#34;scipy_{method}&#34;: method for method in [&#34;RK45&#34;, &#34;DOP853&#34;, &#34;Radau&#34;, &#34;BDF&#34;, &#34;LSODA&#34;]
 }</code></pre>
 </details>
 </section>
@@ -534,7 +551,7 @@ SCIPY_METHODS = {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\integ.py#L349-L360" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/integ.py#L364-L375" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def FT_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
     &#34;&#34;&#34;Step using 1st-O forward-in-time.
@@ -544,8 +561,8 @@ SCIPY_METHODS = {
     # calc tends
     dxdt, dydt = tend_fn(G, x0, y0)
     # increment
-    xnew = x0 + dxdt*dt
-    ynew = y0 + dydt*dt
+    xnew = x0 + dxdt * dt
+    ynew = y0 + dydt * dt
 
     return xnew, ynew</code></pre>
 </details>
@@ -560,7 +577,7 @@ This doesn't affect the result for FT, but for RK4 it does (since sub-steps are 
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\integ.py#L320-L346" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/integ.py#L335-L361" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def FT_step_1b1(G, x0, y0, dt: float):
     &#34;&#34;&#34;Step using 1st-O forward-in-time.
@@ -585,8 +602,8 @@ This doesn't affect the result for FT, but for RK4 it does (since sub-steps are 
         # calc tends
         dxdt, dydt = calc_tend_one(xi, yi, Gn, xn, yn)
         # increment and store
-        xnew[i] = xi + dxdt*dt
-        ynew[i] = yi + dydt*dt
+        xnew[i] = xi + dxdt * dt
+        ynew[i] = yi + dydt * dt
 
     return xnew, ynew</code></pre>
 </details>
@@ -600,7 +617,7 @@ This doesn't affect the result for FT, but for RK4 it does (since sub-steps are 
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\integ.py#L412-L437" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/integ.py#L429-L456" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def RK4_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
     &#34;&#34;&#34;Step using RK4.
@@ -612,6 +629,7 @@ This doesn't affect the result for FT, but for RK4 it does (since sub-steps are 
     y1 = y0
     k1x, k1y = tend_fn(G, x1, y1)
 
+    # fmt: off
     x2 = x0 + dt/2*k1x
     y2 = y0 + dt/2*k1y
     k2x, k2y = tend_fn(G, x2, y2)
@@ -626,6 +644,7 @@ This doesn't affect the result for FT, but for RK4 it does (since sub-steps are 
 
     xnew = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
     ynew = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
+    # fmt: on
 
     return xnew, ynew</code></pre>
 </details>
@@ -645,7 +664,7 @@ all other vortons need to be up to date or we introduce error.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\integ.py#L363-L409" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/integ.py#L378-L426" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def RK4_step_1b1(G, x0_all, y0_all, dt: float):
     &#34;&#34;&#34;Step using RK4.
@@ -674,6 +693,7 @@ all other vortons need to be up to date or we introduce error.</p>
         yn = y0_all[iothers]
 
         # RK4
+        # fmt: off
         x1 = x0
         y1 = y0
         k1x, k1y = calc_tend_one(x1, y1, Gn, xn, yn)
@@ -692,6 +712,7 @@ all other vortons need to be up to date or we introduce error.</p>
 
         xnew[i] = x0 + dt/6*(k1x + 2*k2x + 2*k3x + k4x)
         ynew[i] = y0 + dt/6*(k1y + 2*k2y + 2*k3y + k4y)
+        # fmt: on
 
     return xnew, ynew</code></pre>
 </details>
@@ -706,7 +727,7 @@ to see if we need to go back and step with smaller $\delta t$.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\integ.py#L206-L227" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/integ.py#L216-L237" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def calc_C(G, x, y):
     r&#34;&#34;&#34;Calculate $C$ at time $l$ (see equation and info in `vorts.vortons.Vortons.C`).
@@ -722,7 +743,7 @@ to see if we need to go back and step with smaller $\delta t$.</p></div>
         xi, yi = x[i], y[i]
         xj, yj = x[j], y[j]
 
-        lij_sqd = (xi-xj)**2 + (yi-yj)**2
+        lij_sqd = (xi - xj) ** 2 + (yi - yj) ** 2
 
         Gi = G[i]
         Gj = G[j]
@@ -740,11 +761,11 @@ to see if we need to go back and step with smaller $\delta t$.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\integ.py#L201-L203" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/integ.py#L211-L213" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def calc_lsqd_diff(dx, dy):
     &#34;&#34;&#34;Calculate intervortical distance $l^2$, passing in already-computed `dx` and `dy`.&#34;&#34;&#34;
-    return dx**2 + dy**2</code></pre>
+    return dx ** 2 + dy ** 2</code></pre>
 </details>
 </dd>
 <dt id="vorts.py.integ.calc_lsqd_xy"><code class="name flex">
@@ -755,11 +776,11 @@ to see if we need to go back and step with smaller $\delta t$.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\integ.py#L196-L198" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/integ.py#L206-L208" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def calc_lsqd_xy(x1, y1, x2, y2):
     &#34;&#34;&#34;Calculate intervortical distance $l^2$, using positions to compute `dx` and `dy`.&#34;&#34;&#34;
-    return (x1-x2)**2 + (y1-y2)**2</code></pre>
+    return (x1 - x2) ** 2 + (y1 - y2) ** 2</code></pre>
 </details>
 </dd>
 <dt id="vorts.py.integ.calc_tend"><code class="name flex">
@@ -775,7 +796,7 @@ Using explicit loops intead of vector(ized) operations.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\integ.py#L273-L300" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/integ.py#L288-L315" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@numba.njit
 def calc_tend(G, x, y):
@@ -799,7 +820,7 @@ def calc_tend(G, x, y):
             if i != j and Gj != 0:
                 dx = xi - xj
                 dy = yi - yj
-                lij_sqd = dx**2 + dy**2
+                lij_sqd = dx ** 2 + dy ** 2
                 # add the contributions of j to i&#39;s tends
                 dxdt[i] += -_TEND_PRE * Gj * dy / lij_sqd
                 dydt[i] += _TEND_PRE * Gj * dx / lij_sqd
@@ -816,7 +837,7 @@ Using explicit loops intead of vector(ized) operations.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\integ.py#L303-L317" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/integ.py#L318-L332" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def calc_tend_one(xi, yi, Gn, xn, yn):
     &#34;&#34;&#34;Calculate tendencies for one position (`xi`, `yi`) based on others (`Gn`, `xn`, `yn`).
@@ -827,7 +848,7 @@ Using explicit loops intead of vector(ized) operations.</p></div>
         if Gj != 0:  # tracers don&#39;t contribute
             dx = xi - xj
             dy = yi - yj
-            lij_sqd = dx**2 + dy**2
+            lij_sqd = dx ** 2 + dy ** 2
             # add contribution of j to i&#39;s tends
             dxdt += -_TEND_PRE * Gj * dy / lij_sqd
             dydt += _TEND_PRE * Gj * dx / lij_sqd
@@ -843,7 +864,7 @@ Using explicit loops intead of vector(ized) operations.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\integ.py#L230-L249" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/integ.py#L240-L261" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def calc_tend_vec(G, x, y):
     &#34;&#34;&#34;Calculate both $x$- and $y$-tend written in a vectorized way.&#34;&#34;&#34;
@@ -858,13 +879,15 @@ Using explicit loops intead of vector(ized) operations.</p></div>
     dy = yarr - yarr.T
 
     # avoid dividing by lsqd=0 by adding I
-    lsqd = calc_lsqd_diff(dx, dy) + 1e-10 * np.eye(*xarr.shape)
-    #lsqd = xdiff**2 + ydiff**2
+    # fmt: off
+    lsqd = calc_lsqd_diff(dx, dy) + 1e-10*np.eye(*xarr.shape)
+    # // lsqd = xdiff**2 + ydiff**2
 
     return (
-        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1), # x-tend
-        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0) # y-tend
-    )</code></pre>
+        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1),  # x-tend
+        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0)  # y-tend
+    )
+    # fmt: on</code></pre>
 </details>
 </dd>
 <dt id="vorts.py.integ.calc_tend_vec_premesh"><code class="name flex">
@@ -880,7 +903,7 @@ Using explicit loops intead of vector(ized) operations.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\integ.py#L251-L270" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/integ.py#L264-L285" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@numba.njit
 def calc_tend_vec_premesh(G, X, Y):
@@ -896,12 +919,14 @@ def calc_tend_vec_premesh(G, X, Y):
     dy = Y - Y.T
 
     # avoid dividing by lsqd=0 by adding I
-    lsqd = dx**2 + dy**2 + 1e-10 * np.eye(*X.shape)
+    # fmt: off
+    lsqd = dx**2 + dy**2 + 1e-10*np.eye(*X.shape)
 
     return (
-        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1), # x-tend
-        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0) # y-tend
-    )</code></pre>
+        -1/(2*np.pi) * np.sum(G.T * dy / lsqd, axis=1),  # x-tend
+        1/(2*np.pi) * np.sum(G * dx / lsqd, axis=0)  # y-tend
+    )
+    # fmt: on</code></pre>
 </details>
 </dd>
 <dt id="vorts.py.integ.integrate_manual"><code class="name flex">
@@ -922,11 +947,16 @@ to compare to if doing adaptive time stepping.</dd>
 <dt><strong><code>stepper</code></strong></dt>
 <dd>A time stepping function that returns new positions after one step,
 e.g., one from the <code><a title="vorts.py.integ.MANUAL_STEPPERS" href="#vorts.py.integ.MANUAL_STEPPERS">MANUAL_STEPPERS</a></code> dict.</dd>
+<dt><strong><code>adapt_tstep</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to apply adaptive time-stepping.</dd>
+<dt><strong><code>use_tqdm</code></strong> :&ensp;<code>bool, str</code></dt>
+<dd>If <code>True</code>, or <code>'console'</code>, the console version of tqdm is used.
+Pass <code>'notebook'</code> to activate the Jupyter widget version of tqdm.</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\integ.py#L86-L184" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/integ.py#L87-L195" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def integrate_manual(
     G,
@@ -940,7 +970,6 @@ e.g., one from the <code><a title="vorts.py.integ.MANUAL_STEPPERS" href="#vorts.
     use_tqdm: bool = True,
     C_err_reltol: float = 1.0e-9,
     dt_min: float = 1.0e-4,
-
 ):
     r&#34;&#34;&#34;Integration routine for use with my handwritten FT/RK4 steppers.
 
@@ -958,11 +987,16 @@ e.g., one from the <code><a title="vorts.py.integ.MANUAL_STEPPERS" href="#vorts.
     stepper
         A time stepping function that returns new positions after one step,
         e.g., one from the `vorts.py.integ.MANUAL_STEPPERS` dict.
+    adapt_tstep: bool
+        Whether to apply adaptive time-stepping.
+    use_tqdm: bool, str
+        If `True`, or `&#39;console&#39;`, the console version of tqdm is used.
+        Pass `&#39;notebook&#39;` to activate the Jupyter widget version of tqdm.
     &#34;&#34;&#34;
     if adapt_tstep:
         use_tqdm = False  # override this for now
 
-    nt = t_eval.size  # number of integration steps
+    nt = t_eval.size - 1  # number of integration steps
     nv = x0.size  # number of vortons
 
     # initial previous C val is C_0
@@ -977,18 +1011,24 @@ e.g., one from the <code><a title="vorts.py.integ.MANUAL_STEPPERS" href="#vorts.
         raise NotImplementedError(&#34;non-constant dt in `t_eval`&#34;)
 
     # optionally use tqdm
-    iter_l = range(1, nt+1)  # note starting at 1, not 0
-    if use_tqdm:
+    iter_l = range(1, nt + 1)  # note starting at 1, not 0
+    if use_tqdm is True or use_tqdm == &#34;console&#34;:
         iter_l = tqdm(iter_l)
+    elif use_tqdm == &#34;notebook&#34;:
+        from tqdm import tqdm_notebook
+
+        iter_l = tqdm_notebook(iter_l)
 
     # pre-allocate return arrays
-    xhist = np.empty((nv, nt))
+    xhist = np.empty((nv, nt + 1))
     yhist = np.empty_like(xhist)
+    xhist[:, 0] = x0
+    yhist[:, 0] = y0
 
     # iterate over time index `l`
     x_lm1 = x0  # l-1 starts at 0
     y_lm1 = y0
-    for l in iter_l:
+    for l in iter_l:  # noqa: E741
         # adaptive time stepping
         if adapt_tstep:
             C_relerr = 100
@@ -997,7 +1037,7 @@ e.g., one from the <code><a title="vorts.py.integ.MANUAL_STEPPERS" href="#vorts.
                 # sub-steps
                 x_l = x_lm1.copy()
                 y_l = y_lm1.copy()
-                for _ in range(int(np.round(dt0/dt))):
+                for _ in range(int(np.round(dt0 / dt))):
                     # step
                     x_l, y_l = stepper(G, x_l, y_l, dt=dt)
 
@@ -1018,13 +1058,13 @@ e.g., one from the <code><a title="vorts.py.integ.MANUAL_STEPPERS" href="#vorts.
             # step
             x_l, y_l = stepper(G, x_lm1, y_lm1, dt=dt0)
 
+        # store
+        xhist[:, l] = x_l
+        yhist[:, l] = y_l
+
         # new lm1 terms
         x_lm1 = x_l
         y_lm1 = y_l
-
-        # store
-        xhist[:, l-1] = x_lm1
-        yhist[:, l-1] = y_lm1
 
     return xhist, yhist</code></pre>
 </details>
@@ -1045,7 +1085,7 @@ to which <code>**options</code> are passed, along with <code>t_eval</code>, <cod
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\integ.py#L19-L83" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/integ.py#L16-L84" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def integrate_scipy(
     y0,
@@ -1072,7 +1112,9 @@ to which <code>**options</code> are passed, along with <code>t_eval</code>, <cod
     def calc_lsqd(xarr, yarr):
         # avoid dividing by 0 by adding I
         # taken from RK4_2_step
+        # fmt: off
         return (xarr - xarr.T)**2 + (yarr - yarr.T)**2 + 1e-13*np.eye(*xarr.shape)
+        # fmt: on
 
     def fun(t, y, G):
         &#34;&#34;&#34;Calculate both x- and y-tend.&#34;&#34;&#34;
@@ -1089,10 +1131,12 @@ to which <code>**options</code> are passed, along with <code>t_eval</code>, <cod
 
         lsqd = calc_lsqd(xarr, yarr)
 
-        return np.concatenate((
-            -1/(2*np.pi) * np.sum(G.T * ydiff / lsqd, axis=1),  # x-tend
-            1/(2*np.pi) * np.sum(G * xdiff / lsqd, axis=0)  # y-tend
-        ))
+        return np.concatenate(
+            (
+                -1 / (2 * np.pi) * np.sum(G.T * ydiff / lsqd, axis=1),  # x-tend
+                1 / (2 * np.pi) * np.sum(G * xdiff / lsqd, axis=0),  # y-tend
+            )
+        )
 
     t_span = 0, t_eval[-1]
 

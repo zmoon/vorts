@@ -84,16 +84,16 @@ width=500>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\__init__.py#L0-L7" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/__init__.py#L0-L7" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 vorts -- point vortex models
 
 .. include:: ../README.md
 &#34;&#34;&#34;
-from .model import Model_py, Model_f
-from .vortons import Vortons, Tracers
-from . import plot</code></pre>
+from . import plot  # noqa: F401
+from .model import Model_f, Model_py  # noqa: F401
+from .vortons import Tracers, Vortons  # noqa: F401</code></pre>
 </details>
 </section>
 <section>

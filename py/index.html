@@ -42,7 +42,7 @@ are available here (in the <code><a title="vorts.py" href="#vorts.py">vorts.py</
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\py\__init__.py#L0-L8" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/py/__init__.py#L0-L12" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 Integration routines in Python.
@@ -50,8 +50,12 @@ Integration routines in Python.
 The integration functions `vorts.py.integ.integrate_manual` and `vorts.py.integ.integrate_scipy`
 are available here (in the `vorts.py` namespace).
 &#34;&#34;&#34;
-from .integ import (
-    integrate_manual, integrate_scipy, MANUAL_STEPPERS, SCIPY_METHODS, calc_C,
+from .integ import (  # noqa: F401
+    MANUAL_STEPPERS,
+    SCIPY_METHODS,
+    calc_C,
+    integrate_manual,
+    integrate_scipy,
 )</code></pre>
 </details>
 </section>

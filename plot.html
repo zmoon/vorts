@@ -40,20 +40,19 @@ src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\plot.py#L0-L361" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/plot.py#L0-L363" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 Plotting routines
 &#34;&#34;&#34;
-import inspect
 import functools
+import inspect
 import operator
 import warnings
 
 import cycler
 import matplotlib.pyplot as plt
 import numpy as np
-
 
 # Tableau&#39;s newer version of tab10
 # https://www.tableau.com/about/blog/2016/7/colors-upgrade-tableau-10-56782
@@ -76,6 +75,7 @@ _NEW_TAB10 = [
 
 # TODO: routine to determine system rotation (from data and/or theory); plot trajectories with respect to this rotating ref frame
 
+
 def plot_vorton_trajectories(ds, title=&#34;Vortons&#34;, ax=None, **kwargs):
     &#34;&#34;&#34;Plot lines: one for each vorton&#39;s trajectory.
 
@@ -88,9 +88,8 @@ def plot_vorton_trajectories(ds, title=&#34;Vortons&#34;, ax=None, **kwargs):
     **kwargs
         Passed on to [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
     &#34;&#34;&#34;
-    # Select vortons
-    iv = ds.G != 0  # TODO: move this to the ds creation in model
-    ds = ds.sel(v=iv)
+    # Select vortons only
+    ds = ds.isel(v=~ds.is_t)
 
     fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
@@ -103,9 +102,9 @@ def plot_vorton_trajectories(ds, title=&#34;Vortons&#34;, ax=None, **kwargs):
         ts_i = ds.isel(v=i)
         x = ts_i.x
         y = ts_i.y
-        l, = ax.plot(x, y, lw=0.5, alpha=0.5)
+        (l,) = ax.plot(x, y, lw=0.5, alpha=0.5)
         # Highlight starting position
-        ax.plot(x[0], y[0], &#39;o&#39;, c=l.get_color())
+        ax.plot(x[0], y[0], &#34;o&#34;, c=l.get_color())
 
     _fig_post(fig, ax, title=title, frame=&#34;default&#34;)
 
@@ -123,9 +122,8 @@ def plot_tracer_trajectories(ds, title=&#34;Tracers&#34;, ax=None, **kwargs):
     **kwargs
         Passed on to [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
     &#34;&#34;&#34;
-    # Select tracers
-    it = ds.G == 0  # tracers boolean
-    ds = ds.sel(v=it)
+    # Select tracers only
+    ds = ds.isel(v=ds.is_t)
 
     fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
@@ -137,6 +135,9 @@ def plot_tracer_trajectories(ds, title=&#34;Tracers&#34;, ax=None, **kwargs):
         ax.plot(x, y, c=&#34;0.5&#34;, lw=0.5, alpha=0.5)
 
     _fig_post(fig, ax, title=title, frame=&#34;default&#34;)
+
+
+# TODO: optionally take averages of positions next to each other in time (with weights based on deltas)
 
 
 def select_poincare_times(ds, iv_ref=0, *, xtol=1e-2, ytol=1e-2):
@@ -162,18 +163,17 @@ def select_poincare_times(ds, iv_ref=0, *, xtol=1e-2, ytol=1e-2):
     &#34;&#34;&#34;
     ds_ref = ds.isel(v=iv_ref)  # selected vorton
     ds_ref0 = ds_ref.isel(t=0)  # initial position
-    is_ps = (
-        (np.abs(ds_ref.x - ds_ref0.x) &lt;= xtol) &amp;
-        (np.abs(ds_ref.y - ds_ref0.y) &lt;= ytol)
-    )
+    is_ps = (np.abs(ds_ref.x - ds_ref0.x) &lt;= xtol) &amp; (np.abs(ds_ref.y - ds_ref0.y) &lt;= ytol)
     return ds.isel(t=is_ps.values)  # have to use `.values` since `v` dim does not match original
 
 
-_allowed_subplots_kwargs = (&#34;figsize&#34;, &#34;linewidth&#34;,)
+_allowed_subplots_kwargs = (&#34;figsize&#34;, &#34;linewidth&#34;)
 _allowed_plot_kwargs = ()
 
 
-def plot_poincare(ds, *,
+def plot_poincare(
+    ds,
+    *,
     iv_ref=0,
     c=&#34;0.35&#34;,
     ms=0.2,
@@ -185,7 +185,7 @@ def plot_poincare(ds, *,
     plot_vortons=False,
     vorton_colors=None,
     ax=None,
-    **kwargs
+    **kwargs,
 ):
     &#34;&#34;&#34;Plot Poincaré section.
 
@@ -233,24 +233,25 @@ def plot_poincare(ds, *,
 
     # Separate the kwargs
     select_poincare_times_kwargs = {
-        k: kwargs.pop(k) for k in inspect.getfullargspec(select_poincare_times).kwonlyargs if k in kwargs
+        k: kwargs.pop(k)
+        for k in inspect.getfullargspec(select_poincare_times).kwonlyargs
+        if k in kwargs
     }
     subplots_kwargs = {k: kwargs.pop(k) for k in _allowed_subplots_kwargs if k in kwargs}
     plot_kwargs = {k: kwargs.pop(k) for k in _allowed_plot_kwargs if k in kwargs}
     if kwargs:  # any left
         warnings.warn(
             &#34;these kwargs were passed but won&#39;t be used: &#34;
-            f&#34;{&#39;, &#39;.join(f&#39;`k`&#39; for k in kwargs)}. &#34;
-            &#34;Create your own figure and pass the `ax` in to have more control.&#34;
+            f&#34;{&#39;, &#39;.join(f&#39;`{k}`&#39; for k in kwargs)}. &#34;
+            &#34;Create your own figure and pass the `ax` to have more control over figure properties.&#34;
         )
 
     # Subset data to approximate Poincare section
     ds = select_poincare_times(ds, iv_ref, **select_poincare_times_kwargs)
 
-    # Select tracers
-    it = ds.G == 0
-    ds_v0 = ds.sel(v=~it).isel(t=0)
-    ds = ds.sel(v=it)
+    # Select tracers and initial vortons
+    ds_v0 = ds.sel(v=~ds.is_t).isel(t=0)
+    ds = ds.sel(v=ds.is_t)
 
     fig, ax = _maybe_new_fig(ax=ax, **subplots_kwargs)
 
@@ -298,7 +299,9 @@ def plot_poincare(ds, *,
     if plot_vortons:
         if not vorton_colors:
             vorton_colors = _NEW_TAB10
-        for x_v, y_v, c_v in zip(ds_v0.x.values, ds_v0.y.values, cycler.cycle(_to_list(vorton_colors))):
+        for x_v, y_v, c_v in zip(
+            ds_v0.x.values, ds_v0.y.values, cycler.cycle(_to_list(vorton_colors))
+        ):
             ax.plot(x_v, y_v, &#34;o&#34;, c=c_v, ms=10, alpha=1)
 
     # Set labels, title, frame settings
@@ -345,6 +348,7 @@ def remove_frame(ax=None, *, keep_title=True):
         frame_on=False,
     )
 
+
 def _maybe_new_fig(ax=None, **kwargs):
     &#34;&#34;&#34;Return `fig, ax`, both new if `ax` is `None`. `**kwargs` passed to `plt.subplots()`.&#34;&#34;&#34;
     if ax is None:
@@ -367,9 +371,7 @@ def _is_iterable(x):
 
 def _to_list(v):
     &#34;&#34;&#34;Convert value(s) to list. If `v` is `str`, preserve it instead of returning a list of chars.&#34;&#34;&#34;
-    return list(v) if (
-        _is_iterable(v) and not isinstance(v, (str,))
-    ) else [v]
+    return list(v) if (_is_iterable(v) and not isinstance(v, (str,))) else [v]
 
 
 def _reconcile_cyclers_for_adding(cyclers):
@@ -459,9 +461,11 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\plot.py#L132-L261" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/plot.py#L130-L264" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def plot_poincare(ds, *,
+<pre><code class="python">def plot_poincare(
+    ds,
+    *,
     iv_ref=0,
     c=&#34;0.35&#34;,
     ms=0.2,
@@ -473,7 +477,7 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
     plot_vortons=False,
     vorton_colors=None,
     ax=None,
-    **kwargs
+    **kwargs,
 ):
     &#34;&#34;&#34;Plot Poincaré section.
 
@@ -521,24 +525,25 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
 
     # Separate the kwargs
     select_poincare_times_kwargs = {
-        k: kwargs.pop(k) for k in inspect.getfullargspec(select_poincare_times).kwonlyargs if k in kwargs
+        k: kwargs.pop(k)
+        for k in inspect.getfullargspec(select_poincare_times).kwonlyargs
+        if k in kwargs
     }
     subplots_kwargs = {k: kwargs.pop(k) for k in _allowed_subplots_kwargs if k in kwargs}
     plot_kwargs = {k: kwargs.pop(k) for k in _allowed_plot_kwargs if k in kwargs}
     if kwargs:  # any left
         warnings.warn(
             &#34;these kwargs were passed but won&#39;t be used: &#34;
-            f&#34;{&#39;, &#39;.join(f&#39;`k`&#39; for k in kwargs)}. &#34;
-            &#34;Create your own figure and pass the `ax` in to have more control.&#34;
+            f&#34;{&#39;, &#39;.join(f&#39;`{k}`&#39; for k in kwargs)}. &#34;
+            &#34;Create your own figure and pass the `ax` to have more control over figure properties.&#34;
         )
 
     # Subset data to approximate Poincare section
     ds = select_poincare_times(ds, iv_ref, **select_poincare_times_kwargs)
 
-    # Select tracers
-    it = ds.G == 0
-    ds_v0 = ds.sel(v=~it).isel(t=0)
-    ds = ds.sel(v=it)
+    # Select tracers and initial vortons
+    ds_v0 = ds.sel(v=~ds.is_t).isel(t=0)
+    ds = ds.sel(v=ds.is_t)
 
     fig, ax = _maybe_new_fig(ax=ax, **subplots_kwargs)
 
@@ -586,7 +591,9 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
     if plot_vortons:
         if not vorton_colors:
             vorton_colors = _NEW_TAB10
-        for x_v, y_v, c_v in zip(ds_v0.x.values, ds_v0.y.values, cycler.cycle(_to_list(vorton_colors))):
+        for x_v, y_v, c_v in zip(
+            ds_v0.x.values, ds_v0.y.values, cycler.cycle(_to_list(vorton_colors))
+        ):
             ax.plot(x_v, y_v, &#34;o&#34;, c=c_v, ms=10, alpha=1)
 
     # Set labels, title, frame settings
@@ -610,7 +617,7 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\plot.py#L70-L95" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/plot.py#L69-L93" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def plot_tracer_trajectories(ds, title=&#34;Tracers&#34;, ax=None, **kwargs):
     &#34;&#34;&#34;Plot tracer trajectories.
@@ -624,9 +631,8 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
     **kwargs
         Passed on to [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
     &#34;&#34;&#34;
-    # Select tracers
-    it = ds.G == 0  # tracers boolean
-    ds = ds.sel(v=it)
+    # Select tracers only
+    ds = ds.isel(v=ds.is_t)
 
     fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
@@ -657,7 +663,7 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\plot.py#L35-L66" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/plot.py#L35-L65" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def plot_vorton_trajectories(ds, title=&#34;Vortons&#34;, ax=None, **kwargs):
     &#34;&#34;&#34;Plot lines: one for each vorton&#39;s trajectory.
@@ -671,9 +677,8 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
     **kwargs
         Passed on to [`plt.subplots()`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html)
     &#34;&#34;&#34;
-    # Select vortons
-    iv = ds.G != 0  # TODO: move this to the ds creation in model
-    ds = ds.sel(v=iv)
+    # Select vortons only
+    ds = ds.isel(v=~ds.is_t)
 
     fig, ax = _maybe_new_fig(ax=ax, **kwargs)
 
@@ -686,9 +691,9 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
         ts_i = ds.isel(v=i)
         x = ts_i.x
         y = ts_i.y
-        l, = ax.plot(x, y, lw=0.5, alpha=0.5)
+        (l,) = ax.plot(x, y, lw=0.5, alpha=0.5)
         # Highlight starting position
-        ax.plot(x[0], y[0], &#39;o&#39;, c=l.get_color())
+        ax.plot(x[0], y[0], &#34;o&#34;, c=l.get_color())
 
     _fig_post(fig, ax, title=title, frame=&#34;default&#34;)</code></pre>
 </details>
@@ -701,7 +706,7 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\plot.py#L293-L302" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/plot.py#L296-L305" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_frame(ax=None, *, keep_title=True):
     &#34;&#34;&#34;Remove ticks, tick labels, and frame (spines) from `ax` (uses current by default).&#34;&#34;&#34;
@@ -723,7 +728,7 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\plot.py#L264-L290" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/plot.py#L267-L293" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_ticks(ax=None, *, keep_ax_labels=True, keep_title=True):
     &#34;&#34;&#34;Remove ticks and tick labels from `ax` (uses current by default).&#34;&#34;&#34;
@@ -779,7 +784,7 @@ when the reference vorton is approximately in the desired position.</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/4dcc9546390d795d0c52a985bf0ef8bb12e4ddf6/vorts\plot.py#L98-L125" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/6fbc1bc8f778356ef59b1207bb09bff684a3a677/vorts/plot.py#L99-L123" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def select_poincare_times(ds, iv_ref=0, *, xtol=1e-2, ytol=1e-2):
     &#34;&#34;&#34;From a model output dataset, extract data corresponding to times to use for the Poincaré section.
@@ -804,10 +809,7 @@ when the reference vorton is approximately in the desired position.</dd>
     &#34;&#34;&#34;
     ds_ref = ds.isel(v=iv_ref)  # selected vorton
     ds_ref0 = ds_ref.isel(t=0)  # initial position
-    is_ps = (
-        (np.abs(ds_ref.x - ds_ref0.x) &lt;= xtol) &amp;
-        (np.abs(ds_ref.y - ds_ref0.y) &lt;= ytol)
-    )
+    is_ps = (np.abs(ds_ref.x - ds_ref0.x) &lt;= xtol) &amp; (np.abs(ds_ref.y - ds_ref0.y) &lt;= ytol)
     return ds.isel(t=is_ps.values)  # have to use `.values` since `v` dim does not match original</code></pre>
 </details>
 </dd>
