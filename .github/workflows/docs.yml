@@ -1,0 +1,43 @@
+name: Docs
+
+on:
+  push:
+    paths:
+      - '**.py'
+      - 'README.md'
+      - 'doc/**'
+      - '.github/workflows/docs.yml'
+    branches:
+      - master
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}  # needed for the Conda activation to work
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install package (with `docs` extras)
+        run: |
+          pip install .[docs]
+
+      - name: Build docs with pdoc3
+        run: |
+          pdoc --html --force --template-dir ./doc/templates ./vorts
+
+      - name: Push built docs to `gh-pages` branch
+        uses: JamesIves/github-pages-deploy-action@4.0.0
+        with:
+          branch: gh-pages
+          folder: ./html/vorts
+          clean: true
+          clean-exclude: .nojekyll
