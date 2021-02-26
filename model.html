@@ -42,7 +42,7 @@ directing input and collecting output, etc.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/318cd5588306c7d64e8008730f352a68883691ec/vorts/model.py#L0-L474" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/b6a3b88fa6066f89d61af1acdb362e20809224b5/vorts/model.py#L0-L480" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 Model classes that act as drivers for the integration routines,
@@ -333,7 +333,6 @@ class Model_py(ModelBase):
 
 FORT_BASE_DIR = Path(__file__).parent / &#34;f&#34;  # .absolute()
 # ^ the one that `bin`, `in`, `out`, `src` are in
-assert (FORT_BASE_DIR / &#34;src&#34;).exists()  # make sure that this is the right spot
 
 
 def fort_bool(b: bool):
@@ -399,9 +398,16 @@ class Model_f(ModelBase):
         self.f_write_out_ps = write_ps
 
         # executing the model
+        assert (FORT_BASE_DIR / &#34;src&#34;).exists(), &#34;Fortran source directory not found!&#34;
         exe_name = &#34;vorts.exe&#34; if platform.system() == &#34;Windows&#34; else &#34;vorts&#34;
         self.vorts_exe_path = FORT_BASE_DIR / &#34;bin&#34; / exe_name
         self.oe = &#34;&#34;  # we will store standard output and error here
+
+        # create the needed subdirs if they don&#39;t exist (pip install)
+        for sub in (&#34;bin&#34;, &#34;in&#34;, &#34;out&#34;):
+            p = FORT_BASE_DIR / sub
+            if not p.exists():
+                p.mkdir()
 
         # write the text input files to directory `vorts/f/in`
         self.create_inputs()
@@ -536,7 +542,7 @@ class Model_f(ModelBase):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/318cd5588306c7d64e8008730f352a68883691ec/vorts/model.py#L293-L295" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/b6a3b88fa6066f89d61af1acdb362e20809224b5/vorts/model.py#L292-L294" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def fort_bool(b: bool):
     &#34;&#34;&#34;Convert Python boolean to a string of the corresponding Fortran logical (`.true.`/`.false.`).&#34;&#34;&#34;
@@ -564,7 +570,7 @@ populating it with the run's output data.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/318cd5588306c7d64e8008730f352a68883691ec/vorts/model.py#L22-L172" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/b6a3b88fa6066f89d61af1acdb362e20809224b5/vorts/model.py#L22-L172" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ModelBase(abc.ABC):
     &#34;&#34;&#34;Abstract base class for the models.
@@ -789,7 +795,7 @@ and we have a total of <code>nt+1</code> times when including the initial state.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/318cd5588306c7d64e8008730f352a68883691ec/vorts/model.py#L107-L123" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/b6a3b88fa6066f89d61af1acdb362e20809224b5/vorts/model.py#L107-L123" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def plot(self, which=&#34;vortons&#34;, **kwargs):
     &#34;&#34;&#34;Plot results stored in the history data set `hist`.
@@ -818,7 +824,7 @@ and we have a total of <code>nt+1</code> times when including the initial state.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/318cd5588306c7d64e8008730f352a68883691ec/vorts/model.py#L95-L103" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/b6a3b88fa6066f89d61af1acdb362e20809224b5/vorts/model.py#L95-L103" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run(self):
     &#34;&#34;&#34;Integrate and update the history dataset `hist`.&#34;&#34;&#34;
@@ -864,7 +870,7 @@ depending on the integration scheme.</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/318cd5588306c7d64e8008730f352a68883691ec/vorts/model.py#L298-L475" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/b6a3b88fa6066f89d61af1acdb362e20809224b5/vorts/model.py#L297-L481" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Model_f(ModelBase):
     &#34;&#34;&#34;Thin wrapper for functionality of the Fortran model, whose source code is in `vorts/f/src/`.
@@ -924,9 +930,16 @@ depending on the integration scheme.</dd>
         self.f_write_out_ps = write_ps
 
         # executing the model
+        assert (FORT_BASE_DIR / &#34;src&#34;).exists(), &#34;Fortran source directory not found!&#34;
         exe_name = &#34;vorts.exe&#34; if platform.system() == &#34;Windows&#34; else &#34;vorts&#34;
         self.vorts_exe_path = FORT_BASE_DIR / &#34;bin&#34; / exe_name
         self.oe = &#34;&#34;  # we will store standard output and error here
+
+        # create the needed subdirs if they don&#39;t exist (pip install)
+        for sub in (&#34;bin&#34;, &#34;in&#34;, &#34;out&#34;):
+            p = FORT_BASE_DIR / sub
+            if not p.exists():
+                p.mkdir()
 
         # write the text input files to directory `vorts/f/in`
         self.create_inputs()
@@ -1062,7 +1075,7 @@ and the simulation settings.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/318cd5588306c7d64e8008730f352a68883691ec/vorts/model.py#L363-L394" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/b6a3b88fa6066f89d61af1acdb362e20809224b5/vorts/model.py#L369-L400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_inputs(self):
     &#34;&#34;&#34;
@@ -1159,7 +1172,7 @@ depending on the integration scheme.</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/318cd5588306c7d64e8008730f352a68883691ec/vorts/model.py#L175-L285" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/b6a3b88fa6066f89d61af1acdb362e20809224b5/vorts/model.py#L175-L285" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Model_py(ModelBase):
     &#34;&#34;&#34;Model in Python.&#34;&#34;&#34;
