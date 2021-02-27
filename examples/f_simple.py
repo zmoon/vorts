@@ -23,10 +23,12 @@ import vorts
 
 
 # %% [markdown]
-# Note that on Binder we need to install `gfortran`. Could use a repo `postBuild` file for that. Or uncomment the below to install with `conda`:
+# Note that on Binder we need to install `gfortran`. In the future, we might use a repo `postBuild` file for that. For now, uncomment the below to install with `conda`:
 
 # %%
 # # !conda install -c conda-forge gfortran_linux-64 --yes
+# # !mkdir -p ~/.local/bin
+# # !ln -sf /srv/conda/envs/notebook/bin/x86_64-conda-linux-gnu-gfortran.bin ~/.local/bin/gfortran
 
 # %% [markdown]
 # ## Create case
