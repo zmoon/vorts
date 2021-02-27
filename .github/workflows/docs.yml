@@ -39,5 +39,7 @@ jobs:
         with:
           branch: gh-pages
           folder: ./html/vorts
+          git-config-name: github-actions
+          git-config-email: 41898282+github-actions[bot]@users.noreply.github.com
           clean: true
           clean-exclude: .nojekyll
