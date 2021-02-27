@@ -17,6 +17,6 @@ pip-wheel-metadata/
 *.pyc
 ps*.txt
 ps*.png
-!/examples/ps*.png
+!/examples/img/ps*.png
 .DS_Store
 .vscode
