@@ -14,7 +14,7 @@ Integrate a system of *N* point vortices.
 ## Equations
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/zmoon/vorts/master/examples/img/N-vortex_evolution_equations.png"
+<img src="https://media.githubusercontent.com/media/zmoon/vorts/master/examples/img/N-vortex_evolution_equations.png"
     alt="Point vortex equations"
     title="N-point-vortex system of equations in 2 dimensions"
     width=300>
@@ -25,14 +25,14 @@ Integrate a system of *N* point vortices.
 
 Releasing tracers into the rotating *N*-vortex system:
 <div align="center">
-<img src="https://raw.githubusercontent.com/zmoon/vorts/master/examples/img/tracer_art_1.png"
+<img src="https://media.githubusercontent.com/media/zmoon/vorts/master/examples/img/tracer_art_1.png"
   alt="Tracer art example 1"
   title="Tracer art example 1 – trajectories"
   width=700>
 </div>
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/zmoon/vorts/master/examples/img/tracer_art_2.png"
+<img src="https://media.githubusercontent.com/media/zmoon/vorts/master/examples/img/tracer_art_2.png"
   alt="Tracer art example 2"
   title="Tracer art example 2 – points"
   width=700>
@@ -41,7 +41,7 @@ Releasing tracers into the rotating *N*-vortex system:
 Poincaré plots. Given a sufficiently long run with a large number (e.g. 100) of tracers,
 you can make pretty pictures like this:
 <div align="center">
-<img src="https://raw.githubusercontent.com/zmoon/vorts/master/examples/img/ps_theta60deg.png"
+<img src="https://media.githubusercontent.com/media/zmoon/vorts/master/examples/img/ps_theta60deg.png"
   alt="Example Poincaré section plot"
   title="Example Poincaré section plot"
   width=500>
