@@ -63,8 +63,10 @@ Integrate and return the solution object.
 * `nt`: number of time steps taken from ``t=0``
 * `int_scheme_name`: string of a solver name, e.g., from the
   [ODE solvers list](https://diffeq.sciml.ai/stable/solvers/ode_solve/)
+* `ret_for`: for `"julia"`, return the solution object;
+  for `"python"`, return x and y arrays in (t, v) dim order
 """
-function integrate(r₀, G, dt, nt; int_scheme_name="Tsit5")
+function integrate(r₀, G, dt, nt; int_scheme_name="Tsit5", ret_for="julia")
   # Inputs
   r₀ = permutedims(r₀)  # for Julia, we want coords as cols
   @assert length(G) == size(r₀, 2)
@@ -81,7 +83,14 @@ function integrate(r₀, G, dt, nt; int_scheme_name="Tsit5")
   # * could consider using `dtmax=dt`
 
   # Note that `sol.u` is the solution, as a vec of arrays like r₀ (each r(t) is its own array)
-  return sol
+  if ret_for == "julia"
+    return sol
+  elseif ret_for == "python"
+    xy = reduce(vcat, sol.u)  # x0; y0; x1; y1; ...
+    return xy[1:2:end, :], xy[2:2:end, :]
+  else
+    throw(error("invalid `ret_for`"))
+  end
 end
 
 
