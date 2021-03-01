@@ -100,7 +100,13 @@ function plot_sol(sol)
 end
 
 
-# Test
-sol = integrate([0 1 ; 0 0.01; 0 -1], ones(3), 0.1, 5000)
-plot_sol(sol)
+# try it out
+function main()
+  sol = integrate([0 1 ; 0 0.01; 0 -1], ones(3), 0.1, 500)
+  plot_sol(sol)
+end
 
+
+if abspath(PROGRAM_FILE) == @__FILE__
+  main()
+end
