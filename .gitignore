@@ -1,4 +1,7 @@
 
+# Julia sysimage
+sys*.so
+
 # Julia full package manifest
 Manifest.toml
 
