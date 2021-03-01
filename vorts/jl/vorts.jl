@@ -2,7 +2,7 @@
 Solving the vorts problem using [DifferentialEquations.jl](https://github.com/SciML/DifferentialEquations.jl)
 """
 # Note: pre-compiling DifferentialEquations takes *long* time (for Plots too!)
-using DifferentialEquations: ODEProblem, solve, Vern7
+using DifferentialEquations
 using Plots
 
 
@@ -50,30 +50,41 @@ end
 
 # TODO: complex number formulation + benchmark
 
+"Integrate and return the solution object."
+function integrate(r₀, G, dt, nt; int_scheme_name="Tsit5")
+  # Inputs
+  r₀ = permutedims(r₀)  # for Julia, we want coords as cols
+  @assert length(G) == size(r₀, 2)
+  p = TendParams(G)
+  tspan = (0.0, nt*dt)
+  solver = getfield(Main, Symbol(int_scheme_name))
 
-# Set up problem inputs
-r₀ = [
-  0 3;
-  0 -0.1;
-  0 -3;
-]'  # coords as rows -> coords as cols
-G = [1, 5, 1]
-@assert length(G) == size(r₀, 2)
-p = TendParams(G)
-tspan = (0.0, 1e4)
+  # Use DifferentialEquations
+  prob = ODEProblem(tend!, r₀, tspan, p)
+  sol = solve(prob, solver(); saveat=0:dt:tspan[2])
+  # Notes:
+  # * with default settings, ends up using Tsit5 (`all(sol.alg_choice .== 1)` is true)
+  # * might want to enable dense for Poincare purposes in the future (not compatible with `saveat`)
 
-# Integrate
-prob = ODEProblem(tend!, r₀, tspan, p)
-sol = solve(prob)  # ends up using Tsit5 by default (`all(sol.alg_choice .== 1)` is true)
-# sol = solve(prob, Vern7())
-
-# Plot
-lims = (-5, 5)
-p_plot = (aspect_ratio=:equal, xlabel=raw"$x$", ylabel=raw"$y$", xlims=lims, ylims=lims)
-plot()
-for i ∈ 1:length(p.G)
-  # Column-major, so (1, 3) is first row, (1, 2) is first col
-  plot!(sol, vars=(2i-1, 2i), label="$i")
+  # Note that `sol.u` is the solution, as a vec of arrays like r₀ (each r(t) is its own array)
+  return sol
 end
-plot!(;p_plot...)
-gui()
+
+"Plot the solution on Julia side for testing."
+function plot_sol(sol)
+  xymax = maximum(abs.(hcat(sol.u...)))
+  lims = (-xymax, xymax)
+  p_plot = (aspect_ratio=:equal, xlabel=raw"$x$", ylabel=raw"$y$", xlims=lims, ylims=lims)
+  plot()
+  for i ∈ 1:size(sol.u[1], 2)
+    # Column-major, so (1, 3) is first row, (1, 2) is first col
+    plot!(sol, vars=(2i-1, 2i), label="$i")
+  end
+  plot!(;p_plot...)
+  gui()
+end
+
+# Test
+sol = integrate([0 1 ; 0 0.01; 0 -1], ones(3), 0.1, 5000)
+plot_sol(sol)
+
