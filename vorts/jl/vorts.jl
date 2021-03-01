@@ -50,7 +50,20 @@ end
 
 # TODO: complex number formulation + benchmark
 
-"Integrate and return the solution object."
+
+"""
+    integrate(r₀, G, dt, nt; int_scheme_name)
+
+Integrate and return the solution object.
+
+# Arguments
+* `r₀`: initial positions, where each row is an ``xy`` coordinate pair
+* `G`: vector of ``\\Gamma`` values for each position
+* `dt`: time step that we want the output to have
+* `nt`: number of time steps taken from ``t=0``
+* `int_scheme_name`: string of a solver name, e.g., from the
+  [ODE solvers list](https://diffeq.sciml.ai/stable/solvers/ode_solve/)
+"""
 function integrate(r₀, G, dt, nt; int_scheme_name="Tsit5")
   # Inputs
   r₀ = permutedims(r₀)  # for Julia, we want coords as cols
@@ -65,10 +78,12 @@ function integrate(r₀, G, dt, nt; int_scheme_name="Tsit5")
   # Notes:
   # * with default settings, ends up using Tsit5 (`all(sol.alg_choice .== 1)` is true)
   # * might want to enable dense for Poincare purposes in the future (not compatible with `saveat`)
+  # * could consider using `dtmax=dt`
 
   # Note that `sol.u` is the solution, as a vec of arrays like r₀ (each r(t) is its own array)
   return sol
 end
+
 
 "Plot the solution on Julia side for testing."
 function plot_sol(sol)
@@ -83,6 +98,7 @@ function plot_sol(sol)
   plot!(;p_plot...)
   gui()
 end
+
 
 # Test
 sol = integrate([0 1 ; 0 0.01; 0 -1], ones(3), 0.1, 5000)
