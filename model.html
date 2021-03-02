@@ -42,7 +42,7 @@ directing input and collecting output, etc.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/f767770241f327a2892bec51beca46dd81828913/vorts/model.py#L0-L484" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/f26dc94d4ed5ba1d53a2199bbcef82fa9cd4cece/vorts/model.py#L0-L644" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 Model classes that act as drivers for the integration routines,
@@ -528,7 +528,167 @@ class Model_f(ModelBase):
         if self.f_write_out_ps:
             ps_file = FORT_BASE_DIR / &#34;out/ps.txt&#34;
             data = np.genfromtxt(ps_file, skip_header=1, skip_footer=sf)
-            self.ps = data</code></pre>
+            self.ps = data
+
+
+JL_BASE_DIR = Path(__file__).parent / &#34;jl&#34;
+
+
+class Model_jl(ModelBase):
+    &#34;&#34;&#34;Interface to the Julia model, whose source code is in `vorts/jl/vorts.jl`.
+
+    .. note::
+       In this implementation we communicate with Julia using
+       [pyjulia](https://github.com/JuliaPy/pyjulia)
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        vortons: Vortons = None,
+        tracers: Tracers = None,
+        *,
+        dt=0.1,
+        nt=1000,
+        # above are passed to base
+        int_scheme_name=&#34;Tsit5&#34;,
+        use_sysimage=False,
+        run_method=&#34;pyjulia&#34;,
+    ):
+        r&#34;&#34;&#34;
+
+        Parameters
+        ----------
+        vortons : vorts.vortons.Vortons
+            default: equilateral triangle with inscribing circle radius of $1$ and all $G=1$.
+
+        tracers : vorts.vortons.Tracers
+            default: no tracers
+
+        dt : float
+            Time step $\delta t$ for the output.
+            Additionally, for the integrators, `dt` is used as the constant or maximum integration time step
+            depending on the integration scheme.
+        nt : int
+            Number of time steps to run (not including $t=0$).
+
+        int_scheme_name : str
+            Time integration scheme name. Any from the
+            [ODE solvers list](https://diffeq.sciml.ai/stable/solvers/ode_solve/)
+            are valid.
+        use_sysimage : bool
+            Whether to (try to) use the `sys_vorts.so` created by the `compile.jl` script.
+        run_method : str, {&#39;pyjulia&#39;, &#39;diffeqpy&#39;}
+            Currently, we can run using pyjulia alone or using diffeqpy.
+            Both use the tendency function defined in `vorts.jl`.
+        &#34;&#34;&#34;
+        # Call base initialization
+        super().__init__(vortons, tracers, dt=dt, nt=nt)
+
+        # Other inputs
+        self.int_scheme_name = int_scheme_name
+        self.use_sysimage = use_sysimage
+        self.run_method = run_method
+
+    @staticmethod
+    def _load_jl_sysimage():
+        # Use our sysimage with DifferentialEquations (and our tend fn) pre-compiled
+        # (has to be done before importing any Julia modules)
+        from julia import Julia
+
+        jl = Julia(sysimage=str(JL_BASE_DIR / &#34;sys_vorts.so&#34;))
+        # TODO: might want to also support `Julia(compiled_modules=False)` in some way
+        return jl
+
+    # pyjulia alone
+    def _run_pyjulia(self):
+        from julia.core import JuliaError
+
+        if self.use_sysimage:
+            self._load_jl_sysimage()
+
+        # For some reason it doesn&#39;t work the first time on Windows (can&#39;t find PyCall)
+        # but will work if we just do it again...
+        try:
+            from julia import Base, Main, Pkg
+        except JuliaError as e:
+            warnings.warn(f&#34;Julia imports failed the first time with message:\n{e}&#34;)
+            from julia import Base, Main, Pkg
+
+        # Load our code
+        # Base.println(&#34;Initial env status:&#34;)
+        # Pkg.status()
+        Pkg.activate(JL_BASE_DIR.as_posix())
+        Pkg.status()
+        Main.include((JL_BASE_DIR / &#34;vorts.jl&#34;).as_posix())
+        Base.println(&#34;vorts.jl has been loaded!&#34;)
+
+        # Run by calling `integrate` from `vorts.jl`
+        x, y = Main.integrate(
+            self._vt0.state_mat,
+            self._vt0.G,
+            self.dt,
+            self.nt,
+            int_scheme_name=self.int_scheme_name,
+            ret_for=&#34;python&#34;,
+        )
+
+        # Set output dataset
+        self.hist = self._res_to_xr(x, y)
+
+    # pyjulia + diffeqpy
+    def _run_diffeqpy(self):
+        from julia.core import JuliaError
+
+        if self.use_sysimage:
+            self._load_jl_sysimage()
+
+        try:
+            from julia import Base, Main, Pkg
+        except JuliaError as e:
+            warnings.warn(f&#34;Julia imports failed the first time with message:\n{e}&#34;)
+            from julia import Base, Main, Pkg
+
+        Pkg.activate(JL_BASE_DIR.as_posix())
+        Pkg.status()
+
+        # `ode` from the readme doesn&#39;t work yet in stable (would have to install from GH)
+        # This one would also take two tries in Win if we hadn&#39;t already done the above import
+        from diffeqpy import de
+
+        # Add the code with the tendency function
+        Main.include((JL_BASE_DIR / &#34;vorts.jl&#34;).as_posix())
+        Base.println(&#34;vorts.jl has been loaded!&#34;)
+
+        # Set up our inputs
+        nt = self.nt
+        dt = self.dt
+        vt0 = self._vt0
+        r0 = vt0.state_mat.T  # note transpose!
+        tspan = (0, dt * nt)
+        p = Main.TendParams(vt0.G)
+        solver = getattr(de, self.int_scheme_name)()
+
+        prob = de.ODEProblem(Main.tend_b, r0, tspan, p)
+        sol = de.solve(prob, solver, saveat=np.arange(0, nt + 1) * dt)
+
+        # Exract data and set the output dataset
+        x = np.empty((self.nt + 1, vt0.n))
+        y = np.empty_like(x)
+        assert len(sol.u) == nt + 1
+        assert sol.u[0].shape == (2, vt0.n)
+        for i in range(len(sol.u)):
+            x[i, :] = sol.u[i][0, :]
+            y[i, :] = sol.u[i][1, :]
+
+        self.hist = self._res_to_xr(x, y)
+
+    def _run(self):
+        if self.run_method == &#34;pyjulia&#34;:
+            self._run_pyjulia()
+        elif self.run_method == &#34;diffeqpy&#34;:
+            self._run_diffeqpy()
+        else:
+            raise ValueError(&#34;`run_method` must be &#39;pyjulia&#39; or &#39;diffeqpy&#39;.&#34;)</code></pre>
 </details>
 </section>
 <section>
@@ -546,7 +706,7 @@ class Model_f(ModelBase):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/f767770241f327a2892bec51beca46dd81828913/vorts/model.py#L293-L295" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/f26dc94d4ed5ba1d53a2199bbcef82fa9cd4cece/vorts/model.py#L293-L295" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def fort_bool(b: bool):
     &#34;&#34;&#34;Convert Python boolean to a string of the corresponding Fortran logical (`.true.`/`.false.`).&#34;&#34;&#34;
@@ -574,7 +734,7 @@ populating it with the run's output data.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/f767770241f327a2892bec51beca46dd81828913/vorts/model.py#L23-L173" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/f26dc94d4ed5ba1d53a2199bbcef82fa9cd4cece/vorts/model.py#L23-L173" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ModelBase(abc.ABC):
     &#34;&#34;&#34;Abstract base class for the models.
@@ -735,6 +895,7 @@ populating it with the run's output data.</p>
 <h3>Subclasses</h3>
 <ul class="hlist">
 <li><a title="vorts.model.Model_f" href="#vorts.model.Model_f">Model_f</a></li>
+<li><a title="vorts.model.Model_jl" href="#vorts.model.Model_jl">Model_jl</a></li>
 <li><a title="vorts.model.Model_py" href="#vorts.model.Model_py">Model_py</a></li>
 </ul>
 <h3>Instance variables</h3>
@@ -799,7 +960,7 @@ and we have a total of <code>nt+1</code> times when including the initial state.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/f767770241f327a2892bec51beca46dd81828913/vorts/model.py#L108-L124" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/f26dc94d4ed5ba1d53a2199bbcef82fa9cd4cece/vorts/model.py#L108-L124" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def plot(self, which=&#34;vortons&#34;, **kwargs):
     &#34;&#34;&#34;Plot results stored in the history data set `hist`.
@@ -828,7 +989,7 @@ and we have a total of <code>nt+1</code> times when including the initial state.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/f767770241f327a2892bec51beca46dd81828913/vorts/model.py#L96-L104" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/f26dc94d4ed5ba1d53a2199bbcef82fa9cd4cece/vorts/model.py#L96-L104" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run(self):
     &#34;&#34;&#34;Integrate and update the history dataset `hist`.&#34;&#34;&#34;
@@ -874,7 +1035,7 @@ depending on the integration scheme.</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/f767770241f327a2892bec51beca46dd81828913/vorts/model.py#L310-L485" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/f26dc94d4ed5ba1d53a2199bbcef82fa9cd4cece/vorts/model.py#L310-L485" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Model_f(ModelBase):
     &#34;&#34;&#34;Thin wrapper for functionality of the Fortran model, whose source code is in `vorts/f/src/`.
@@ -1070,7 +1231,7 @@ and the simulation settings.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/f767770241f327a2892bec51beca46dd81828913/vorts/model.py#L382-L413" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/f26dc94d4ed5ba1d53a2199bbcef82fa9cd4cece/vorts/model.py#L382-L413" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_inputs(self):
     &#34;&#34;&#34;
@@ -1107,6 +1268,226 @@ and the simulation settings.</p></div>
 </details>
 </dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="vorts.model.ModelBase" href="#vorts.model.ModelBase">ModelBase</a></b></code>:
+<ul class="hlist">
+<li><code><a title="vorts.model.ModelBase.dt" href="#vorts.model.ModelBase.dt">dt</a></code></li>
+<li><code><a title="vorts.model.ModelBase.hist" href="#vorts.model.ModelBase.hist">hist</a></code></li>
+<li><code><a title="vorts.model.ModelBase.n_points" href="#vorts.model.ModelBase.n_points">n_points</a></code></li>
+<li><code><a title="vorts.model.ModelBase.n_timesteps" href="#vorts.model.ModelBase.n_timesteps">n_timesteps</a></code></li>
+<li><code><a title="vorts.model.ModelBase.n_tracers" href="#vorts.model.ModelBase.n_tracers">n_tracers</a></code></li>
+<li><code><a title="vorts.model.ModelBase.n_vortons" href="#vorts.model.ModelBase.n_vortons">n_vortons</a></code></li>
+<li><code><a title="vorts.model.ModelBase.nt" href="#vorts.model.ModelBase.nt">nt</a></code></li>
+<li><code><a title="vorts.model.ModelBase.plot" href="#vorts.model.ModelBase.plot">plot</a></code></li>
+<li><code><a title="vorts.model.ModelBase.run" href="#vorts.model.ModelBase.run">run</a></code></li>
+<li><code><a title="vorts.model.ModelBase.tracers" href="#vorts.model.ModelBase.tracers">tracers</a></code></li>
+<li><code><a title="vorts.model.ModelBase.tracers0" href="#vorts.model.ModelBase.tracers0">tracers0</a></code></li>
+<li><code><a title="vorts.model.ModelBase.vortons" href="#vorts.model.ModelBase.vortons">vortons</a></code></li>
+<li><code><a title="vorts.model.ModelBase.vortons0" href="#vorts.model.ModelBase.vortons0">vortons0</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="vorts.model.Model_jl"><code class="flex name class">
+<span>class <span class="ident">Model_jl</span></span>
+<span>(</span><span>vortons: <a title="vorts.vortons.Vortons" href="vortons.html#vorts.vortons.Vortons">Vortons</a> = None, tracers: <a title="vorts.vortons.Tracers" href="vortons.html#vorts.vortons.Tracers">Tracers</a> = None, *, dt=0.1, nt=1000, int_scheme_name='Tsit5', use_sysimage=False, run_method='pyjulia')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Interface to the Julia model, whose source code is in <code>vorts/jl/vorts.jl</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In this implementation we communicate with Julia using
+<a href="https://github.com/JuliaPy/pyjulia">pyjulia</a></p>
+</div>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>vortons</code></strong> :&ensp;<code><a title="vorts.vortons.Vortons" href="vortons.html#vorts.vortons.Vortons">Vortons</a></code></dt>
+<dd>default: equilateral triangle with inscribing circle radius of $1$ and all $G=1$.</dd>
+<dt><strong><code>tracers</code></strong> :&ensp;<code><a title="vorts.vortons.Tracers" href="vortons.html#vorts.vortons.Tracers">Tracers</a></code></dt>
+<dd>default: no tracers</dd>
+<dt><strong><code>dt</code></strong> :&ensp;<code>float</code></dt>
+<dd>Time step $\delta t$ for the output.
+Additionally, for the integrators, <code>dt</code> is used as the constant or maximum integration time step
+depending on the integration scheme.</dd>
+<dt><strong><code>nt</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of time steps to run (not including $t=0$).</dd>
+<dt><strong><code>int_scheme_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Time integration scheme name. Any from the
+<a href="https://diffeq.sciml.ai/stable/solvers/ode_solve/">ODE solvers list</a>
+are valid.</dd>
+<dt><strong><code>use_sysimage</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to (try to) use the <code>sys_vorts.so</code> created by the <code>compile.jl</code> script.</dd>
+<dt><strong><code>run_method</code></strong> :&ensp;<code>str, {'pyjulia', 'diffeqpy'}</code></dt>
+<dd>Currently, we can run using pyjulia alone or using diffeqpy.
+Both use the tendency function defined in <code>vorts.jl</code>.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/zmoon/vorts/blob/f26dc94d4ed5ba1d53a2199bbcef82fa9cd4cece/vorts/model.py#L491-L645" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Model_jl(ModelBase):
+    &#34;&#34;&#34;Interface to the Julia model, whose source code is in `vorts/jl/vorts.jl`.
+
+    .. note::
+       In this implementation we communicate with Julia using
+       [pyjulia](https://github.com/JuliaPy/pyjulia)
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        vortons: Vortons = None,
+        tracers: Tracers = None,
+        *,
+        dt=0.1,
+        nt=1000,
+        # above are passed to base
+        int_scheme_name=&#34;Tsit5&#34;,
+        use_sysimage=False,
+        run_method=&#34;pyjulia&#34;,
+    ):
+        r&#34;&#34;&#34;
+
+        Parameters
+        ----------
+        vortons : vorts.vortons.Vortons
+            default: equilateral triangle with inscribing circle radius of $1$ and all $G=1$.
+
+        tracers : vorts.vortons.Tracers
+            default: no tracers
+
+        dt : float
+            Time step $\delta t$ for the output.
+            Additionally, for the integrators, `dt` is used as the constant or maximum integration time step
+            depending on the integration scheme.
+        nt : int
+            Number of time steps to run (not including $t=0$).
+
+        int_scheme_name : str
+            Time integration scheme name. Any from the
+            [ODE solvers list](https://diffeq.sciml.ai/stable/solvers/ode_solve/)
+            are valid.
+        use_sysimage : bool
+            Whether to (try to) use the `sys_vorts.so` created by the `compile.jl` script.
+        run_method : str, {&#39;pyjulia&#39;, &#39;diffeqpy&#39;}
+            Currently, we can run using pyjulia alone or using diffeqpy.
+            Both use the tendency function defined in `vorts.jl`.
+        &#34;&#34;&#34;
+        # Call base initialization
+        super().__init__(vortons, tracers, dt=dt, nt=nt)
+
+        # Other inputs
+        self.int_scheme_name = int_scheme_name
+        self.use_sysimage = use_sysimage
+        self.run_method = run_method
+
+    @staticmethod
+    def _load_jl_sysimage():
+        # Use our sysimage with DifferentialEquations (and our tend fn) pre-compiled
+        # (has to be done before importing any Julia modules)
+        from julia import Julia
+
+        jl = Julia(sysimage=str(JL_BASE_DIR / &#34;sys_vorts.so&#34;))
+        # TODO: might want to also support `Julia(compiled_modules=False)` in some way
+        return jl
+
+    # pyjulia alone
+    def _run_pyjulia(self):
+        from julia.core import JuliaError
+
+        if self.use_sysimage:
+            self._load_jl_sysimage()
+
+        # For some reason it doesn&#39;t work the first time on Windows (can&#39;t find PyCall)
+        # but will work if we just do it again...
+        try:
+            from julia import Base, Main, Pkg
+        except JuliaError as e:
+            warnings.warn(f&#34;Julia imports failed the first time with message:\n{e}&#34;)
+            from julia import Base, Main, Pkg
+
+        # Load our code
+        # Base.println(&#34;Initial env status:&#34;)
+        # Pkg.status()
+        Pkg.activate(JL_BASE_DIR.as_posix())
+        Pkg.status()
+        Main.include((JL_BASE_DIR / &#34;vorts.jl&#34;).as_posix())
+        Base.println(&#34;vorts.jl has been loaded!&#34;)
+
+        # Run by calling `integrate` from `vorts.jl`
+        x, y = Main.integrate(
+            self._vt0.state_mat,
+            self._vt0.G,
+            self.dt,
+            self.nt,
+            int_scheme_name=self.int_scheme_name,
+            ret_for=&#34;python&#34;,
+        )
+
+        # Set output dataset
+        self.hist = self._res_to_xr(x, y)
+
+    # pyjulia + diffeqpy
+    def _run_diffeqpy(self):
+        from julia.core import JuliaError
+
+        if self.use_sysimage:
+            self._load_jl_sysimage()
+
+        try:
+            from julia import Base, Main, Pkg
+        except JuliaError as e:
+            warnings.warn(f&#34;Julia imports failed the first time with message:\n{e}&#34;)
+            from julia import Base, Main, Pkg
+
+        Pkg.activate(JL_BASE_DIR.as_posix())
+        Pkg.status()
+
+        # `ode` from the readme doesn&#39;t work yet in stable (would have to install from GH)
+        # This one would also take two tries in Win if we hadn&#39;t already done the above import
+        from diffeqpy import de
+
+        # Add the code with the tendency function
+        Main.include((JL_BASE_DIR / &#34;vorts.jl&#34;).as_posix())
+        Base.println(&#34;vorts.jl has been loaded!&#34;)
+
+        # Set up our inputs
+        nt = self.nt
+        dt = self.dt
+        vt0 = self._vt0
+        r0 = vt0.state_mat.T  # note transpose!
+        tspan = (0, dt * nt)
+        p = Main.TendParams(vt0.G)
+        solver = getattr(de, self.int_scheme_name)()
+
+        prob = de.ODEProblem(Main.tend_b, r0, tspan, p)
+        sol = de.solve(prob, solver, saveat=np.arange(0, nt + 1) * dt)
+
+        # Exract data and set the output dataset
+        x = np.empty((self.nt + 1, vt0.n))
+        y = np.empty_like(x)
+        assert len(sol.u) == nt + 1
+        assert sol.u[0].shape == (2, vt0.n)
+        for i in range(len(sol.u)):
+            x[i, :] = sol.u[i][0, :]
+            y[i, :] = sol.u[i][1, :]
+
+        self.hist = self._res_to_xr(x, y)
+
+    def _run(self):
+        if self.run_method == &#34;pyjulia&#34;:
+            self._run_pyjulia()
+        elif self.run_method == &#34;diffeqpy&#34;:
+            self._run_diffeqpy()
+        else:
+            raise ValueError(&#34;`run_method` must be &#39;pyjulia&#39; or &#39;diffeqpy&#39;.&#34;)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="vorts.model.ModelBase" href="#vorts.model.ModelBase">ModelBase</a></li>
+<li>abc.ABC</li>
+</ul>
 <h3>Inherited members</h3>
 <ul class="hlist">
 <li><code><b><a title="vorts.model.ModelBase" href="#vorts.model.ModelBase">ModelBase</a></b></code>:
@@ -1167,7 +1548,7 @@ depending on the integration scheme.</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/f767770241f327a2892bec51beca46dd81828913/vorts/model.py#L176-L286" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/f26dc94d4ed5ba1d53a2199bbcef82fa9cd4cece/vorts/model.py#L176-L286" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Model_py(ModelBase):
     &#34;&#34;&#34;Model in Python.&#34;&#34;&#34;
@@ -1358,6 +1739,9 @@ vorts
 <ul class="">
 <li><code><a title="vorts.model.Model_f.create_inputs" href="#vorts.model.Model_f.create_inputs">create_inputs</a></code></li>
 </ul>
+</li>
+<li>
+<h4><code><a title="vorts.model.Model_jl" href="#vorts.model.Model_jl">Model_jl</a></code></h4>
 </li>
 <li>
 <h4><code><a title="vorts.model.Model_py" href="#vorts.model.Model_py">Model_py</a></code></h4>
