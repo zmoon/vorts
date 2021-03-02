@@ -483,3 +483,163 @@ class Model_f(ModelBase):
             ps_file = FORT_BASE_DIR / "out/ps.txt"
             data = np.genfromtxt(ps_file, skip_header=1, skip_footer=sf)
             self.ps = data
+
+
+JL_BASE_DIR = Path(__file__).parent / "jl"
+
+
+class Model_jl(ModelBase):
+    """Interface to the Julia model, whose source code is in `vorts/jl/vorts.jl`.
+
+    .. note::
+       In this implementation we communicate with Julia using
+       [pyjulia](https://github.com/JuliaPy/pyjulia)
+    """
+
+    def __init__(
+        self,
+        vortons: Vortons = None,
+        tracers: Tracers = None,
+        *,
+        dt=0.1,
+        nt=1000,
+        # above are passed to base
+        int_scheme_name="Tsit5",
+        use_sysimage=False,
+        run_method="pyjulia",
+    ):
+        r"""
+
+        Parameters
+        ----------
+        vortons : vorts.vortons.Vortons
+            default: equilateral triangle with inscribing circle radius of $1$ and all $G=1$.
+
+        tracers : vorts.vortons.Tracers
+            default: no tracers
+
+        dt : float
+            Time step $\delta t$ for the output.
+            Additionally, for the integrators, `dt` is used as the constant or maximum integration time step
+            depending on the integration scheme.
+        nt : int
+            Number of time steps to run (not including $t=0$).
+
+        int_scheme_name : str
+            Time integration scheme name. Any from the
+            [ODE solvers list](https://diffeq.sciml.ai/stable/solvers/ode_solve/)
+            are valid.
+        use_sysimage : bool
+            Whether to (try to) use the `sys_vorts.so` created by the `compile.jl` script.
+        run_method : str, {'pyjulia', 'diffeqpy'}
+            Currently, we can run using pyjulia alone or using diffeqpy.
+            Both use the tendency function defined in `vorts.jl`.
+        """
+        # Call base initialization
+        super().__init__(vortons, tracers, dt=dt, nt=nt)
+
+        # Other inputs
+        self.int_scheme_name = int_scheme_name
+        self.use_sysimage = use_sysimage
+        self.run_method = run_method
+
+    @staticmethod
+    def _load_jl_sysimage():
+        # Use our sysimage with DifferentialEquations (and our tend fn) pre-compiled
+        # (has to be done before importing any Julia modules)
+        from julia import Julia
+
+        jl = Julia(sysimage=str(JL_BASE_DIR / "sys_vorts.so"))
+        # TODO: might want to also support `Julia(compiled_modules=False)` in some way
+        return jl
+
+    # pyjulia alone
+    def _run_pyjulia(self):
+        from julia.core import JuliaError
+
+        if self.use_sysimage:
+            self._load_jl_sysimage()
+
+        # For some reason it doesn't work the first time on Windows (can't find PyCall)
+        # but will work if we just do it again...
+        try:
+            from julia import Base, Main, Pkg
+        except JuliaError as e:
+            warnings.warn(f"Julia imports failed the first time with message:\n{e}")
+            from julia import Base, Main, Pkg
+
+        # Load our code
+        # Base.println("Initial env status:")
+        # Pkg.status()
+        Pkg.activate(JL_BASE_DIR.as_posix())
+        Pkg.status()
+        Main.include((JL_BASE_DIR / "vorts.jl").as_posix())
+        Base.println("vorts.jl has been loaded!")
+
+        # Run by calling `integrate` from `vorts.jl`
+        x, y = Main.integrate(
+            self._vt0.state_mat,
+            self._vt0.G,
+            self.dt,
+            self.nt,
+            int_scheme_name=self.int_scheme_name,
+            ret_for="python",
+        )
+
+        # Set output dataset
+        self.hist = self._res_to_xr(x, y)
+
+    # pyjulia + diffeqpy
+    def _run_diffeqpy(self):
+        from julia.core import JuliaError
+
+        if self.use_sysimage:
+            self._load_jl_sysimage()
+
+        try:
+            from julia import Base, Main, Pkg
+        except JuliaError as e:
+            warnings.warn(f"Julia imports failed the first time with message:\n{e}")
+            from julia import Base, Main, Pkg
+
+        Pkg.activate(JL_BASE_DIR.as_posix())
+        Pkg.status()
+
+        # `ode` from the readme doesn't work yet in stable (would have to install from GH)
+        # This one would also take two tries in Win if we hadn't already done the above import
+        from diffeqpy import de
+
+        # Add the code with the tendency function
+        Main.include((JL_BASE_DIR / "vorts.jl").as_posix())
+        Base.println("vorts.jl has been loaded!")
+
+        # Set up our inputs
+        nt = self.nt
+        dt = self.dt
+        vt0 = self._vt0
+        r0 = vt0.state_mat.T  # note transpose!
+        tspan = (0, dt * nt)
+        p = Main.TendParams(vt0.G)
+        solver = getattr(de, self.int_scheme_name)()
+
+        prob = de.ODEProblem(Main.tend_b, r0, tspan, p)
+        sol = de.solve(prob, solver, saveat=np.arange(0, nt + 1) * dt)
+
+        # Exract data and set the output dataset
+        x = np.empty((self.nt + 1, vt0.n))
+        y = np.empty_like(x)
+        assert len(sol.u) == nt + 1
+        assert sol.u[0].shape == (2, vt0.n)
+        for i in range(len(sol.u)):
+            x[i, :] = sol.u[i][0, :]
+            y[i, :] = sol.u[i][1, :]
+
+        self.hist = self._res_to_xr(x, y)
+
+    def _run(self):
+        if self.run_method == "pyjulia":
+            self._run_pyjulia()
+        elif self.run_method == "diffeqpy":
+            self._run_diffeqpy()
+        else:
+            raise ValueError("`run_method` must be 'pyjulia' or 'diffeqpy'.")

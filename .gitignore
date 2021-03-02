@@ -1,4 +1,10 @@
 
+# Julia sysimage
+sys*.so
+
+# Julia full package manifest
+Manifest.toml
+
 # built Fortran files
 vorts/f/src/*.o
 vorts/f/src/*.mod
