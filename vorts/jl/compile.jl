@@ -1,6 +1,6 @@
 # Create a Julia sysimage for faster startup
 #
-# The env should be activated when runinng:
+# The env should be activated when running:
 # julia --project=. compile.jl
 #
 # Note that it can take a few minutes and the sysimage can be 100s of MB
