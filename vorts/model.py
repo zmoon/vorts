@@ -505,6 +505,8 @@ class Model_jl(ModelBase):
         nt=1000,
         # above are passed to base
         int_scheme_name="Tsit5",
+        use_sysimage=False,
+        run_method="pyjulia",
     ):
         r"""
 
@@ -527,39 +529,48 @@ class Model_jl(ModelBase):
             Time integration scheme name. Any from the
             [ODE solvers list](https://diffeq.sciml.ai/stable/solvers/ode_solve/)
             are valid.
-
+        use_sysimage : bool
+            Whether to (try to) use the `sys_vorts.so` created by the `compile.jl` script.
+        run_method : str, {'pyjulia', 'diffeqpy'}
+            Currently, we can run using pyjulia alone or using diffeqpy.
+            Both use the tendency function defined in `vorts.jl`.
         """
-        # call base initialization
+        # Call base initialization
         super().__init__(vortons, tracers, dt=dt, nt=nt)
 
-        # other inputs
+        # Other inputs
         self.int_scheme_name = int_scheme_name
+        self.use_sysimage = use_sysimage
+        self.run_method = run_method
+
+    @staticmethod
+    def _load_jl_sysimage():
+        # Use our sysimage with DifferentialEquations (and our tend fn) pre-compiled
+        # (has to be done before importing any Julia modules)
+        from julia import Julia
+
+        jl = Julia(sysimage=str(JL_BASE_DIR / "sys_vorts.so"))
+        # TODO: might want to also support `Julia(compiled_modules=False)` in some way
+        return jl
 
     # pyjulia alone
     def _run_pyjulia(self):
-        # Use our sysimage with DifferentialEquations (and our tend fn) pre-compiled
-        # (has to be done before importing any Julia modules)
-        # TODO: make this optional
-        # from julia import Julia
-        # jl = Julia(sysimage=str(JL_BASE_DIR / "sys_vorts.so"))
+        from julia.core import JuliaError
+
+        if self.use_sysimage:
+            self._load_jl_sysimage()
 
         # For some reason it doesn't work the first time on Windows (can't find PyCall)
         # but will work if we just do it again...
-        import julia
-
         try:
             from julia import Base, Main, Pkg
-        except julia.core.JuliaError:
+        except JuliaError as e:
+            warnings.warn(f"Julia imports failed the first time with message:\n{e}")
             from julia import Base, Main, Pkg
 
-        # Load our code (with `.eval`)
-        # jl.eval(f'using Pkg; Pkg.activate("{JL_BASE_DIR.as_posix()}")')
-        # jl.eval(f'include("{(JL_BASE_DIR / "vorts.jl").as_posix()}")')
-        # jl.eval('println("vorts.jl has been loaded!")')
-
         # Load our code
-        Base.println("Initial env status:")
-        Pkg.status()
+        # Base.println("Initial env status:")
+        # Pkg.status()
         Pkg.activate(JL_BASE_DIR.as_posix())
         Pkg.status()
         Main.include((JL_BASE_DIR / "vorts.jl").as_posix())
@@ -580,26 +591,27 @@ class Model_jl(ModelBase):
 
     # pyjulia + diffeqpy
     def _run_diffeqpy(self):
-        # With Linux Conda, pyjulia complained that libpython was statically linked and said to do this:
-        # from julia import Julia
-        # jl = Julia(compiled_modules=False)
+        from julia.core import JuliaError
 
-        import julia
+        if self.use_sysimage:
+            self._load_jl_sysimage()
 
         try:
-            from julia import Main, Pkg
-        except julia.core.JuliaError:
-            from julia import Main, Pkg
+            from julia import Base, Main, Pkg
+        except JuliaError as e:
+            warnings.warn(f"Julia imports failed the first time with message:\n{e}")
+            from julia import Base, Main, Pkg
 
         Pkg.activate(JL_BASE_DIR.as_posix())
         Pkg.status()
 
         # `ode` from the readme doesn't work yet in stable (would have to install from GH)
-        # This one would also take two tries if we hadn't already done the above import
+        # This one would also take two tries in Win if we hadn't already done the above import
         from diffeqpy import de
 
         # Add the code with the tendency function
         Main.include((JL_BASE_DIR / "vorts.jl").as_posix())
+        Base.println("vorts.jl has been loaded!")
 
         # Set up our inputs
         nt = self.nt
@@ -613,7 +625,7 @@ class Model_jl(ModelBase):
         prob = de.ODEProblem(Main.tend_b, r0, tspan, p)
         sol = de.solve(prob, solver, saveat=np.arange(0, nt + 1) * dt)
 
-        # Set output dataset
+        # Exract data and set the output dataset
         x = np.empty((self.nt + 1, vt0.n))
         y = np.empty_like(x)
         assert len(sol.u) == nt + 1
@@ -624,7 +636,10 @@ class Model_jl(ModelBase):
 
         self.hist = self._res_to_xr(x, y)
 
-    # later will allow setting which runner to use
     def _run(self):
-        self._run_pyjulia()
-        # self._run_diffeqpy()
+        if self.run_method == "pyjulia":
+            self._run_pyjulia()
+        elif self.run_method == "diffeqpy":
+            self._run_diffeqpy()
+        else:
+            raise ValueError("`run_method` must be 'pyjulia' or 'diffeqpy'.")
