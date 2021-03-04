@@ -1,0 +1,24 @@
+name: vorts
+channels:
+  - conda-forge
+dependencies:
+  - python=3.8
+  #
+  # used by vorts
+  - cycler
+  - makefun
+  - matplotlib
+  - numba
+  - numpy
+  - scipy
+  - tqdm
+  - xarray
+  #
+  # example nbs
+  - ipympl
+  - jupyterlab>=3
+  - jupytext
+  #
+  - pip
+  - pip:
+      - '../'
