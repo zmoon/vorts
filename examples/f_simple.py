@@ -23,30 +23,20 @@ import vorts
 
 
 # %% [markdown]
-# Note that on Binder we need to install `gfortran`. In the future, we might use a repo `postBuild` file for that. For now, uncomment the below to install with `conda`:
-
-# %%
-# # !conda install -c conda-forge gfortran_linux-64 --yes
-# # !mkdir -p ~/.local/bin
-# # !ln -sf /srv/conda/envs/notebook/bin/x86_64-conda-linux-gnu-gfortran.bin ~/.local/bin/gfortran
-
-# %% [markdown]
 # ## Create case
 
 # %% create
-vs = vorts.Vortons([1, 1], [0, 0], [-0.5, 1])  # <-> Lambda=0 (no longer a triangle)
+vs = vorts.Vortons.regular_polygon(3) + vorts.Vortons(-1, 0, 0)
 vs.plot()
 
-ts = vorts.Tracers.randu(100)
+ts = vorts.Tracers.randu(100, dx=1.5, dy=1.5)
 ts.plot()
 
 m = vorts.Model_f(
     vs, ts,
-    dt=0.05, nt=2e5,  # 0.005, 2e6 to get better Poincare, but only use this with `write_ps` only to avoid writing large tracer files!
+    dt=0.05, nt=2e4,
     int_scheme_name='RK4',
-    write_vortons=True,  # default `True`
-    write_tracers=True,  # default `False`
-    write_ps=False,  # default `False`
+    write_tracers=True,
 )
 
 
@@ -58,15 +48,14 @@ m.run()
 
 
 # %% plot results
-m.plot()
+m.plot()  # vortons are stationary!
 m.plot("tracers")
 
 
 # %% [markdown]
-# Since both have $x=0$, either one works to make a nice Poincare map.
+# In this special completely stationary case (non-rotating), all points of the tracer trajectories can be used in the Poincare section.
+#
+# Note that in rotating cases, `dt=0.005, nt=2e6` would give a better Poincare section, but we would only want to use this with `write_ps` only to avoid writing large tracer files. And, on the usual Binder, a longer run than what we have set would use too much memory and fail.
 
-# %% Poincare?
-m.plot("poincare")
-
-m.plot("poincare", iv_ref=1)  # this is the one with initial position (0, 1)
-vorts.plot.remove_frame(keep_title=False)  # doesn't show up with `%matplotlib notebook`
+# %%
+m.plot("poincare", c=["teal", "tomato"])

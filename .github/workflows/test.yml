@@ -21,18 +21,18 @@ jobs:
       - name: Cache Conda packages
         uses: actions/cache@v2.1.4
         env:
-          CACHE_NUMBER: 0  # increase to reset cache if environment.yml has not changed
+          CACHE_NUMBER: 0  # increase to reset cache if the environment.yml has not changed
         with:
           path: ~/conda_pkgs_dir
-          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment-dev.yml') }}
 
       # TODO: This part takes multiple minutes (~3 without caching, bit less with)
       - name: Install dependencies in Miniconda env and activate it
         uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: 3.8
-          activate-environment: vorts
-          environment-file: environment.yml
+          activate-environment: vorts-dev
+          environment-file: environment-dev.yml
           use-only-tar-bz2: true  # need to be set for caching to work
 
       - name: Check Conda env info
