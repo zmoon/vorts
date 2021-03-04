@@ -1,5 +1,4 @@
-# Conda environment
-name: vorts
+name: vorts-dev
 channels:
   - conda-forge
 dependencies:
@@ -24,7 +23,6 @@ dependencies:
   - pytest>=6  # pyproject.toml support
   - rope
   #
-  # pip
   - pip
   - pip:
       #
