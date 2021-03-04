@@ -87,8 +87,8 @@ class PointsBase(abc.ABC):
 
             Initial $x$ and $y$ positions.
         """
-        x = np.asarray(x, dtype=float)
-        y = np.asarray(y, dtype=float)
+        x = np.atleast_1d(np.asarray(x, dtype=float))  # should be view if `x` is ndarray
+        y = np.atleast_1d(np.asarray(y, dtype=float))
         assert x.shape == y.shape and x.ndim == 1
 
         self._xy = np.column_stack((x, y))
@@ -561,7 +561,7 @@ class Vortons(PointsBase):
         """
         super().__init__(x=x, y=y)
 
-        self.G = np.asarray(G)
+        self.G = np.atleast_1d(np.asarray(G, dtype=float))
         r"""Array of vorton strengths ($\Gamma$)."""
         # if np.any(self.G == 0):
         #     warnings.warn(

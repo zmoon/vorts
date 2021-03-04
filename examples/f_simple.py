@@ -26,7 +26,7 @@ import vorts
 # ## Create case
 
 # %% create
-vs = vorts.Vortons.regular_polygon(3) + vorts.Vortons([-1], [0], [0])
+vs = vorts.Vortons.regular_polygon(3) + vorts.Vortons(-1, 0, 0)
 vs.plot()
 
 ts = vorts.Tracers.randu(100, dx=1.5, dy=1.5)
