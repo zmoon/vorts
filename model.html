@@ -42,7 +42,7 @@ directing input and collecting output, etc.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/model.py#L0-L644" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/model.py#L0-L627" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 Model classes that act as drivers for the integration routines,
@@ -61,7 +61,7 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
-from .plot import plot_poincare, plot_tracer_trajectories, plot_vorton_trajectories
+from .plot import _PlotMethods
 from .py import MANUAL_STEPPERS, SCIPY_METHODS, integrate_manual, integrate_scipy
 from .vortons import Tracers, Vortons
 
@@ -129,6 +129,9 @@ class ModelBase(abc.ABC):
         # initially, the model hasn&#39;t been run
         self._has_run = False
 
+        # attach _PlotMethods instance
+        self.plot = _PlotMethods(self)
+
     @abc.abstractmethod
     def _run(self):
         &#34;&#34;&#34;The `_run` method in concrete classes should:
@@ -148,26 +151,6 @@ class ModelBase(abc.ABC):
         # TODO: with hist having been updated (presumably), update vortons?
 
         return self
-
-    # might be better to use _plot_methods dict of name: function
-    # so that certain models could extend the options
-    def plot(self, which=&#34;vortons&#34;, **kwargs):
-        &#34;&#34;&#34;Plot results stored in the history data set `hist`.
-
-        `**kwargs` are passed through to the corresponding plotting function
-        (see `vorts.plot`).
-        &#34;&#34;&#34;
-        if not self._has_run:
-            raise Exception(&#34;The model has not yet been run.&#34;)
-
-        if which == &#34;vortons&#34;:
-            plot_vorton_trajectories(self.hist, **kwargs)
-        elif which == &#34;tracers&#34;:
-            plot_tracer_trajectories(self.hist, **kwargs)
-        elif which == &#34;poincare&#34;:
-            plot_poincare(self.hist, **kwargs)
-        else:
-            raise NotImplementedError(f&#34;which={which!r}&#34;)
 
     def _res_to_xr(self, xhist, yhist):
         &#34;&#34;&#34;Take full trajectory histories `xhist` and `yhist`
@@ -706,7 +689,7 @@ class Model_jl(ModelBase):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/model.py#L293-L295" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/model.py#L276-L278" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def fort_bool(b: bool):
     &#34;&#34;&#34;Convert Python boolean to a string of the corresponding Fortran logical (`.true.`/`.false.`).&#34;&#34;&#34;
@@ -724,7 +707,7 @@ class Model_jl(ModelBase):
 </code></dt>
 <dd>
 <div class="desc"><p>Abstract base class for the models.</p>
-<p>Provides concrete methods <code><a title="vorts.model.ModelBase.run" href="#vorts.model.ModelBase.run">ModelBase.run()</a></code> and <code><a title="vorts.model.ModelBase.plot" href="#vorts.model.ModelBase.plot">ModelBase.plot()</a></code>, which work properly if the
+<p>Provides concrete methods <code><a title="vorts.model.ModelBase.run" href="#vorts.model.ModelBase.run">ModelBase.run()</a></code> and <code>ModelBase.plot</code>, which work properly if the
 inheriting class defines a <code>_run</code> method that integrates the system and updates <code><a title="vorts.model.ModelBase.hist" href="#vorts.model.ModelBase.hist">ModelBase.hist</a></code>,
 populating it with the run's output data.</p>
 <ul>
@@ -734,7 +717,7 @@ populating it with the run's output data.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/model.py#L23-L173" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/model.py#L23-L156" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ModelBase(abc.ABC):
     &#34;&#34;&#34;Abstract base class for the models.
@@ -799,6 +782,9 @@ populating it with the run's output data.</p>
         # initially, the model hasn&#39;t been run
         self._has_run = False
 
+        # attach _PlotMethods instance
+        self.plot = _PlotMethods(self)
+
     @abc.abstractmethod
     def _run(self):
         &#34;&#34;&#34;The `_run` method in concrete classes should:
@@ -818,26 +804,6 @@ populating it with the run's output data.</p>
         # TODO: with hist having been updated (presumably), update vortons?
 
         return self
-
-    # might be better to use _plot_methods dict of name: function
-    # so that certain models could extend the options
-    def plot(self, which=&#34;vortons&#34;, **kwargs):
-        &#34;&#34;&#34;Plot results stored in the history data set `hist`.
-
-        `**kwargs` are passed through to the corresponding plotting function
-        (see `vorts.plot`).
-        &#34;&#34;&#34;
-        if not self._has_run:
-            raise Exception(&#34;The model has not yet been run.&#34;)
-
-        if which == &#34;vortons&#34;:
-            plot_vorton_trajectories(self.hist, **kwargs)
-        elif which == &#34;tracers&#34;:
-            plot_tracer_trajectories(self.hist, **kwargs)
-        elif which == &#34;poincare&#34;:
-            plot_poincare(self.hist, **kwargs)
-        else:
-            raise NotImplementedError(f&#34;which={which!r}&#34;)
 
     def _res_to_xr(self, xhist, yhist):
         &#34;&#34;&#34;Take full trajectory histories `xhist` and `yhist`
@@ -950,37 +916,6 @@ and we have a total of <code>nt+1</code> times when including the initial state.
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="vorts.model.ModelBase.plot"><code class="name flex">
-<span>def <span class="ident">plot</span></span>(<span>self, which='vortons', **kwargs)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Plot results stored in the history data set <code>hist</code>.</p>
-<p><code>**kwargs</code> are passed through to the corresponding plotting function
-(see <code><a title="vorts.plot" href="plot.html">vorts.plot</a></code>).</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/model.py#L108-L124" class="git-link">Browse git</a>
-</summary>
-<pre><code class="python">def plot(self, which=&#34;vortons&#34;, **kwargs):
-    &#34;&#34;&#34;Plot results stored in the history data set `hist`.
-
-    `**kwargs` are passed through to the corresponding plotting function
-    (see `vorts.plot`).
-    &#34;&#34;&#34;
-    if not self._has_run:
-        raise Exception(&#34;The model has not yet been run.&#34;)
-
-    if which == &#34;vortons&#34;:
-        plot_vorton_trajectories(self.hist, **kwargs)
-    elif which == &#34;tracers&#34;:
-        plot_tracer_trajectories(self.hist, **kwargs)
-    elif which == &#34;poincare&#34;:
-        plot_poincare(self.hist, **kwargs)
-    else:
-        raise NotImplementedError(f&#34;which={which!r}&#34;)</code></pre>
-</details>
-</dd>
 <dt id="vorts.model.ModelBase.run"><code class="name flex">
 <span>def <span class="ident">run</span></span>(<span>self)</span>
 </code></dt>
@@ -989,7 +924,7 @@ and we have a total of <code>nt+1</code> times when including the initial state.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/model.py#L96-L104" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/model.py#L99-L107" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run(self):
     &#34;&#34;&#34;Integrate and update the history dataset `hist`.&#34;&#34;&#34;
@@ -1035,7 +970,7 @@ depending on the integration scheme.</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/model.py#L310-L485" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/model.py#L293-L468" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Model_f(ModelBase):
     &#34;&#34;&#34;Thin wrapper for functionality of the Fortran model, whose source code is in `vorts/f/src/`.
@@ -1231,7 +1166,7 @@ and the simulation settings.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/model.py#L382-L413" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/model.py#L365-L396" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_inputs(self):
     &#34;&#34;&#34;
@@ -1279,7 +1214,6 @@ and the simulation settings.</p></div>
 <li><code><a title="vorts.model.ModelBase.n_tracers" href="#vorts.model.ModelBase.n_tracers">n_tracers</a></code></li>
 <li><code><a title="vorts.model.ModelBase.n_vortons" href="#vorts.model.ModelBase.n_vortons">n_vortons</a></code></li>
 <li><code><a title="vorts.model.ModelBase.nt" href="#vorts.model.ModelBase.nt">nt</a></code></li>
-<li><code><a title="vorts.model.ModelBase.plot" href="#vorts.model.ModelBase.plot">plot</a></code></li>
 <li><code><a title="vorts.model.ModelBase.run" href="#vorts.model.ModelBase.run">run</a></code></li>
 <li><code><a title="vorts.model.ModelBase.tracers" href="#vorts.model.ModelBase.tracers">tracers</a></code></li>
 <li><code><a title="vorts.model.ModelBase.tracers0" href="#vorts.model.ModelBase.tracers0">tracers0</a></code></li>
@@ -1325,7 +1259,7 @@ Both use the tendency function defined in <code>vorts.jl</code>.</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/model.py#L491-L645" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/model.py#L474-L628" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Model_jl(ModelBase):
     &#34;&#34;&#34;Interface to the Julia model, whose source code is in `vorts/jl/vorts.jl`.
@@ -1499,7 +1433,6 @@ Both use the tendency function defined in <code>vorts.jl</code>.</dd>
 <li><code><a title="vorts.model.ModelBase.n_tracers" href="#vorts.model.ModelBase.n_tracers">n_tracers</a></code></li>
 <li><code><a title="vorts.model.ModelBase.n_vortons" href="#vorts.model.ModelBase.n_vortons">n_vortons</a></code></li>
 <li><code><a title="vorts.model.ModelBase.nt" href="#vorts.model.ModelBase.nt">nt</a></code></li>
-<li><code><a title="vorts.model.ModelBase.plot" href="#vorts.model.ModelBase.plot">plot</a></code></li>
 <li><code><a title="vorts.model.ModelBase.run" href="#vorts.model.ModelBase.run">run</a></code></li>
 <li><code><a title="vorts.model.ModelBase.tracers" href="#vorts.model.ModelBase.tracers">tracers</a></code></li>
 <li><code><a title="vorts.model.ModelBase.tracers0" href="#vorts.model.ModelBase.tracers0">tracers0</a></code></li>
@@ -1548,7 +1481,7 @@ depending on the integration scheme.</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/model.py#L176-L286" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/model.py#L159-L269" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Model_py(ModelBase):
     &#34;&#34;&#34;Model in Python.&#34;&#34;&#34;
@@ -1678,7 +1611,6 @@ depending on the integration scheme.</dd>
 <li><code><a title="vorts.model.ModelBase.n_tracers" href="#vorts.model.ModelBase.n_tracers">n_tracers</a></code></li>
 <li><code><a title="vorts.model.ModelBase.n_vortons" href="#vorts.model.ModelBase.n_vortons">n_vortons</a></code></li>
 <li><code><a title="vorts.model.ModelBase.nt" href="#vorts.model.ModelBase.nt">nt</a></code></li>
-<li><code><a title="vorts.model.ModelBase.plot" href="#vorts.model.ModelBase.plot">plot</a></code></li>
 <li><code><a title="vorts.model.ModelBase.run" href="#vorts.model.ModelBase.run">run</a></code></li>
 <li><code><a title="vorts.model.ModelBase.tracers" href="#vorts.model.ModelBase.tracers">tracers</a></code></li>
 <li><code><a title="vorts.model.ModelBase.tracers0" href="#vorts.model.ModelBase.tracers0">tracers0</a></code></li>
@@ -1726,7 +1658,6 @@ vorts
 <li><code><a title="vorts.model.ModelBase.n_tracers" href="#vorts.model.ModelBase.n_tracers">n_tracers</a></code></li>
 <li><code><a title="vorts.model.ModelBase.n_vortons" href="#vorts.model.ModelBase.n_vortons">n_vortons</a></code></li>
 <li><code><a title="vorts.model.ModelBase.nt" href="#vorts.model.ModelBase.nt">nt</a></code></li>
-<li><code><a title="vorts.model.ModelBase.plot" href="#vorts.model.ModelBase.plot">plot</a></code></li>
 <li><code><a title="vorts.model.ModelBase.run" href="#vorts.model.ModelBase.run">run</a></code></li>
 <li><code><a title="vorts.model.ModelBase.tracers" href="#vorts.model.ModelBase.tracers">tracers</a></code></li>
 <li><code><a title="vorts.model.ModelBase.tracers0" href="#vorts.model.ModelBase.tracers0">tracers0</a></code></li>

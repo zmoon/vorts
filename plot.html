@@ -40,7 +40,7 @@ src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/plot.py#L0-L363" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/plot.py#L0-L404" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 Plotting routines
@@ -68,8 +68,6 @@ _NEW_TAB10 = [
     &#34;#9c755f&#34;,
     &#34;#bab0ac&#34;,
 ]
-
-# TODO: PlotMethods object that could allow .plot_type(...) and (&#34;plot_type&#34;, ...) and be attached to the Model? (like pandas/xarray)
 
 # TODO: should plotters return `fig, ax`, or just `ax`? or something else? xarray returns the set of matplotlib artists
 
@@ -405,7 +403,50 @@ def _fig_post(fig, ax, *, title, frame, **kwargs):
         raise ValueError(&#34;invalid value for `frame`: {frame!r}&#34;)
 
     ax.set_aspect(&#34;equal&#34;, &#34;box&#34;)
-    fig.set_tight_layout(True)</code></pre>
+    fig.set_tight_layout(True)
+
+
+class _PlotMethods:
+    &#34;&#34;&#34;Plot methods.
+
+    Use `.plot()` for default plot (vorton trajectories).
+    Other plots are invoked as methods of `.plot`, e.g., `.plot.poincare()`.
+    These methods use the `plot_*` functions defined in `vorts.plot`.
+    &#34;&#34;&#34;
+
+    def __init__(self, m):
+        self._m = m
+
+    @property
+    def _ds(self):
+        return self._m.hist
+
+    @staticmethod
+    def _check_not_none(ds):
+        if ds is None:
+            raise Exception(
+                &#34;The model has not yet been run (no `m.hist`) so the plot cannot be created. &#34;
+                &#34;Note that vortons and tracers can still be plotted with their interfaces, e.g., &#34;
+                &#34;`m.vortons.plot()`.&#34;
+            )
+        return ds
+
+    @functools.wraps(plot_vorton_trajectories)
+    def vortons(self, *args, **kwargs):
+        return plot_vorton_trajectories(ds=self._check_not_none(self._ds), *args, **kwargs)
+
+    @functools.wraps(plot_tracer_trajectories)
+    def tracers(self, *args, **kwargs):
+        return plot_tracer_trajectories(ds=self._check_not_none(self._ds), *args, **kwargs)
+
+    @functools.wraps(plot_poincare)
+    def poincare(self, *args, **kwargs):
+        return plot_poincare(ds=self._check_not_none(self._ds), *args, **kwargs)
+
+    # Set default plotter (to be invoked if just `.plot()` used)
+    @functools.wraps(plot_vorton_trajectories)
+    def __call__(self, *args, **kwargs):
+        return self.vortons(*args, **kwargs)</code></pre>
 </details>
 </section>
 <section>
@@ -461,7 +502,7 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/plot.py#L130-L264" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/plot.py#L128-L262" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def plot_poincare(
     ds,
@@ -617,7 +658,7 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/plot.py#L69-L93" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/plot.py#L67-L91" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def plot_tracer_trajectories(ds, title=&#34;Tracers&#34;, ax=None, **kwargs):
     &#34;&#34;&#34;Plot tracer trajectories.
@@ -663,7 +704,7 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/plot.py#L35-L65" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/plot.py#L33-L63" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def plot_vorton_trajectories(ds, title=&#34;Vortons&#34;, ax=None, **kwargs):
     &#34;&#34;&#34;Plot lines: one for each vorton&#39;s trajectory.
@@ -706,7 +747,7 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/plot.py#L296-L305" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/plot.py#L294-L303" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_frame(ax=None, *, keep_title=True):
     &#34;&#34;&#34;Remove ticks, tick labels, and frame (spines) from `ax` (uses current by default).&#34;&#34;&#34;
@@ -728,7 +769,7 @@ or <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/plot.py#L267-L293" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/plot.py#L265-L291" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_ticks(ax=None, *, keep_ax_labels=True, keep_title=True):
     &#34;&#34;&#34;Remove ticks and tick labels from `ax` (uses current by default).&#34;&#34;&#34;
@@ -784,7 +825,7 @@ when the reference vorton is approximately in the desired position.</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/14435d385afb707ad09c43245bc263cf8d5face4/vorts/plot.py#L99-L123" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/plot.py#L97-L121" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def select_poincare_times(ds, iv_ref=0, *, xtol=1e-2, ytol=1e-2):
     &#34;&#34;&#34;From a model output dataset, extract data corresponding to times to use for the Poincaré section.
