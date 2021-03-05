@@ -49,7 +49,7 @@ m.run()
 
 # %% plot results
 m.plot()  # vortons are stationary!
-m.plot("tracers")
+m.plot.tracers()
 
 
 # %% [markdown]
@@ -58,4 +58,4 @@ m.plot("tracers")
 # Note that in rotating cases, `dt=0.005, nt=2e6` would give a better Poincare section, but we would only want to use this with `write_ps` only to avoid writing large tracer files. And, on the usual Binder, a longer run than what we have set would use too much memory and fail.
 
 # %%
-m.plot("poincare", c=["teal", "tomato"])
+m.plot.poincare(c=["teal", "tomato"])

@@ -49,19 +49,19 @@ m = vorts.Model_py(
 
 # %%
 shared = dict(figsize=(6, 6), xtol=0.02, ytol=0.02, title=None)
-m.plot("poincare", ms=2, **shared)
+m.plot.poincare(ms=2, **shared)
 
 # %% [markdown]
 # We can add vortons to the plot to spice it up a bit (like the one shown in the readme).
 
 # %%
-m.plot("poincare", ms=2, plot_vortons=True, **shared)
+m.plot.poincare(ms=2, plot_vortons=True, **shared)
 
 # %% [markdown]
 # ### Color cycling
 
 # %%
-m.plot("poincare", ms=2.5, alpha=0.8, c=["g", "b"], **shared)
+m.plot.poincare(ms=2.5, alpha=0.8, c=["g", "b"], **shared)
 
 # %% [markdown]
 # ### Color, marker size, and marker alpha cycling
@@ -72,8 +72,7 @@ m.plot("poincare", ms=2.5, alpha=0.8, c=["g", "b"], **shared)
 fig, axs = plt.subplots(1, 2, figsize=(12, 6))
 
 for ax, cycle_by in zip(axs.flat, ["vorton", "time"]):
-    m.plot(
-        "poincare",
+    m.plot.poincare(
         ms=[1, 2, 4],
         c=plt.cm.rainbow(np.linspace(0, 1, 30)),
         alpha=[0.6, 0.85],
