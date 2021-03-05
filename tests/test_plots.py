@@ -11,4 +11,4 @@ m = vorts.Model_py(tracers=vorts.Tracers.grid(7, 7)).run()
 
 @pytest.mark.parametrize("which", ("vortons", "tracers", "poincare"))
 def test_plot_works_from_model(which):
-    m.plot(which)
+    getattr(m.plot, which)()

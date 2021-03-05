@@ -25,8 +25,6 @@ _NEW_TAB10 = [
     "#bab0ac",
 ]
 
-# TODO: PlotMethods object that could allow .plot_type(...) and ("plot_type", ...) and be attached to the Model? (like pandas/xarray)
-
 # TODO: should plotters return `fig, ax`, or just `ax`? or something else? xarray returns the set of matplotlib artists
 
 # TODO: routine to determine system rotation (from data and/or theory); plot trajectories with respect to this rotating ref frame
@@ -362,3 +360,46 @@ def _fig_post(fig, ax, *, title, frame, **kwargs):
 
     ax.set_aspect("equal", "box")
     fig.set_tight_layout(True)
+
+
+class _PlotMethods:
+    """Plot methods.
+
+    Use `.plot()` for default plot (vorton trajectories).
+    Other plots are invoked as methods of `.plot`, e.g., `.plot.poincare()`.
+    These methods use the `plot_*` functions defined in `vorts.plot`.
+    """
+
+    def __init__(self, m):
+        self._m = m
+
+    @property
+    def _ds(self):
+        return self._m.hist
+
+    @staticmethod
+    def _check_not_none(ds):
+        if ds is None:
+            raise Exception(
+                "The model has not yet been run (no `m.hist`) so the plot cannot be created. "
+                "Note that vortons and tracers can still be plotted with their interfaces, e.g., "
+                "`m.vortons.plot()`."
+            )
+        return ds
+
+    @functools.wraps(plot_vorton_trajectories)
+    def vortons(self, *args, **kwargs):
+        return plot_vorton_trajectories(ds=self._check_not_none(self._ds), *args, **kwargs)
+
+    @functools.wraps(plot_tracer_trajectories)
+    def tracers(self, *args, **kwargs):
+        return plot_tracer_trajectories(ds=self._check_not_none(self._ds), *args, **kwargs)
+
+    @functools.wraps(plot_poincare)
+    def poincare(self, *args, **kwargs):
+        return plot_poincare(ds=self._check_not_none(self._ds), *args, **kwargs)
+
+    # Set default plotter (to be invoked if just `.plot()` used)
+    @functools.wraps(plot_vorton_trajectories)
+    def __call__(self, *args, **kwargs):
+        return self.vortons(*args, **kwargs)

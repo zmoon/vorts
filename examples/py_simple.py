@@ -66,7 +66,7 @@ m.run()
 m.plot()  # vortons by default
 
 # %%
-m.plot("tracers")
+m.plot.tracers()
 
 # %% [markdown]
 # ## Interactive, examining impact of options
