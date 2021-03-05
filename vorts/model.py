@@ -15,7 +15,7 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
-from .plot import plot_poincare, plot_tracer_trajectories, plot_vorton_trajectories
+from .plot import _PlotMethods
 from .py import MANUAL_STEPPERS, SCIPY_METHODS, integrate_manual, integrate_scipy
 from .vortons import Tracers, Vortons
 
@@ -83,6 +83,9 @@ class ModelBase(abc.ABC):
         # initially, the model hasn't been run
         self._has_run = False
 
+        # attach _PlotMethods instance
+        self.plot = _PlotMethods(self)
+
     @abc.abstractmethod
     def _run(self):
         """The `_run` method in concrete classes should:
@@ -102,26 +105,6 @@ class ModelBase(abc.ABC):
         # TODO: with hist having been updated (presumably), update vortons?
 
         return self
-
-    # might be better to use _plot_methods dict of name: function
-    # so that certain models could extend the options
-    def plot(self, which="vortons", **kwargs):
-        """Plot results stored in the history data set `hist`.
-
-        `**kwargs` are passed through to the corresponding plotting function
-        (see `vorts.plot`).
-        """
-        if not self._has_run:
-            raise Exception("The model has not yet been run.")
-
-        if which == "vortons":
-            plot_vorton_trajectories(self.hist, **kwargs)
-        elif which == "tracers":
-            plot_tracer_trajectories(self.hist, **kwargs)
-        elif which == "poincare":
-            plot_poincare(self.hist, **kwargs)
-        else:
-            raise NotImplementedError(f"which={which!r}")
 
     def _res_to_xr(self, xhist, yhist):
         """Take full trajectory histories `xhist` and `yhist`
