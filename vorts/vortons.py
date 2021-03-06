@@ -536,6 +536,33 @@ def vertices_isos_triangle(*, theta_deg=None, Lambda=None):
     return np.column_stack((xi, yi))
 
 
+def points_asterisk(n_limbs=5, n_per_limb=3, *, rmax=1):
+    """Asterisk with `n_limbs` number of limbs and `n_per_limb` points per limb.
+
+    Parameters
+    ----------
+    n_limbs : int
+        For example, `5` to get a 5-pointed asterisk
+    n_per_limb : int
+        Number of evenly-spaced points in the limb, not including the center!
+    rmax : float
+        Limb length (maximum radius for on-limb points)
+    """
+    assert n_limbs >= 1 and n_per_limb >= 1, "both n's must be >= 1"
+    # Center point
+    x = [0]
+    y = [0]
+
+    # Limbs (could use regular_polygon for this really)
+    theta = np.deg2rad(np.linspace(90, 360 + 90, n_limbs + 1))[:-1]
+    rs = np.linspace(0, rmax, n_per_limb + 1)[1:]
+    for r in rs:
+        x.extend((r * np.cos(theta)).tolist())
+        y.extend((r * np.sin(theta)).tolist())
+
+    return np.column_stack((x, y))
+
+
 # Note: could exchange x,y for r at some point, to open 3-d option more easily
 class Vortons(PointsBase):
     """Collection of `Vorton`s."""
@@ -805,6 +832,26 @@ class Vortons(PointsBase):
         """
         G = _maybe_fill_G(G, 3)
         xy = vertices_isos_triangle(**kwargs).T
+        return cls(G, *xy)
+
+    @classmethod
+    def asterisk(cls, *args, G=None, **kwargs):
+        r"""Create asterisk of Vortons.
+
+        Parameters
+        ----------
+        G : int, array_like, optional
+            $\Gamma$ value(s) to use.
+
+            Single value or size-3 array-like of values.
+
+            default: 1.0
+
+        `**kwargs`
+            Passed on to `vertices_isos_triangle`.
+        """
+        xy = points_asterisk(*args, **kwargs).T
+        G = _maybe_fill_G(G, xy.shape[1])
         return cls(G, *xy)
 
     def _add_vortons(self, vortons, inplace=False):

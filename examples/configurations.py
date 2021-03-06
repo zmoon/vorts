@@ -81,9 +81,25 @@ vorts.Vortons.isos_triangle(theta_deg=72).plot()
 fig2 = plt.figure()
 
 
-def plot_spiral(n=6):
+def plot_polygon(n=6):
     fig = plt.figure(fig2.number); fig.clf(); ax = fig.add_subplot()  # noqa: E702
     vorts.Vortons.regular_polygon(n=n).plot(ax=ax)
 
 
-interact(plot_spiral, n=(3, 20))
+interact(plot_polygon, n=(3, 20))
+
+# %% [markdown]
+# ### *n*-pointed asterisk
+
+# %%
+fig3 = plt.figure()
+
+
+def plot_asterisk(n_limbs=5, n_per_limb=3):
+    fig = plt.figure(fig3.number); fig.clf(); ax = fig.add_subplot()  # noqa: E702
+    vorts.Vortons.asterisk(n_limbs, n_per_limb).plot(ax=ax)
+
+
+interact(plot_asterisk, n_limbs=(1, 12), n_per_limb=(0, 10))
+
+# %%
