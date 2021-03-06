@@ -568,7 +568,7 @@ _G_params = r"""
 G : float, array_like, optional
     $\Gamma$ value(s) to use.
 
-    Single value or size-3 array-like of values.
+    Single value or array-like vector of values.
 
     default: 1
 """.strip()
