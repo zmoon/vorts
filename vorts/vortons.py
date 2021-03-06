@@ -149,11 +149,21 @@ class PointsBase(abc.ABC):
         try:
             xy = np.append(self.xy, other.xy, axis=0)
         except AttributeError:
-            raise TypeError(f"Addition to {type(other)!r} is unsupported.")
+            raise TypeError(f"Addition to {type(other)} is unsupported.")
         else:
             return self.__class__(*xy.T)
 
     # def __iadd__(self, other):
+
+    def __mul__(self, other):
+        if isinstance(other, (int, float)):
+            xy = self.xy * other
+            return self.__class__(*xy.T)
+        else:
+            raise TypeError(f"Multiplication by {type(other)} is unsupported.")
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
 
 
 class Tracers(PointsBase):
@@ -458,6 +468,18 @@ class Vortons(PointsBase):
             return self._maybe_add_tracers(other)
         else:
             raise TypeError(f"Addition to {type(other)!r} is unsupported.")
+
+    # def __iadd__
+
+    def __mul__(self, other):
+        if isinstance(other, (int, float)):
+            xy = self.xy * other
+            return self.__class__(self.G, *xy.T)
+        else:  # keep message in sync with `PointsBase.__mul__`
+            raise TypeError(f"Multiplication by {type(other)} is unsupported.")
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
 
     # TODO: indexing dunder methods
 
