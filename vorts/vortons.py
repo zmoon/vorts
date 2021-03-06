@@ -627,15 +627,13 @@ numpy.ndarray
     short="Create `Tracers` by sampling from uniform random distributions using `points_randu`."
 )
 @_add_snippets(snippets=dict(returns=_points_returns))
-def points_randu(n, *, c=(0, 0), dx=2, dy=2):
+def points_randu(n, *, dx=2, dy=2):
     """Sample from 2-d uniform.
 
     Parameters
     ----------
     n : int
         Number of points.
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
     dx, dy : float
         $x$ positions will be sampled from $[$`-dx`, `dx`$)$, and $y$ similarly.
 
@@ -643,23 +641,20 @@ def points_randu(n, *, c=(0, 0), dx=2, dy=2):
     -------
     %(returns)s
     """
-    c = np.asarray(c)
     x = np.random.uniform(-dx, dx, (n,))
     y = np.random.uniform(-dy, dy, (n,))
-    return np.column_stack((x, y)) + c
+    return np.column_stack((x, y))
 
 
 @_add_to_tracers(short="Create spiral arrangement of `Tracers` using `points_spiral`.")
 @_add_snippets(snippets=dict(returns=_points_returns))
-def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3, kind="Archimedean", spacing="linear"):
+def points_spiral(n, *, rmin=0, rmax=2, revs=3, kind="Archimedean", spacing="linear"):
     r"""Create spiral of points.
 
     Parameters
     ----------
     n : int
         Number of points.
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
     rmin : float
         Minimum radius (distance from the center for the innermost point).
         Normally should be 0 (not really a spiral without the 0 point).
@@ -676,8 +671,6 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3, kind="Archimedean", sp
     -------
     %(returns)s
     """
-    c = np.asarray(c)
-
     x = np.linspace(0, 1, n)
     if spacing == "linear":
         x2 = x[1:]
@@ -705,14 +698,14 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3, kind="Archimedean", sp
     x = r * np.cos(theta)
     y = r * np.sin(theta)
 
-    return np.column_stack((x, y)) + c
+    return np.column_stack((x, y))
 
 
 @_add_to_tracers(
     short="Create `Tracers` by sampling from normal distributions using `points_randn`."
 )
 @_add_snippets(snippets=dict(returns=_points_returns))
-def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
+def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1):
     """Sample from normal distribution.
 
     Parameters
@@ -723,17 +716,14 @@ def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
         Mean/center of the distribution in each direction.
     sig_x, sig_y : float
         Standard deviation of the distribution in each direction.
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
 
     Returns
     -------
     %(returns)s
     """
-    c = np.asarray(c)
     x = np.random.normal(mu_x, sig_x, (n,))
     y = np.random.normal(mu_y, sig_y, (n,))
-    return np.column_stack((x, y)) + c
+    return np.column_stack((x, y))
 
 
 # TODO: sample from any scipy dist, optionally different for x and y
@@ -741,7 +731,7 @@ def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
 
 @_add_to_tracers(short="Create gridded arrangement of `Tracers` using `points_grid`.")
 @_add_snippets(snippets=dict(returns=_points_returns))
-def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), dxy=None, c=(0, 0)):
+def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), dxy=None):
     """Points on a grid.
 
     Parameters
@@ -753,25 +743,22 @@ def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), dxy=None, c=(0, 0))
     dxy : float, optional
         Overrides `xbounds` and `ybounds`, setting both to `(-dxy, dxy)`;
         more convenient if finer-grained control is not needed.
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
 
     Returns
     -------
     %(returns)s
     """
-    c = np.asarray(c)
     if dxy:
         xbounds = ybounds = (-dxy, dxy)
     x = np.linspace(*xbounds, nx)
     y = np.linspace(*ybounds, ny)
     X, Y = np.meshgrid(x, y)
-    return np.column_stack((X.ravel(), Y.ravel())) + c
+    return np.column_stack((X.ravel(), Y.ravel()))
 
 
 @_add_to_tracers(short="Create concentric circle arrangement of `Tracers` using `points_circles`.")
 @_add_snippets(snippets=dict(returns=_points_returns))
-def points_circles(ns=(10, 20, 34, 50), rs=(0.5, 1, 1.5, 2), *, c=(0, 0)):
+def points_circles(ns=(10, 20, 34, 50), rs=(0.5, 1, 1.5, 2)):
     """Concentric circles.
 
     Parameters
@@ -780,14 +767,11 @@ def points_circles(ns=(10, 20, 34, 50), rs=(0.5, 1, 1.5, 2), *, c=(0, 0)):
         Number of points in each circle.
     rs : array_like
         Radii of each circle (one for each value of `ns`).
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
 
     Returns
     -------
     %(returns)s
     """
-    c = np.asarray(c)
     x = []
     y = []
     for n, r in zip(ns, rs):
@@ -796,7 +780,7 @@ def points_circles(ns=(10, 20, 34, 50), rs=(0.5, 1, 1.5, 2), *, c=(0, 0)):
         x = np.append(x, r * np.cos(thetas))
         y = np.append(y, r * np.sin(thetas))
 
-    return np.column_stack((x, y)) + c
+    return np.column_stack((x, y))
 
 
 def rotmat_2d(ang_deg):  # TODO: could lru_cache?
@@ -855,15 +839,13 @@ def rotate_2d(x, *, ang_deg=None, rotmat=None):
     short="Create polygonal arrangement of `Vortons` using `vertices_regular_polygon`."
 )
 @_add_snippets(snippets=dict(returns=_points_returns))
-def vertices_regular_polygon(n, *, c=(0, 0), r_c=1):
+def vertices_regular_polygon(n, *, r_c=1):
     """Regular polygon vertices.
 
     Parameters
     ----------
     n : int
         Polygon order (number of sides/vertices).
-    c : array_like
-        Coordinates of the center of the inscribing circle ($x_c$, $y_c$).
     r_c : float, int
         Radius $r_c$ of the inscribing circle.
 
@@ -871,8 +853,6 @@ def vertices_regular_polygon(n, *, c=(0, 0), r_c=1):
     -------
     %(returns)s
     """
-    c = np.asarray(c)
-
     # initial vertex
     vert0 = np.r_[0, r_c]
 
@@ -884,7 +864,7 @@ def vertices_regular_polygon(n, *, c=(0, 0), r_c=1):
     for i in range(1, n):
         verts[i, :] = rotate_2d(verts[i - 1, :], rotmat=rotmat)
 
-    return verts + c
+    return verts
 
 
 @_add_to_vortons(
