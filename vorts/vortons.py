@@ -173,6 +173,20 @@ class PointsBase(abc.ABC):
     def __rmul__(self, other):
         return self.__mul__(other)
 
+    def rotate(self, theta, *, units="deg", inplace=False):
+        """Rotate coordinates about the origin by angle `theta` (units `'rad'` or `'deg'`)."""
+        if inplace:
+            raise NotImplementedError
+        if units not in ("rad", "deg"):
+            raise ValueError
+        theta_deg = theta if units == "deg" else np.rad2deg(theta)
+        rotmat = rotmat_2d(theta_deg)
+        xy = self.xy.copy()
+        for i in range(xy.shape[0]):  # over rows
+            xy[i] = rotate_2d(xy[i], rotmat=rotmat)
+
+        return self.__class__(*xy.T)
+
 
 class Tracers(PointsBase):
     """Collection of `Tracer`s."""
@@ -468,21 +482,19 @@ class Vortons(PointsBase):
         x, y = np.append(self.xy, tracers.xy, axis=0).T
         return self.__class__(G, x, y)
 
-    # Overriding base class so can treat tracers and vortons differently
+    def to_tracers(self):
+        """Return `Tracers` instance corresponding to the vorton positions."""
+        return Tracers(self.x, self.y)
+
+    # Overriding base class so can treat tracers and vortons differently (and due to G)
     def __add__(self, other):
         if isinstance(other, self.__class__):
             return self._add_vortons(other)
         elif isinstance(other, Tracers):
             return self._maybe_add_tracers(other)
         else:  # try translation
-            try:
-                xyp = np.asarray(other)
-                assert xyp.shape == (2,)
-            except (TypeError, AssertionError) as e:
-                raise TypeError(f"{other!r} is unsuitable for adding to {type(self)}.") from e
-            else:
-                xy = self.xy + xyp
-                return self.__class__(self.G, *xy.T)
+            xy = (self.to_tracers() + other).xy
+            return self.__class__(self.G, *xy.T)
 
     # def __iadd__
 
@@ -493,6 +505,12 @@ class Vortons(PointsBase):
             return self.__class__(self.G, *xy.T)
         else:  # keep message in sync with `PointsBase.__mul__`
             raise TypeError(f"Multiplication by {type(other)} is unsupported.")
+
+    # Overriding base class due to G
+    def rotate(self, theta, *, units="deg", inplace=False):
+        """Rotate coordinates about the origin by angle `theta` (units `'rad'` or `'deg'`)."""
+        xy = self.to_tracers().rotate(theta, units=units, inplace=inplace).xy
+        return self.__class__(self.G, *xy.T)
 
     # TODO: indexing dunder methods
 
