@@ -34,12 +34,12 @@ import vorts
 fig1 = plt.figure()
 
 
-def plot_spiral(n=100, revs=2, connect=False):
+def plot_spiral(n=100, revs=3, kind="Archimedean", spacing="linear", connect=True):
     fig = plt.figure(fig1.number); fig.clf(); ax = fig.add_subplot()  # noqa: E702
-    vorts.Tracers.spiral(n=n, revs=revs).plot(ax=ax, connect=connect)
+    vorts.Tracers.spiral(n=n, revs=revs, kind=kind, spacing=spacing).plot(ax=ax, connect=connect)
 
 
-interact(plot_spiral, n=(1, 500), revs=(1, 10))
+interact(plot_spiral, n=(1, 500), revs=(1, 10), kind=["Archimedean", "Fermat's"], spacing=["linear", "log", "inv-exp", "1/x"])
 
 # %% [markdown]
 # ### Uniform random

@@ -287,8 +287,8 @@ def points_randu(n, *, c=(0, 0), dx=2, dy=2):
 
 @_add_to_tracers(short="Create spiral arrangement of `Tracers` using `points_spiral`.")
 @_add_snippets(snippets=dict(returns=_points_returns))
-def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
-    """Create spiral of points.
+def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3, kind="Archimedean", spacing="linear"):
+    r"""Create spiral of points.
 
     Parameters
     ----------
@@ -302,24 +302,44 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
         Maximum radius (distance from the center for the outermost point).
     revs : float
         Total number of revolutions in the spiral.
+    kind : str, {'Archimedean', "Fermat's", 'logarithmic'}
+        Type of spiral.
+    spacing : str, {'linear', 'log', 'inv-exp', '1/x'}
+        Method for spacing $\theta$ values on the spiral.
 
     Returns
     -------
     %(returns)s
     """
-    # TODO: option for linear distance between consecutive points
     c = np.asarray(c)
 
-    rad = np.linspace(rmin, rmax, n)  # radius
+    x = np.linspace(0, 1, n)
+    if spacing == "linear":
+        x2 = x[1:]
+    elif spacing == "log":
+        x2 = np.log(x[1:] * 10 + 1) / 10
+    elif spacing == "inv-exp":
+        x2 = 1 - np.exp(-x[1:])
+    elif spacing == "1/x":
+        x2 = 6 - 1 / (x[1:] + 1 / 6)
+    else:
+        raise ValueError
+    theta = np.append(0, np.deg2rad(x2 / x2.max() * 360 * revs))
 
-    deg_tot = revs * 360
-    rotmat = rotmat_2d(deg_tot / n)
-    rhat = np.full((n, 2), (0, 1), dtype=float)  # rhat: unit vectors
-    for i in range(1, n):
-        rhat[i, :] = rotate_2d(rhat[i - 1, :], rotmat=rotmat)
-    # TODO: here would be simpler to do polar coords first then convert to x,y
+    # Compute r from theta
+    if kind == "Archimedean":
+        r = theta / theta.max() * rmax
+    elif kind == "Fermat's":
+        r = np.sqrt(theta / theta.max()) * rmax
+    elif kind == "logarithmic":
+        raise NotImplementedError
+    else:
+        raise ValueError
 
-    return rad[:, np.newaxis] * rhat + c
+    x = r * np.cos(theta)
+    y = r * np.sin(theta)
+
+    return np.column_stack((x, y)) + c
 
 
 @_add_to_tracers(
