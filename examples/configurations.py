@@ -101,5 +101,3 @@ def plot_asterisk(n_limbs=5, n_per_limb=3):
 
 
 interact(plot_asterisk, n_limbs=(1, 12), n_per_limb=(0, 10))
-
-# %%

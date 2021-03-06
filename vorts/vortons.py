@@ -206,6 +206,264 @@ class Tracers(PointsBase):
         fig.set_tight_layout(True)
 
 
+# Note: could exchange x,y for r at some point, to open 3-d option more easily
+class Vortons(PointsBase):
+    """Collection of `Vorton`s."""
+
+    def __init__(self, G, x, y):
+        r"""
+
+        Parameters
+        ----------
+        G, x, y : array_like
+            shape: `(n_vortons,)`
+
+            `G`: $\Gamma$s ("G" for [Gamma](https://en.wikipedia.org/wiki/Gamma)).
+
+            $\Gamma$ represents the strength of the circulation, with sign to indicate direction.
+            In fluid dynamics, circulation $\Gamma$ is the line integral of velocity
+            or flux of vorticity vectors through a surface (here the $xy$-plane).
+
+            `x`: $x$ positions
+
+            `y`: $y$ positions
+
+        """
+        super().__init__(x=x, y=y)
+
+        self.G = np.atleast_1d(np.asarray(G, dtype=float))
+        r"""Array of vorton strengths ($\Gamma$)."""
+        # if np.any(self.G == 0):
+        #     warnings.warn(
+        #         "Tracers should be in a `Tracers` instance. "
+        #         "The ability to add them here may be removed in the future."
+        #     )
+        assert self.G.ndim == 1 and self.G.size == self.n  # n_vortons
+
+        # the state matrix has shape (n_vortons, n_pos_dims) (G excluded since time-invariant)
+        x = np.asarray(x, dtype=float)
+        y = np.asarray(y, dtype=float)
+        self.state_mat = np.column_stack((x, y))
+        """2-d array of $(x, y)$ coordinates -- each row is the coordinate of one vorton."""
+
+    def _update_points(self):
+        self._points = [Vorton(G, x, y) for G, x, y in self.state_mat_full()]
+
+    def vortons(self):
+        """List of corresponding `Vorton` objects."""
+        self._update_points()
+        return self._points
+
+    def state_mat_full(self):
+        """Return full state matrix: ($G$, $x$, $y$ / `Vortons.G`, `Vortons.x`, `Vortons.y`) as 3 columns."""
+        return np.column_stack((self.G, self.xy))
+
+    # Seems to return a view into self.G, so ok to be property
+    @property
+    def G_col(self):
+        """`Vortons.G` as a column vector."""
+        return self.G[:, np.newaxis]
+
+    def C(self):
+        r"""Calculate $C$.
+
+        $$
+        C = \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
+            \Gamma_{\alpha} \Gamma_{\beta} l_{\alpha \beta}^{2}
+        $$
+
+        $C$ is supposed to be a conserved quantity in this system.
+        -- Chamecki (2005) eq. 15, which references Aref (1979)
+        """
+        n_vortons = self.n
+        G = self.G
+        C = 0
+        for i, j in zip(*np.triu_indices(n_vortons, 1)):  # all combinations without repetition
+
+            xi, yi = self.x[i], self.y[i]
+            xj, yj = self.x[j], self.y[j]
+
+            lij_sqd = (xi - xj) ** 2 + (yi - yj) ** 2
+
+            Gi, Gj = G[i], G[j]
+
+            C += Gi * Gj * lij_sqd
+
+        return C
+
+    def H(self):
+        r"""Calculate $H$, the Hamiltonian of the system.
+
+        $$
+        H = -\frac{1}{4 \pi} \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
+            \Gamma_{\alpha} \Gamma_{\beta}
+            \ln | r_{\alpha} - r_{\beta} |
+        $$
+        """
+        nv = self.n
+        G = self.G
+        r = self.state_mat  # vorton positions
+        H = 0
+        for a, b in zip(*np.triu_indices(nv, 1)):
+            ra, rb = r[a], r[b]
+            Ga, Gb = G[a], G[b]
+            H += -1 / (4 * np.pi) * Ga * Gb * np.log(np.linalg.norm(ra - rb))
+
+        return H
+
+    def I(self):  # noqa: 743,741
+        r"""Calculate $I$, the angular impulse of the system.
+
+        $$
+        I = \sum_{\alpha = 1}^{N} \Gamma_{\alpha} | r_{\alpha} |^2
+        $$
+        """
+        G = self.G
+        # r = self.state_mat
+        x = self.x
+        y = self.y
+
+        # r_hat_sqd =
+
+        return (G * (x ** 2 + y ** 2)).sum()
+
+    # TODO: P and Q (coordinates of the center-of-vorticity)
+
+    # TODO: results are not right for equi tri... need to check formulas
+    def theta(self):
+        r"""Calculate $\theta$, the action angles??
+
+        Chamecki eq. 19
+        """
+        N = self.n
+        I = self.I()  # noqa: 741
+        H = self.H()
+
+        # fmt: off
+        return (2/(N-1))**(N*(N-1)/2) * I**(N*(N-1)) * np.exp(4*np.pi*H)
+        # fmt: on
+
+    def plot(self, *, ax=None, adjustable="datalim", **kwargs):
+        """Plot the vortons.
+        (Only their current positions, which are all `Vortons` knows about.)
+        """
+        fig, ax = _maybe_new_fig(ax=ax, **kwargs)
+
+        # plot vorton positions
+        c_Gp = "cadetblue"
+        c_Gm = "salmon"
+        G = self.G
+        Gp, Gm = G > 0, G < 0
+        x, y = self.x, self.y
+        ax.plot(x[Gp], y[Gp], "o", ms=7, c=c_Gp, label=r"$\Gamma > 0$")
+        ax.plot(x[Gm], y[Gm], "o", ms=7, c=c_Gm, label=r"$\Gamma < 0$")
+
+        # plot center of mass
+        x_cm, y_cm = self.cm()
+        s_cm = f"({x_cm:.4g}, {y_cm:.4g})"
+        ax.plot(x_cm, y_cm, "o", ms=13, c="gold", label=f"center of mass\n{s_cm}")
+
+        # 2nd mom
+        x_cm2, y_cm2 = self.moment(2)
+        s_cm2 = f"({x_cm2:.4g}, {y_cm2:.4g})"
+        ax.plot(x_cm2, y_cm2, "*", ms=13, c="0.4", label=f"mom2\n{s_cm2}")
+
+        # 3nd mom
+        # TODO: helper fn to DRY this
+        x_cm3, y_cm3 = self.moment(3)
+        s_cm3 = f"({x_cm3:.4g}, {y_cm3:.4g})"
+        ax.plot(x_cm3, y_cm3, "*", ms=13, c="0.55", label=f"mom3\n{s_cm3}")
+
+        ax.set(
+            title=f"$C = {self.C():.4g}$",
+            xlabel="$x$",
+            ylabel="$y$",
+        )
+        ax.set_aspect("equal", adjustable)
+        fig.legend()
+        ax.grid(True)
+        fig.tight_layout()
+
+    def moment(self, n, *, abs_G=False, center=False):
+        r"""Compute `n`-th moment.
+
+        Parameters
+        ----------
+        n : int
+            Which [moment](https://en.wikipedia.org/wiki/Moment_(mathematics)) to calculate.
+        abs_G : bool
+            Whether to take the absolute value of the $\Gamma$ values (false by default).
+        center : bool
+            `True`: evaluate moment wrt. center of mass from `Vortons.cm`
+
+            `False`: evaluate moment wrt. $(0, 0)$
+        """
+        # seems like a moment but that might not be the correct terminology...
+        G = self.G_col
+        if abs_G:
+            G = np.abs(G)
+        G_tot = G.sum()
+
+        x = self.state_mat  # x, y (columns)
+
+        c = self.cm() if center else 0
+
+        x_mom = (G * (x - c) ** n).sum(axis=0) / G_tot  # sum along vortons dim, giving a position
+        # ^ maybe this should be x - x_cm here...
+
+        return x_mom
+
+    # Chamecki notes suggest this should be called "center of vorticity" or "linear impulse"
+    def center_of_mass(self):
+        r"""Compute [center of mass](https://en.wikipedia.org/wiki/Center_of_mass#A_system_of_particles)
+        using $\Gamma$ (`Vortons.G`) as mass.
+        Equivalent to `Vortons.moment` with `n=1`, `abs_G=True` (currently), `center=False`.
+        """
+        # TODO: what impact should sign of G have on cm? mass is always pos. but G can be neg.
+        return self.moment(1, abs_G=True, center=False)
+
+    def cm(self):
+        """Alias for `Vortons.center_of_mass`."""
+        return self.center_of_mass()
+
+    def center_coords(self, inplace=False):
+        """Make $(0, 0)$ the center of mass."""
+        xy_cm = self.cm()
+        x_cm, y_cm = xy_cm
+        if not inplace:
+            return Vortons(self.G, self.x - x_cm, self.y - y_cm)
+        else:
+            self.state_mat -= x_cm
+
+    def _add_vortons(self, vortons, inplace=False):
+        if inplace:
+            raise NotImplementedError
+        Gxy = np.append(self.state_mat_full(), vortons.state_mat_full(), axis=0)
+        return self.__class__(*Gxy.T)
+
+    def _maybe_add_tracers(self, tracers, inplace=False):
+        if tracers is None:
+            return self
+        if inplace:
+            raise NotImplementedError
+        G = np.append(self.G, np.zeros((tracers.n,)))
+        x, y = np.append(self.xy, tracers.xy, axis=0).T
+        return self.__class__(G, x, y)
+
+    # Overriding base class so can treat tracers and vortons differently
+    def __add__(self, other):
+        if isinstance(other, self.__class__):
+            return self._add_vortons(other)
+        elif isinstance(other, Tracers):
+            return self._maybe_add_tracers(other)
+        else:
+            raise TypeError(f"Addition to {type(other)!r} is unsupported.")
+
+    # TODO: indexing dunder methods
+
+    # TODO: class method to take List[Vorton] and return a Vortons?
+
+
 def _extract_params_block(f):
     """Extract params block from `f`'s docstring."""
     lines = inspect.getdoc(f).splitlines()
@@ -249,6 +507,59 @@ def _add_to_tracers(points_method=None, *, short=None):
 
     # Add method to `Tracers`, removing the `points_` part of the name
     setattr(Tracers, f"{points_method.__name__[7:]}", f)
+
+    return points_method
+
+
+_G_params = r"""
+G : float, array_like, optional
+    $\Gamma$ value(s) to use.
+
+    Single value or size-3 array-like of values.
+
+    default: 1
+""".strip()
+
+
+def _add_to_vortons(points_method=None, *, short=None):
+    """Decorator for adding points fns to `Vortons`."""
+    if points_method is None:
+        return functools.partial(_add_to_vortons, short=short)
+
+    short = short if short else ""
+    params = _extract_params_block(points_method)
+
+    # Add `G` as first param in the signature
+    sig0 = inspect.signature(points_method)
+    sig = makefun.add_signature_parameters(
+        sig0, last=inspect.Parameter("G", kind=inspect.Parameter.KEYWORD_ONLY, default=1)
+    )
+
+    @staticmethod
+    @makefun.with_signature(sig)
+    @_add_snippets(snippets=dict(params=params, short=short, G_params=_G_params))
+    def f(*args, **kwargs):
+        """%(short)s
+
+        Parameters
+        ----------
+        %(params)s
+        %(G_params)s
+
+        Returns
+        -------
+        Vortons
+        """
+        G = kwargs.pop("G")
+        xy = points_method(*args, **kwargs)
+        n = xy.shape[0]
+        G_ = _maybe_fill_G(G, n)
+        return Vortons(G_, *xy.T)
+
+    # Add method to `Vortons`
+    name0 = points_method.__name__
+    name = name0[name0.index("_") + 1 :]
+    setattr(Vortons, name, f)
 
     return points_method
 
@@ -487,6 +798,10 @@ def rotate_2d(x, *, ang_deg=None, rotmat=None):
     return (rotmat @ x[:, np.newaxis]).squeeze()
 
 
+@_add_to_vortons(
+    short="Create polygonal arrangement of `Vortons` using `vertices_regular_polygon`."
+)
+@_add_snippets(snippets=dict(returns=_points_returns))
 def vertices_regular_polygon(n, *, c=(0, 0), r_c=1):
     """Regular polygon vertices.
 
@@ -498,6 +813,10 @@ def vertices_regular_polygon(n, *, c=(0, 0), r_c=1):
         Coordinates of the center of the inscribing circle ($x_c$, $y_c$).
     r_c : float, int
         Radius $r_c$ of the inscribing circle.
+
+    Returns
+    -------
+    %(returns)s
     """
     c = np.asarray(c)
 
@@ -515,6 +834,10 @@ def vertices_regular_polygon(n, *, c=(0, 0), r_c=1):
     return verts + c
 
 
+@_add_to_vortons(
+    short="Create isosceles triangle arrangement of `Vortons` using `vertices_isos_triangle`."
+)
+@_add_snippets(snippets=dict(returns=_points_returns))
 def vertices_isos_triangle(*, theta_deg=None, Lambda=None):
     r"""Isosceles triangle vertices.
     With fixed top point $(0, 1)$ and fixed left & right $y=-0.5$.
@@ -538,6 +861,9 @@ def vertices_isos_triangle(*, theta_deg=None, Lambda=None):
 
         $\Lambda = 1 \to$ equilateral triangle
 
+    Returns
+    -------
+    %(returns)s
     """
     if (theta_deg is not None and Lambda is not None) or (theta_deg is None and Lambda is None):
         raise Exception("Specify either `theta_deg` or `Lambda` (not both).")
@@ -558,6 +884,8 @@ def vertices_isos_triangle(*, theta_deg=None, Lambda=None):
     return np.column_stack((xi, yi))
 
 
+@_add_to_vortons(short="Create asterisk arrangement of `Vortons` using `points_asterisk`.")
+@_add_snippets(snippets=dict(returns=_points_returns))
 def points_asterisk(n_limbs=5, n_per_limb=3, *, rmax=1):
     """Asterisk with `n_limbs` number of limbs and `n_per_limb` points per limb.
 
@@ -569,6 +897,10 @@ def points_asterisk(n_limbs=5, n_per_limb=3, *, rmax=1):
         Number of evenly-spaced points in the limb, not including the center!
     rmax : float
         Limb length (maximum radius for on-limb points)
+
+    Returns
+    -------
+    %(returns)s
     """
     assert n_limbs >= 1 and n_per_limb >= 1, "both n's must be >= 1"
     # Center point
@@ -583,326 +915,6 @@ def points_asterisk(n_limbs=5, n_per_limb=3, *, rmax=1):
         y.extend((r * np.sin(theta)).tolist())
 
     return np.column_stack((x, y))
-
-
-# Note: could exchange x,y for r at some point, to open 3-d option more easily
-class Vortons(PointsBase):
-    """Collection of `Vorton`s."""
-
-    def __init__(self, G, x, y):
-        r"""
-
-        Parameters
-        ----------
-        G, x, y : array_like
-            shape: `(n_vortons,)`
-
-            `G`: $\Gamma$s ("G" for [Gamma](https://en.wikipedia.org/wiki/Gamma)).
-
-            $\Gamma$ represents the strength of the circulation, with sign to indicate direction.
-            In fluid dynamics, circulation $\Gamma$ is the line integral of velocity
-            or flux of vorticity vectors through a surface (here the $xy$-plane).
-
-            `x`: $x$ positions
-
-            `y`: $y$ positions
-
-        """
-        super().__init__(x=x, y=y)
-
-        self.G = np.atleast_1d(np.asarray(G, dtype=float))
-        r"""Array of vorton strengths ($\Gamma$)."""
-        # if np.any(self.G == 0):
-        #     warnings.warn(
-        #         "Tracers should be in a `Tracers` instance. "
-        #         "The ability to add them here may be removed in the future."
-        #     )
-        assert self.G.ndim == 1 and self.G.size == self.n  # n_vortons
-
-        # the state matrix has shape (n_vortons, n_pos_dims) (G excluded since time-invariant)
-        x = np.asarray(x, dtype=float)
-        y = np.asarray(y, dtype=float)
-        self.state_mat = np.column_stack((x, y))
-        """2-d array of $(x, y)$ coordinates -- each row is the coordinate of one vorton."""
-
-    def _update_points(self):
-        self._points = [Vorton(G, x, y) for G, x, y in self.state_mat_full()]
-
-    def vortons(self):
-        """List of corresponding `Vorton` objects."""
-        self._update_points()
-        return self._points
-
-    def state_mat_full(self):
-        """Return full state matrix: ($G$, $x$, $y$ / `Vortons.G`, `Vortons.x`, `Vortons.y`) as 3 columns."""
-        return np.column_stack((self.G, self.xy))
-
-    # Seems to return a view into self.G, so ok to be property
-    @property
-    def G_col(self):
-        """`Vortons.G` as a column vector."""
-        return self.G[:, np.newaxis]
-
-    def C(self):
-        r"""Calculate $C$.
-
-        $$
-        C = \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
-            \Gamma_{\alpha} \Gamma_{\beta} l_{\alpha \beta}^{2}
-        $$
-
-        $C$ is supposed to be a conserved quantity in this system.
-        -- Chamecki (2005) eq. 15, which references Aref (1979)
-        """
-        n_vortons = self.n
-        G = self.G
-        C = 0
-        for i, j in zip(*np.triu_indices(n_vortons, 1)):  # all combinations without repetition
-
-            xi, yi = self.x[i], self.y[i]
-            xj, yj = self.x[j], self.y[j]
-
-            lij_sqd = (xi - xj) ** 2 + (yi - yj) ** 2
-
-            Gi, Gj = G[i], G[j]
-
-            C += Gi * Gj * lij_sqd
-
-        return C
-
-    def H(self):
-        r"""Calculate $H$, the Hamiltonian of the system.
-
-        $$
-        H = -\frac{1}{4 \pi} \sum_{\alpha, \beta = 1; \alpha \neq \beta}^{N}
-            \Gamma_{\alpha} \Gamma_{\beta}
-            \ln | r_{\alpha} - r_{\beta} |
-        $$
-        """
-        nv = self.n
-        G = self.G
-        r = self.state_mat  # vorton positions
-        H = 0
-        for a, b in zip(*np.triu_indices(nv, 1)):
-            ra, rb = r[a], r[b]
-            Ga, Gb = G[a], G[b]
-            H += -1 / (4 * np.pi) * Ga * Gb * np.log(np.linalg.norm(ra - rb))
-
-        return H
-
-    def I(self):  # noqa: 743,741
-        r"""Calculate $I$, the angular impulse of the system.
-
-        $$
-        I = \sum_{\alpha = 1}^{N} \Gamma_{\alpha} | r_{\alpha} |^2
-        $$
-        """
-        G = self.G
-        # r = self.state_mat
-        x = self.x
-        y = self.y
-
-        # r_hat_sqd =
-
-        return (G * (x ** 2 + y ** 2)).sum()
-
-    # TODO: P and Q (coordinates of the center-of-vorticity)
-
-    # TODO: results are not right for equi tri... need to check formulas
-    def theta(self):
-        r"""Calculate $\theta$, the action angles??
-
-        Chamecki eq. 19
-        """
-        N = self.n
-        I = self.I()  # noqa: 741
-        H = self.H()
-
-        # fmt: off
-        return (2/(N-1))**(N*(N-1)/2) * I**(N*(N-1)) * np.exp(4*np.pi*H)
-        # fmt: on
-
-    def plot(self, *, ax=None, adjustable="datalim", **kwargs):
-        """Plot the vortons.
-        (Only their current positions, which are all `Vortons` knows about.)
-        """
-        fig, ax = _maybe_new_fig(ax=ax, **kwargs)
-
-        # plot vorton positions
-        c_Gp = "cadetblue"
-        c_Gm = "salmon"
-        G = self.G
-        Gp, Gm = G > 0, G < 0
-        x, y = self.x, self.y
-        ax.plot(x[Gp], y[Gp], "o", ms=7, c=c_Gp, label=r"$\Gamma > 0$")
-        ax.plot(x[Gm], y[Gm], "o", ms=7, c=c_Gm, label=r"$\Gamma < 0$")
-
-        # plot center of mass
-        x_cm, y_cm = self.cm()
-        s_cm = f"({x_cm:.4g}, {y_cm:.4g})"
-        ax.plot(x_cm, y_cm, "o", ms=13, c="gold", label=f"center of mass\n{s_cm}")
-
-        # 2nd mom
-        x_cm2, y_cm2 = self.moment(2)
-        s_cm2 = f"({x_cm2:.4g}, {y_cm2:.4g})"
-        ax.plot(x_cm2, y_cm2, "*", ms=13, c="0.4", label=f"mom2\n{s_cm2}")
-
-        # 3nd mom
-        # TODO: helper fn to DRY this
-        x_cm3, y_cm3 = self.moment(3)
-        s_cm3 = f"({x_cm3:.4g}, {y_cm3:.4g})"
-        ax.plot(x_cm3, y_cm3, "*", ms=13, c="0.55", label=f"mom3\n{s_cm3}")
-
-        ax.set(
-            title=f"$C = {self.C():.4g}$",
-            xlabel="$x$",
-            ylabel="$y$",
-        )
-        ax.set_aspect("equal", adjustable)
-        fig.legend()
-        ax.grid(True)
-        fig.tight_layout()
-
-    def moment(self, n, *, abs_G=False, center=False):
-        r"""Compute `n`-th moment.
-
-        Parameters
-        ----------
-        n : int
-            Which [moment](https://en.wikipedia.org/wiki/Moment_(mathematics)) to calculate.
-        abs_G : bool
-            Whether to take the absolute value of the $\Gamma$ values (false by default).
-        center : bool
-            `True`: evaluate moment wrt. center of mass from `Vortons.cm`
-
-            `False`: evaluate moment wrt. $(0, 0)$
-        """
-        # seems like a moment but that might not be the correct terminology...
-        G = self.G_col
-        if abs_G:
-            G = np.abs(G)
-        G_tot = G.sum()
-
-        x = self.state_mat  # x, y (columns)
-
-        c = self.cm() if center else 0
-
-        x_mom = (G * (x - c) ** n).sum(axis=0) / G_tot  # sum along vortons dim, giving a position
-        # ^ maybe this should be x - x_cm here...
-
-        return x_mom
-
-    # Chamecki notes suggest this should be called "center of vorticity" or "linear impulse"
-    def center_of_mass(self):
-        r"""Compute [center of mass](https://en.wikipedia.org/wiki/Center_of_mass#A_system_of_particles)
-        using $\Gamma$ (`Vortons.G`) as mass.
-        Equivalent to `Vortons.moment` with `n=1`, `abs_G=True` (currently), `center=False`.
-        """
-        # TODO: what impact should sign of G have on cm? mass is always pos. but G can be neg.
-        return self.moment(1, abs_G=True, center=False)
-
-    def cm(self):
-        """Alias for `Vortons.center_of_mass`."""
-        return self.center_of_mass()
-
-    def center_coords(self, inplace=False):
-        """Make $(0, 0)$ the center of mass."""
-        xy_cm = self.cm()
-        x_cm, y_cm = xy_cm
-        if not inplace:
-            return Vortons(self.G, self.x - x_cm, self.y - y_cm)
-        else:
-            self.state_mat -= x_cm
-
-    @classmethod
-    def regular_polygon(cls, n, *, G=None, **kwargs):
-        r"""Create Vortons with positions corresponding to the vertices of a regular polygon.
-
-        Parameters
-        ----------
-        n : int
-            Polygon order.
-        G : int, array_like, optional
-            $\Gamma$ value(s) to use.
-
-            Single value or size-$n$ array-like of values.
-
-            default: 1.0
-
-        **kwargs
-            Passed on to `vertices_regular_polygon`.
-        """
-        G = _maybe_fill_G(G, n)
-        xy = vertices_regular_polygon(n, **kwargs).T  # x, y cols-> rows (for unpacking)
-        return cls(G, *xy)
-
-    @classmethod
-    def isos_triangle(cls, *, G=None, **kwargs):
-        r"""Create Vortons with isosceles triangle vertices.
-
-        Parameters
-        ----------
-        G : int, array_like, optional
-            $\Gamma$ value(s) to use.
-
-            Single value or size-3 array-like of values.
-
-            default: 1.0
-
-        `**kwargs`
-            Passed on to `vertices_isos_triangle`.
-        """
-        G = _maybe_fill_G(G, 3)
-        xy = vertices_isos_triangle(**kwargs).T
-        return cls(G, *xy)
-
-    @classmethod
-    def asterisk(cls, *args, G=None, **kwargs):
-        r"""Create asterisk of Vortons.
-
-        Parameters
-        ----------
-        G : int, array_like, optional
-            $\Gamma$ value(s) to use.
-
-            Single value or size-3 array-like of values.
-
-            default: 1.0
-
-        `**kwargs`
-            Passed on to `vertices_isos_triangle`.
-        """
-        xy = points_asterisk(*args, **kwargs).T
-        G = _maybe_fill_G(G, xy.shape[1])
-        return cls(G, *xy)
-
-    def _add_vortons(self, vortons, inplace=False):
-        if inplace:
-            raise NotImplementedError
-        Gxy = np.append(self.state_mat_full(), vortons.state_mat_full(), axis=0)
-        return self.__class__(*Gxy.T)
-
-    def _maybe_add_tracers(self, tracers, inplace=False):
-        if tracers is None:
-            return self
-        if inplace:
-            raise NotImplementedError
-        G = np.append(self.G, np.zeros((tracers.n,)))
-        x, y = np.append(self.xy, tracers.xy, axis=0).T
-        return self.__class__(G, x, y)
-
-    # Overriding base class so can treat tracers and vortons differently
-    def __add__(self, other):
-        if isinstance(other, self.__class__):
-            return self._add_vortons(other)
-        elif isinstance(other, Tracers):
-            return self._maybe_add_tracers(other)
-        else:
-            raise TypeError(f"Addition to {type(other)!r} is unsupported.")
-
-    # TODO: indexing dunder methods
-
-    # TODO: class method to take List[Vorton] and return a Vortons?
 
 
 def _maybe_fill_G(G, n):
