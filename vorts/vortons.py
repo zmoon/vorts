@@ -298,6 +298,7 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3, kind="Archimedean", sp
         Coordinates of the center ($x_c$, $y_c$).
     rmin : float
         Minimum radius (distance from the center for the innermost point).
+        Normally should be 0 (not really a spiral without the 0 point).
     rmax : float
         Maximum radius (distance from the center for the outermost point).
     revs : float
@@ -328,13 +329,14 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3, kind="Archimedean", sp
 
     # Compute r from theta
     if kind == "Archimedean":
-        r = theta / theta.max() * rmax
+        r0 = theta / theta.max()
     elif kind == "Fermat's":
-        r = np.sqrt(theta / theta.max()) * rmax
+        r0 = np.sqrt(theta / theta.max())
     elif kind == "logarithmic":
         raise NotImplementedError
     else:
         raise ValueError
+    r = rmin + r0 * (rmax - rmin)
 
     x = r * np.cos(theta)
     y = r * np.sin(theta)
