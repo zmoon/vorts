@@ -137,7 +137,9 @@ class PointsBase(abc.ABC):
 
     @abc.abstractmethod
     def state_mat_full(self):
-        """Full state matrix (could be same as `xy` but should return a copy)."""
+        """Full state matrix (could be same as `xy` but should return a copy).
+        Columns should be in the same order as the class init positional parameters.
+        """
         ...
 
     @abc.abstractmethod
@@ -146,12 +148,18 @@ class PointsBase(abc.ABC):
         ...
 
     def __add__(self, other):
-        try:
+        if hasattr(other, "xy"):  # other points collection
             xy = np.append(self.xy, other.xy, axis=0)
-        except AttributeError:
-            raise TypeError(f"Addition to {type(other)} is unsupported.")
-        else:
-            return self.__class__(*xy.T)
+        else:  # vector for translation?
+            try:
+                xyp = np.asarray(other)
+                assert xyp.shape == (2,)
+            except (TypeError, AssertionError) as e:
+                raise TypeError(f"{other!r} is unsuitable for adding to {type(self)}.") from e
+            else:
+                xy = self.xy + xyp
+
+        return self.__class__(*xy.T)
 
     # def __iadd__(self, other):
 
@@ -195,8 +203,8 @@ class Tracers(PointsBase):
 
     def state_mat_full(self):
         """Full state mat for tracers doesn't include G."""
-        warnings.warn("Note that `state_mat_full` for tracers is the same as `state_mat` (no G).")
-        return self._xy
+        # warnings.warn("Note that `state_mat_full` for tracers is the same as `state_mat` (no G).")
+        return self._xy.copy()
 
     def plot(self, *, connect=False, adjustable="box", ax=None, **kwargs):
         """Plot tracers, with points connected if `connect=True`."""
@@ -466,20 +474,25 @@ class Vortons(PointsBase):
             return self._add_vortons(other)
         elif isinstance(other, Tracers):
             return self._maybe_add_tracers(other)
-        else:
-            raise TypeError(f"Addition to {type(other)!r} is unsupported.")
+        else:  # try translation
+            try:
+                xyp = np.asarray(other)
+                assert xyp.shape == (2,)
+            except (TypeError, AssertionError) as e:
+                raise TypeError(f"{other!r} is unsuitable for adding to {type(self)}.") from e
+            else:
+                xy = self.xy + xyp
+                return self.__class__(self.G, *xy.T)
 
     # def __iadd__
 
+    # Overriding base class due to G
     def __mul__(self, other):
         if isinstance(other, (int, float)):
             xy = self.xy * other
             return self.__class__(self.G, *xy.T)
         else:  # keep message in sync with `PointsBase.__mul__`
             raise TypeError(f"Multiplication by {type(other)} is unsupported.")
-
-    def __rmul__(self, other):
-        return self.__mul__(other)
 
     # TODO: indexing dunder methods
 
