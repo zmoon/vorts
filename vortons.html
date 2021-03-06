@@ -43,7 +43,7 @@ Currently the result has the class of the one on the left in the addition.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L0-L847" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L0-L916" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 `Vorton`/`Tracer` classes and `Vortons`/`Tracers` container classes.
@@ -334,8 +334,8 @@ def points_randu(n, *, c=(0, 0), dx=2, dy=2):
 
 @_add_to_tracers(short=&#34;Create spiral arrangement of `Tracers` using `points_spiral`.&#34;)
 @_add_snippets(snippets=dict(returns=_points_returns))
-def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
-    &#34;&#34;&#34;Create spiral of points.
+def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3, kind=&#34;Archimedean&#34;, spacing=&#34;linear&#34;):
+    r&#34;&#34;&#34;Create spiral of points.
 
     Parameters
     ----------
@@ -345,28 +345,50 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
         Coordinates of the center ($x_c$, $y_c$).
     rmin : float
         Minimum radius (distance from the center for the innermost point).
+        Normally should be 0 (not really a spiral without the 0 point).
     rmax : float
         Maximum radius (distance from the center for the outermost point).
     revs : float
         Total number of revolutions in the spiral.
+    kind : str, {&#39;Archimedean&#39;, &#34;Fermat&#39;s&#34;, &#39;logarithmic&#39;}
+        Type of spiral.
+    spacing : str, {&#39;linear&#39;, &#39;log&#39;, &#39;inv-exp&#39;, &#39;1/x&#39;}
+        Method for spacing $\theta$ values on the spiral.
 
     Returns
     -------
     %(returns)s
     &#34;&#34;&#34;
-    # TODO: option for linear distance between consecutive points
     c = np.asarray(c)
 
-    rad = np.linspace(rmin, rmax, n)  # radius
+    x = np.linspace(0, 1, n)
+    if spacing == &#34;linear&#34;:
+        x2 = x[1:]
+    elif spacing == &#34;log&#34;:
+        x2 = np.log(x[1:] * 10 + 1) / 10
+    elif spacing == &#34;inv-exp&#34;:
+        x2 = 1 - np.exp(-x[1:])
+    elif spacing == &#34;1/x&#34;:
+        x2 = 6 - 1 / (x[1:] + 1 / 6)
+    else:
+        raise ValueError
+    theta = np.append(0, np.deg2rad(x2 / x2.max() * 360 * revs))
 
-    deg_tot = revs * 360
-    rotmat = rotmat_2d(deg_tot / n)
-    rhat = np.full((n, 2), (0, 1), dtype=float)  # rhat: unit vectors
-    for i in range(1, n):
-        rhat[i, :] = rotate_2d(rhat[i - 1, :], rotmat=rotmat)
-    # TODO: here would be simpler to do polar coords first then convert to x,y
+    # Compute r from theta
+    if kind == &#34;Archimedean&#34;:
+        r0 = theta / theta.max()
+    elif kind == &#34;Fermat&#39;s&#34;:
+        r0 = np.sqrt(theta / theta.max())
+    elif kind == &#34;logarithmic&#34;:
+        raise NotImplementedError
+    else:
+        raise ValueError
+    r = rmin + r0 * (rmax - rmin)
 
-    return rad[:, np.newaxis] * rhat + c
+    x = r * np.cos(theta)
+    y = r * np.sin(theta)
+
+    return np.column_stack((x, y)) + c
 
 
 @_add_to_tracers(
@@ -581,6 +603,33 @@ def vertices_isos_triangle(*, theta_deg=None, Lambda=None):
     Lambda = np.sqrt((180 - 2 * theta_deg) / float(theta_deg))  # Marcelo eqns 17--19
 
     return np.column_stack((xi, yi))
+
+
+def points_asterisk(n_limbs=5, n_per_limb=3, *, rmax=1):
+    &#34;&#34;&#34;Asterisk with `n_limbs` number of limbs and `n_per_limb` points per limb.
+
+    Parameters
+    ----------
+    n_limbs : int
+        For example, `5` to get a 5-pointed asterisk
+    n_per_limb : int
+        Number of evenly-spaced points in the limb, not including the center!
+    rmax : float
+        Limb length (maximum radius for on-limb points)
+    &#34;&#34;&#34;
+    assert n_limbs &gt;= 1 and n_per_limb &gt;= 1, &#34;both n&#39;s must be &gt;= 1&#34;
+    # Center point
+    x = [0]
+    y = [0]
+
+    # Limbs (could use regular_polygon for this really)
+    theta = np.deg2rad(np.linspace(90, 360 + 90, n_limbs + 1))[:-1]
+    rs = np.linspace(0, rmax, n_per_limb + 1)[1:]
+    for r in rs:
+        x.extend((r * np.cos(theta)).tolist())
+        y.extend((r * np.sin(theta)).tolist())
+
+    return np.column_stack((x, y))
 
 
 # Note: could exchange x,y for r at some point, to open 3-d option more easily
@@ -854,6 +903,26 @@ class Vortons(PointsBase):
         xy = vertices_isos_triangle(**kwargs).T
         return cls(G, *xy)
 
+    @classmethod
+    def asterisk(cls, *args, G=None, **kwargs):
+        r&#34;&#34;&#34;Create asterisk of Vortons.
+
+        Parameters
+        ----------
+        G : int, array_like, optional
+            $\Gamma$ value(s) to use.
+
+            Single value or size-3 array-like of values.
+
+            default: 1.0
+
+        `**kwargs`
+            Passed on to `vertices_isos_triangle`.
+        &#34;&#34;&#34;
+        xy = points_asterisk(*args, **kwargs).T
+        G = _maybe_fill_G(G, xy.shape[1])
+        return cls(G, *xy)
+
     def _add_vortons(self, vortons, inplace=False):
         if inplace:
             raise NotImplementedError
@@ -902,6 +971,52 @@ def _maybe_fill_G(G, n):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="vorts.vortons.points_asterisk"><code class="name flex">
+<span>def <span class="ident">points_asterisk</span></span>(<span>n_limbs=5, n_per_limb=3, *, rmax=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Asterisk with <code>n_limbs</code> number of limbs and <code>n_per_limb</code> points per limb.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>n_limbs</code></strong> :&ensp;<code>int</code></dt>
+<dd>For example, <code>5</code> to get a 5-pointed asterisk</dd>
+<dt><strong><code>n_per_limb</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of evenly-spaced points in the limb, not including the center!</dd>
+<dt><strong><code>rmax</code></strong> :&ensp;<code>float</code></dt>
+<dd>Limb length (maximum radius for on-limb points)</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L561-L585" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def points_asterisk(n_limbs=5, n_per_limb=3, *, rmax=1):
+    &#34;&#34;&#34;Asterisk with `n_limbs` number of limbs and `n_per_limb` points per limb.
+
+    Parameters
+    ----------
+    n_limbs : int
+        For example, `5` to get a 5-pointed asterisk
+    n_per_limb : int
+        Number of evenly-spaced points in the limb, not including the center!
+    rmax : float
+        Limb length (maximum radius for on-limb points)
+    &#34;&#34;&#34;
+    assert n_limbs &gt;= 1 and n_per_limb &gt;= 1, &#34;both n&#39;s must be &gt;= 1&#34;
+    # Center point
+    x = [0]
+    y = [0]
+
+    # Limbs (could use regular_polygon for this really)
+    theta = np.deg2rad(np.linspace(90, 360 + 90, n_limbs + 1))[:-1]
+    rs = np.linspace(0, rmax, n_per_limb + 1)[1:]
+    for r in rs:
+        x.extend((r * np.cos(theta)).tolist())
+        y.extend((r * np.sin(theta)).tolist())
+
+    return np.column_stack((x, y))</code></pre>
+</details>
+</dd>
 <dt id="vorts.vortons.points_circles"><code class="name flex">
 <span>def <span class="ident">points_circles</span></span>(<span>ns=(10, 20, 34, 50), rs=(0.5, 1, 1.5, 2), *, c=(0, 0))</span>
 </code></dt>
@@ -924,7 +1039,7 @@ def _maybe_fill_G(G, n):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L386-L413" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L408-L435" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@_add_to_tracers(short=&#34;Create concentric circle arrangement of `Tracers` using `points_circles`.&#34;)
 @_add_snippets(snippets=dict(returns=_points_returns))
@@ -981,7 +1096,7 @@ more convenient if finer-grained control is not needed.</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L356-L383" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L378-L405" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@_add_to_tracers(short=&#34;Create gridded arrangement of `Tracers` using `points_grid`.&#34;)
 @_add_snippets(snippets=dict(returns=_points_returns))
@@ -1037,7 +1152,7 @@ def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), dxy=None, c=(0, 0))
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L325-L350" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L347-L372" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@_add_to_tracers(
     short=&#34;Create `Tracers` by sampling from normal distributions using `points_randn`.&#34;
@@ -1089,7 +1204,7 @@ def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L262-L285" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L262-L285" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@_add_to_tracers(
     short=&#34;Create `Tracers` by sampling from uniform random distributions using `points_randu`.&#34;
@@ -1118,7 +1233,7 @@ def points_randu(n, *, c=(0, 0), dx=2, dy=2):
 </details>
 </dd>
 <dt id="vorts.vortons.points_spiral"><code class="name flex">
-<span>def <span class="ident">points_spiral</span></span>(<span>n, *, c=(0, 0), rmin=0, rmax=2, revs=3)</span>
+<span>def <span class="ident">points_spiral</span></span>(<span>n, *, c=(0, 0), rmin=0, rmax=2, revs=3, kind='Archimedean', spacing='linear')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create spiral of points.</p>
@@ -1129,11 +1244,16 @@ def points_randu(n, *, c=(0, 0), dx=2, dy=2):
 <dt><strong><code>c</code></strong> :&ensp;<code>array_like</code></dt>
 <dd>Coordinates of the center ($x_c$, $y_c$).</dd>
 <dt><strong><code>rmin</code></strong> :&ensp;<code>float</code></dt>
-<dd>Minimum radius (distance from the center for the innermost point).</dd>
+<dd>Minimum radius (distance from the center for the innermost point).
+Normally should be 0 (not really a spiral without the 0 point).</dd>
 <dt><strong><code>rmax</code></strong> :&ensp;<code>float</code></dt>
 <dd>Maximum radius (distance from the center for the outermost point).</dd>
 <dt><strong><code>revs</code></strong> :&ensp;<code>float</code></dt>
 <dd>Total number of revolutions in the spiral.</dd>
+<dt><strong><code>kind</code></strong> :&ensp;<code>str, {'Archimedean', "Fermat's", 'logarithmic'}</code></dt>
+<dd>Type of spiral.</dd>
+<dt><strong><code>spacing</code></strong> :&ensp;<code>str, {'linear', 'log', 'inv-exp', '1/x'}</code></dt>
+<dd>Method for spacing $\theta$ values on the spiral.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -1143,12 +1263,12 @@ def points_randu(n, *, c=(0, 0), dx=2, dy=2):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L288-L322" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L288-L344" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@_add_to_tracers(short=&#34;Create spiral arrangement of `Tracers` using `points_spiral`.&#34;)
 @_add_snippets(snippets=dict(returns=_points_returns))
-def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
-    &#34;&#34;&#34;Create spiral of points.
+def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3, kind=&#34;Archimedean&#34;, spacing=&#34;linear&#34;):
+    r&#34;&#34;&#34;Create spiral of points.
 
     Parameters
     ----------
@@ -1158,28 +1278,50 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3):
         Coordinates of the center ($x_c$, $y_c$).
     rmin : float
         Minimum radius (distance from the center for the innermost point).
+        Normally should be 0 (not really a spiral without the 0 point).
     rmax : float
         Maximum radius (distance from the center for the outermost point).
     revs : float
         Total number of revolutions in the spiral.
+    kind : str, {&#39;Archimedean&#39;, &#34;Fermat&#39;s&#34;, &#39;logarithmic&#39;}
+        Type of spiral.
+    spacing : str, {&#39;linear&#39;, &#39;log&#39;, &#39;inv-exp&#39;, &#39;1/x&#39;}
+        Method for spacing $\theta$ values on the spiral.
 
     Returns
     -------
     %(returns)s
     &#34;&#34;&#34;
-    # TODO: option for linear distance between consecutive points
     c = np.asarray(c)
 
-    rad = np.linspace(rmin, rmax, n)  # radius
+    x = np.linspace(0, 1, n)
+    if spacing == &#34;linear&#34;:
+        x2 = x[1:]
+    elif spacing == &#34;log&#34;:
+        x2 = np.log(x[1:] * 10 + 1) / 10
+    elif spacing == &#34;inv-exp&#34;:
+        x2 = 1 - np.exp(-x[1:])
+    elif spacing == &#34;1/x&#34;:
+        x2 = 6 - 1 / (x[1:] + 1 / 6)
+    else:
+        raise ValueError
+    theta = np.append(0, np.deg2rad(x2 / x2.max() * 360 * revs))
 
-    deg_tot = revs * 360
-    rotmat = rotmat_2d(deg_tot / n)
-    rhat = np.full((n, 2), (0, 1), dtype=float)  # rhat: unit vectors
-    for i in range(1, n):
-        rhat[i, :] = rotate_2d(rhat[i - 1, :], rotmat=rotmat)
-    # TODO: here would be simpler to do polar coords first then convert to x,y
+    # Compute r from theta
+    if kind == &#34;Archimedean&#34;:
+        r0 = theta / theta.max()
+    elif kind == &#34;Fermat&#39;s&#34;:
+        r0 = np.sqrt(theta / theta.max())
+    elif kind == &#34;logarithmic&#34;:
+        raise NotImplementedError
+    else:
+        raise ValueError
+    r = rmin + r0 * (rmax - rmin)
 
-    return rad[:, np.newaxis] * rhat + c</code></pre>
+    x = r * np.cos(theta)
+    y = r * np.sin(theta)
+
+    return np.column_stack((x, y)) + c</code></pre>
 </details>
 </dd>
 <dt id="vorts.vortons.rotate_2d"><code class="name flex">
@@ -1211,7 +1353,7 @@ you can pass <code>rotmat</code> instead to avoid computing it multiple times.</
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L430-L465" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L452-L487" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def rotate_2d(x, *, ang_deg=None, rotmat=None):
     r&#34;&#34;&#34;Rotate vector `x` by `ang_deg` degrees.
@@ -1265,7 +1407,7 @@ can be used for 3-d rotations.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L416-L427" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L438-L449" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def rotmat_2d(ang_deg):  # TODO: could lru_cache?
     &#34;&#34;&#34;Return rotation matrix for rotation `ang_deg` in degrees.
@@ -1310,7 +1452,7 @@ which gives control over size and location)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L496-L536" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L518-L558" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vertices_isos_triangle(*, theta_deg=None, Lambda=None):
     r&#34;&#34;&#34;Isosceles triangle vertices.
@@ -1372,7 +1514,7 @@ which gives control over size and location)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L468-L493" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L490-L515" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vertices_regular_polygon(n, *, c=(0, 0), r_c=1):
     &#34;&#34;&#34;Regular polygon vertices.
@@ -1424,7 +1566,7 @@ which gives control over size and location)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L78-L156" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L78-L156" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PointsBase(abc.ABC):
     &#34;&#34;&#34;Points base class with $x$ and $y$.&#34;&#34;&#34;
@@ -1523,7 +1665,7 @@ which gives control over size and location)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L111-L114" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L111-L114" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def n(self):
@@ -1537,7 +1679,7 @@ def n(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L116-L119" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L116-L119" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def x(self):
@@ -1552,7 +1694,7 @@ This is the data array on which the others depend.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L126-L131" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L126-L131" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def xy(self):
@@ -1568,7 +1710,7 @@ def xy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L121-L124" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L121-L124" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def y(self):
@@ -1587,7 +1729,7 @@ def y(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L143-L146" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L143-L146" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@abc.abstractmethod
 def plot(self):
@@ -1603,7 +1745,7 @@ def plot(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L138-L141" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L138-L141" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@abc.abstractmethod
 def state_mat_full(self):
@@ -1622,7 +1764,7 @@ def state_mat_full(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L70-L75" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L70-L75" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Tracer(NamedTuple):
     r&#34;&#34;&#34;Tracer -- a vorton with $\Gamma=0$ (no circulation/mass) that knows its current position.&#34;&#34;&#34;
@@ -1664,7 +1806,7 @@ def state_mat_full(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L159-L206" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L159-L206" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Tracers(PointsBase):
     &#34;&#34;&#34;Collection of `Tracer`s.&#34;&#34;&#34;
@@ -1808,7 +1950,7 @@ more convenient if finer-grained control is not needed.</dd>
 </dl></div>
 </dd>
 <dt id="vorts.vortons.Tracers.spiral"><code class="name flex">
-<span>def <span class="ident">spiral</span></span>(<span>n, *, c=(0, 0), rmin=0, rmax=2, revs=3)</span>
+<span>def <span class="ident">spiral</span></span>(<span>n, *, c=(0, 0), rmin=0, rmax=2, revs=3, kind='Archimedean', spacing='linear')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create spiral arrangement of <code><a title="vorts.vortons.Tracers" href="#vorts.vortons.Tracers">Tracers</a></code> using <code><a title="vorts.vortons.points_spiral" href="#vorts.vortons.points_spiral">points_spiral()</a></code>.</p>
@@ -1819,11 +1961,16 @@ more convenient if finer-grained control is not needed.</dd>
 <dt><strong><code>c</code></strong> :&ensp;<code>array_like</code></dt>
 <dd>Coordinates of the center ($x_c$, $y_c$).</dd>
 <dt><strong><code>rmin</code></strong> :&ensp;<code>float</code></dt>
-<dd>Minimum radius (distance from the center for the innermost point).</dd>
+<dd>Minimum radius (distance from the center for the innermost point).
+Normally should be 0 (not really a spiral without the 0 point).</dd>
 <dt><strong><code>rmax</code></strong> :&ensp;<code>float</code></dt>
 <dd>Maximum radius (distance from the center for the outermost point).</dd>
 <dt><strong><code>revs</code></strong> :&ensp;<code>float</code></dt>
 <dd>Total number of revolutions in the spiral.</dd>
+<dt><strong><code>kind</code></strong> :&ensp;<code>str, {'Archimedean', "Fermat's", 'logarithmic'}</code></dt>
+<dd>Type of spiral.</dd>
+<dt><strong><code>spacing</code></strong> :&ensp;<code>str, {'linear', 'log', 'inv-exp', '1/x'}</code></dt>
+<dd>Method for spacing $\theta$ values on the spiral.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -1844,7 +1991,7 @@ more convenient if finer-grained control is not needed.</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L176-L184" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L176-L184" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tracers(self):
@@ -1868,7 +2015,7 @@ def tracers(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L191-L206" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L191-L206" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def plot(self, *, connect=False, adjustable=&#34;box&#34;, ax=None, **kwargs):
     &#34;&#34;&#34;Plot tracers, with points connected if `connect=True`.&#34;&#34;&#34;
@@ -1896,7 +2043,7 @@ def tracers(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L186-L189" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L186-L189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def state_mat_full(self):
     &#34;&#34;&#34;Full state mat for tracers doesn&#39;t include G.&#34;&#34;&#34;
@@ -1931,7 +2078,7 @@ def tracers(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L54-L67" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L54-L67" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Vorton(NamedTuple):
     &#34;&#34;&#34;A vorton that knows its current state (position and strength).
@@ -1990,7 +2137,7 @@ or flux of vorticity vectors through a surface (here the $xy$-plane).</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L540-L836" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L589-L905" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Vortons(PointsBase):
     &#34;&#34;&#34;Collection of `Vorton`s.&#34;&#34;&#34;
@@ -2262,6 +2409,26 @@ or flux of vorticity vectors through a surface (here the $xy$-plane).</p>
         xy = vertices_isos_triangle(**kwargs).T
         return cls(G, *xy)
 
+    @classmethod
+    def asterisk(cls, *args, G=None, **kwargs):
+        r&#34;&#34;&#34;Create asterisk of Vortons.
+
+        Parameters
+        ----------
+        G : int, array_like, optional
+            $\Gamma$ value(s) to use.
+
+            Single value or size-3 array-like of values.
+
+            default: 1.0
+
+        `**kwargs`
+            Passed on to `vertices_isos_triangle`.
+        &#34;&#34;&#34;
+        xy = points_asterisk(*args, **kwargs).T
+        G = _maybe_fill_G(G, xy.shape[1])
+        return cls(G, *xy)
+
     def _add_vortons(self, vortons, inplace=False):
         if inplace:
             raise NotImplementedError
@@ -2297,6 +2464,48 @@ or flux of vorticity vectors through a surface (here the $xy$-plane).</p>
 </ul>
 <h3>Static methods</h3>
 <dl>
+<dt id="vorts.vortons.Vortons.asterisk"><code class="name flex">
+<span>def <span class="ident">asterisk</span></span>(<span>*args, G=None, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create asterisk of Vortons.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>G</code></strong> :&ensp;<code>int, array_like</code>, optional</dt>
+<dd>
+<p>$\Gamma$ value(s) to use.</p>
+<p>Single value or size-3 array-like of values.</p>
+<p>default: 1.0</p>
+</dd>
+</dl>
+<p><code>**kwargs</code>
+Passed on to <code><a title="vorts.vortons.vertices_isos_triangle" href="#vorts.vortons.vertices_isos_triangle">vertices_isos_triangle()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L859-L877" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@classmethod
+def asterisk(cls, *args, G=None, **kwargs):
+    r&#34;&#34;&#34;Create asterisk of Vortons.
+
+    Parameters
+    ----------
+    G : int, array_like, optional
+        $\Gamma$ value(s) to use.
+
+        Single value or size-3 array-like of values.
+
+        default: 1.0
+
+    `**kwargs`
+        Passed on to `vertices_isos_triangle`.
+    &#34;&#34;&#34;
+    xy = points_asterisk(*args, **kwargs).T
+    G = _maybe_fill_G(G, xy.shape[1])
+    return cls(G, *xy)</code></pre>
+</details>
+</dd>
 <dt id="vorts.vortons.Vortons.isos_triangle"><code class="name flex">
 <span>def <span class="ident">isos_triangle</span></span>(<span>*, G=None, **kwargs)</span>
 </code></dt>
@@ -2316,7 +2525,7 @@ Passed on to <code><a title="vorts.vortons.vertices_isos_triangle" href="#vorts.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L790-L808" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L839-L857" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@classmethod
 def isos_triangle(cls, *, G=None, **kwargs):
@@ -2360,7 +2569,7 @@ def isos_triangle(cls, *, G=None, **kwargs):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L768-L788" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L817-L837" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@classmethod
 def regular_polygon(cls, n, *, G=None, **kwargs):
@@ -2398,7 +2607,7 @@ def regular_polygon(cls, n, *, G=None, **kwargs):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L592-L595" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L641-L644" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def G_col(self):
@@ -2427,7 +2636,7 @@ $$</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L597-L622" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L646-L671" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def C(self):
     r&#34;&#34;&#34;Calculate $C$.
@@ -2470,7 +2679,7 @@ $$</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L624-L642" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L673-L691" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def H(self):
     r&#34;&#34;&#34;Calculate $H$, the Hamiltonian of the system.
@@ -2504,7 +2713,7 @@ $$</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L644-L658" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L693-L707" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def I(self):  # noqa: 743,741
     r&#34;&#34;&#34;Calculate $I$, the angular impulse of the system.
@@ -2531,7 +2740,7 @@ $$</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L759-L766" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L808-L815" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def center_coords(self, inplace=False):
     &#34;&#34;&#34;Make $(0, 0)$ the center of mass.&#34;&#34;&#34;
@@ -2553,7 +2762,7 @@ Equivalent to <code><a title="vorts.vortons.Vortons.moment" href="#vorts.vortons
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L747-L753" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L796-L802" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def center_of_mass(self):
     r&#34;&#34;&#34;Compute [center of mass](https://en.wikipedia.org/wiki/Center_of_mass#A_system_of_particles)
@@ -2572,7 +2781,7 @@ Equivalent to <code><a title="vorts.vortons.Vortons.moment" href="#vorts.vortons
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L755-L757" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L804-L806" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def cm(self):
     &#34;&#34;&#34;Alias for `Vortons.center_of_mass`.&#34;&#34;&#34;
@@ -2599,7 +2808,7 @@ Equivalent to <code><a title="vorts.vortons.Vortons.moment" href="#vorts.vortons
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L717-L744" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L766-L793" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def moment(self, n, *, abs_G=False, center=False):
     r&#34;&#34;&#34;Compute `n`-th moment.
@@ -2640,7 +2849,7 @@ Equivalent to <code><a title="vorts.vortons.Vortons.moment" href="#vorts.vortons
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L676-L715" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L725-L764" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def plot(self, *, ax=None, adjustable=&#34;datalim&#34;, **kwargs):
     &#34;&#34;&#34;Plot the vortons.
@@ -2692,7 +2901,7 @@ Equivalent to <code><a title="vorts.vortons.Vortons.moment" href="#vorts.vortons
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L587-L589" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L636-L638" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def state_mat_full(self):
     &#34;&#34;&#34;Return full state matrix: ($G$, $x$, $y$ / `Vortons.G`, `Vortons.x`, `Vortons.y`) as 3 columns.&#34;&#34;&#34;
@@ -2708,7 +2917,7 @@ Equivalent to <code><a title="vorts.vortons.Vortons.moment" href="#vorts.vortons
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L663-L674" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L712-L723" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def theta(self):
     r&#34;&#34;&#34;Calculate $\theta$, the action angles??
@@ -2732,7 +2941,7 @@ Equivalent to <code><a title="vorts.vortons.Vortons.moment" href="#vorts.vortons
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/0efa013aed6e9f4bfd22181dd93443343a0dfe6d/vorts/vortons.py#L582-L585" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/eb3e8df7000c1f4688c34f4e354796eca90c50c4/vorts/vortons.py#L631-L634" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vortons(self):
     &#34;&#34;&#34;List of corresponding `Vorton` objects.&#34;&#34;&#34;
@@ -2776,6 +2985,7 @@ vorts
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="vorts.vortons.points_asterisk" href="#vorts.vortons.points_asterisk">points_asterisk</a></code></li>
 <li><code><a title="vorts.vortons.points_circles" href="#vorts.vortons.points_circles">points_circles</a></code></li>
 <li><code><a title="vorts.vortons.points_grid" href="#vorts.vortons.points_grid">points_grid</a></code></li>
 <li><code><a title="vorts.vortons.points_randn" href="#vorts.vortons.points_randn">points_randn</a></code></li>
@@ -2836,6 +3046,7 @@ vorts
 <li><code><a title="vorts.vortons.Vortons.G_col" href="#vorts.vortons.Vortons.G_col">G_col</a></code></li>
 <li><code><a title="vorts.vortons.Vortons.H" href="#vorts.vortons.Vortons.H">H</a></code></li>
 <li><code><a title="vorts.vortons.Vortons.I" href="#vorts.vortons.Vortons.I">I</a></code></li>
+<li><code><a title="vorts.vortons.Vortons.asterisk" href="#vorts.vortons.Vortons.asterisk">asterisk</a></code></li>
 <li><code><a title="vorts.vortons.Vortons.center_coords" href="#vorts.vortons.Vortons.center_coords">center_coords</a></code></li>
 <li><code><a title="vorts.vortons.Vortons.center_of_mass" href="#vorts.vortons.Vortons.center_of_mass">center_of_mass</a></code></li>
 <li><code><a title="vorts.vortons.Vortons.cm" href="#vorts.vortons.Vortons.cm">cm</a></code></li>
