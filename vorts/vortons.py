@@ -3,8 +3,40 @@
 
 The module name is "vortons" because most of the focus is on the vorton collection.
 
-`Vortons` and `Tracers` can be added.
+`Vortons` and `Tracers` can combined using `+`.
 Currently the result has the class of the one on the left in the addition.
+>>> ts = vorts.Tracers(0, 0)
+>>> ts + ts
+Tracers(
+  Tracer(x=0.0, y=0.0)
+  Tracer(x=0.0, y=0.0)
+)
+>>> vorts.Vortons.regular_polygon(3) + ts
+Vortons(
+  Vorton(G=1.0, x=0.0, y=1.0)
+  Vorton(G=1.0, x=-0.8660254037844387, y=-0.4999999999999998)
+  Vorton(G=1.0, x=0.8660254037844384, y=-0.5000000000000003)
+  Vorton(G=0.0, x=0.0, y=0.0)
+)
+
+`Vortons`/`Tracers` can also be transformed (creating a new object).
+>>> ts = vorts.Tracers(2, 1)
+>>> ts
+Tracers(
+  Tracer(x=2.0, y=1.0)
+)
+>>> ts + (1, 1)  # translate
+Tracers(
+  Tracer(x=3.0, y=2.0)
+)
+>>> 2 * ts  # scale
+Tracers(
+  Tracer(x=4.0, y=2.0)
+)
+>>> ts.rotate(90)  # rotate
+Tracers(
+  Tracer(x=-0.9999999999999999, y=2.0)
+)
 """
 import abc
 import functools
