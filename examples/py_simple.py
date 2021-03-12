@@ -47,7 +47,7 @@ fig, [ax1, ax2] = plt.subplots(1, 2, figsize=(7, 3.5), sharex=True, sharey=True)
 vs = vorts.Vortons(G, xi, yi)
 vs.plot(ax=ax1, adjustable=None)  # plot initial state
 
-ts = vorts.Tracers.spiral(6, c=vs.cm(), revs=1)
+ts = vorts.Tracers.spiral(20, revs=2) + vs.cm()  # center on the vortons' center of mass
 ts.plot(ax=ax2)
 
 m = vorts.Model_py(

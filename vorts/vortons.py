@@ -3,8 +3,40 @@
 
 The module name is "vortons" because most of the focus is on the vorton collection.
 
-`Vortons` and `Tracers` can be added.
+`Vortons` and `Tracers` can combined using `+`.
 Currently the result has the class of the one on the left in the addition.
+>>> ts = vorts.Tracers(0, 0)
+>>> ts + ts
+Tracers(
+  Tracer(x=0.0, y=0.0)
+  Tracer(x=0.0, y=0.0)
+)
+>>> vorts.Vortons.regular_polygon(3) + ts
+Vortons(
+  Vorton(G=1.0, x=0.0, y=1.0)
+  Vorton(G=1.0, x=-0.8660254037844387, y=-0.4999999999999998)
+  Vorton(G=1.0, x=0.8660254037844384, y=-0.5000000000000003)
+  Vorton(G=0.0, x=0.0, y=0.0)
+)
+
+`Vortons`/`Tracers` can also be transformed (creating a new object).
+>>> ts = vorts.Tracers(2, 1)
+>>> ts
+Tracers(
+  Tracer(x=2.0, y=1.0)
+)
+>>> ts + (1, 1)  # translate
+Tracers(
+  Tracer(x=3.0, y=2.0)
+)
+>>> 2 * ts  # scale
+Tracers(
+  Tracer(x=4.0, y=2.0)
+)
+>>> ts.rotate(90)  # rotate
+Tracers(
+  Tracer(x=-0.9999999999999999, y=2.0)
+)
 """
 import abc
 import functools
@@ -137,7 +169,9 @@ class PointsBase(abc.ABC):
 
     @abc.abstractmethod
     def state_mat_full(self):
-        """Full state matrix (could be same as `xy` but should return a copy)."""
+        """Full state matrix (could be same as `xy` but should return a copy).
+        Columns should be in the same order as the class init positional parameters.
+        """
         ...
 
     @abc.abstractmethod
@@ -146,14 +180,44 @@ class PointsBase(abc.ABC):
         ...
 
     def __add__(self, other):
-        try:
+        if hasattr(other, "xy"):  # other points collection
             xy = np.append(self.xy, other.xy, axis=0)
-        except AttributeError:
-            raise TypeError(f"Addition to {type(other)!r} is unsupported.")
-        else:
-            return self.__class__(*xy.T)
+        else:  # vector for translation?
+            try:
+                xyp = np.asarray(other)
+                assert xyp.shape == (2,)
+            except (TypeError, AssertionError) as e:
+                raise TypeError(f"{other!r} is unsuitable for adding to {type(self)}.") from e
+            else:
+                xy = self.xy + xyp
+
+        return self.__class__(*xy.T)
 
     # def __iadd__(self, other):
+
+    def __mul__(self, other):
+        if isinstance(other, (int, float)):
+            xy = self.xy * other
+            return self.__class__(*xy.T)
+        else:
+            raise TypeError(f"Multiplication by {type(other)} is unsupported.")
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def rotate(self, theta, *, units="deg", inplace=False):
+        """Rotate coordinates about the origin by angle `theta` (units `'rad'` or `'deg'`)."""
+        if inplace:
+            raise NotImplementedError
+        if units not in ("rad", "deg"):
+            raise ValueError
+        theta_deg = theta if units == "deg" else np.rad2deg(theta)
+        rotmat = rotmat_2d(theta_deg)
+        xy = self.xy.copy()
+        for i in range(xy.shape[0]):  # over rows
+            xy[i] = rotate_2d(xy[i], rotmat=rotmat)
+
+        return self.__class__(*xy.T)
 
 
 class Tracers(PointsBase):
@@ -185,8 +249,8 @@ class Tracers(PointsBase):
 
     def state_mat_full(self):
         """Full state mat for tracers doesn't include G."""
-        warnings.warn("Note that `state_mat_full` for tracers is the same as `state_mat` (no G).")
-        return self._xy
+        # warnings.warn("Note that `state_mat_full` for tracers is the same as `state_mat` (no G).")
+        return self._xy.copy()
 
     def plot(self, *, connect=False, adjustable="box", ax=None, **kwargs):
         """Plot tracers, with points connected if `connect=True`."""
@@ -450,14 +514,35 @@ class Vortons(PointsBase):
         x, y = np.append(self.xy, tracers.xy, axis=0).T
         return self.__class__(G, x, y)
 
-    # Overriding base class so can treat tracers and vortons differently
+    def to_tracers(self):
+        """Return `Tracers` instance corresponding to the vorton positions."""
+        return Tracers(self.x, self.y)
+
+    # Overriding base class so can treat tracers and vortons differently (and due to G)
     def __add__(self, other):
         if isinstance(other, self.__class__):
             return self._add_vortons(other)
         elif isinstance(other, Tracers):
             return self._maybe_add_tracers(other)
-        else:
-            raise TypeError(f"Addition to {type(other)!r} is unsupported.")
+        else:  # try translation
+            xy = (self.to_tracers() + other).xy
+            return self.__class__(self.G, *xy.T)
+
+    # def __iadd__
+
+    # Overriding base class due to G
+    def __mul__(self, other):
+        if isinstance(other, (int, float)):
+            xy = self.xy * other
+            return self.__class__(self.G, *xy.T)
+        else:  # keep message in sync with `PointsBase.__mul__`
+            raise TypeError(f"Multiplication by {type(other)} is unsupported.")
+
+    # Overriding base class due to G
+    def rotate(self, theta, *, units="deg", inplace=False):
+        """Rotate coordinates about the origin by angle `theta` (units `'rad'` or `'deg'`)."""
+        xy = self.to_tracers().rotate(theta, units=units, inplace=inplace).xy
+        return self.__class__(self.G, *xy.T)
 
     # TODO: indexing dunder methods
 
@@ -515,7 +600,7 @@ _G_params = r"""
 G : float, array_like, optional
     $\Gamma$ value(s) to use.
 
-    Single value or size-3 array-like of values.
+    Single value or array-like vector of values.
 
     default: 1
 """.strip()
@@ -574,15 +659,13 @@ numpy.ndarray
     short="Create `Tracers` by sampling from uniform random distributions using `points_randu`."
 )
 @_add_snippets(snippets=dict(returns=_points_returns))
-def points_randu(n, *, c=(0, 0), dx=2, dy=2):
+def points_randu(n, *, dx=2, dy=2):
     """Sample from 2-d uniform.
 
     Parameters
     ----------
     n : int
         Number of points.
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
     dx, dy : float
         $x$ positions will be sampled from $[$`-dx`, `dx`$)$, and $y$ similarly.
 
@@ -590,23 +673,20 @@ def points_randu(n, *, c=(0, 0), dx=2, dy=2):
     -------
     %(returns)s
     """
-    c = np.asarray(c)
     x = np.random.uniform(-dx, dx, (n,))
     y = np.random.uniform(-dy, dy, (n,))
-    return np.column_stack((x, y)) + c
+    return np.column_stack((x, y))
 
 
 @_add_to_tracers(short="Create spiral arrangement of `Tracers` using `points_spiral`.")
 @_add_snippets(snippets=dict(returns=_points_returns))
-def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3, kind="Archimedean", spacing="linear"):
+def points_spiral(n, *, rmin=0, rmax=2, revs=3, kind="Archimedean", spacing="linear"):
     r"""Create spiral of points.
 
     Parameters
     ----------
     n : int
         Number of points.
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
     rmin : float
         Minimum radius (distance from the center for the innermost point).
         Normally should be 0 (not really a spiral without the 0 point).
@@ -623,8 +703,6 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3, kind="Archimedean", sp
     -------
     %(returns)s
     """
-    c = np.asarray(c)
-
     x = np.linspace(0, 1, n)
     if spacing == "linear":
         x2 = x[1:]
@@ -652,14 +730,14 @@ def points_spiral(n, *, c=(0, 0), rmin=0, rmax=2, revs=3, kind="Archimedean", sp
     x = r * np.cos(theta)
     y = r * np.sin(theta)
 
-    return np.column_stack((x, y)) + c
+    return np.column_stack((x, y))
 
 
 @_add_to_tracers(
     short="Create `Tracers` by sampling from normal distributions using `points_randn`."
 )
 @_add_snippets(snippets=dict(returns=_points_returns))
-def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
+def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1):
     """Sample from normal distribution.
 
     Parameters
@@ -670,17 +748,14 @@ def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
         Mean/center of the distribution in each direction.
     sig_x, sig_y : float
         Standard deviation of the distribution in each direction.
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
 
     Returns
     -------
     %(returns)s
     """
-    c = np.asarray(c)
     x = np.random.normal(mu_x, sig_x, (n,))
     y = np.random.normal(mu_y, sig_y, (n,))
-    return np.column_stack((x, y)) + c
+    return np.column_stack((x, y))
 
 
 # TODO: sample from any scipy dist, optionally different for x and y
@@ -688,7 +763,7 @@ def points_randn(n, *, mu_x=0, mu_y=0, sig_x=1, sig_y=1, c=(0, 0)):
 
 @_add_to_tracers(short="Create gridded arrangement of `Tracers` using `points_grid`.")
 @_add_snippets(snippets=dict(returns=_points_returns))
-def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), dxy=None, c=(0, 0)):
+def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), dxy=None):
     """Points on a grid.
 
     Parameters
@@ -700,25 +775,22 @@ def points_grid(nx, ny, *, xbounds=(-2, 2), ybounds=(-2, 2), dxy=None, c=(0, 0))
     dxy : float, optional
         Overrides `xbounds` and `ybounds`, setting both to `(-dxy, dxy)`;
         more convenient if finer-grained control is not needed.
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
 
     Returns
     -------
     %(returns)s
     """
-    c = np.asarray(c)
     if dxy:
         xbounds = ybounds = (-dxy, dxy)
     x = np.linspace(*xbounds, nx)
     y = np.linspace(*ybounds, ny)
     X, Y = np.meshgrid(x, y)
-    return np.column_stack((X.ravel(), Y.ravel())) + c
+    return np.column_stack((X.ravel(), Y.ravel()))
 
 
 @_add_to_tracers(short="Create concentric circle arrangement of `Tracers` using `points_circles`.")
 @_add_snippets(snippets=dict(returns=_points_returns))
-def points_circles(ns=(10, 20, 34, 50), rs=(0.5, 1, 1.5, 2), *, c=(0, 0)):
+def points_circles(ns=(10, 20, 34, 50), rs=(0.5, 1, 1.5, 2)):
     """Concentric circles.
 
     Parameters
@@ -727,14 +799,11 @@ def points_circles(ns=(10, 20, 34, 50), rs=(0.5, 1, 1.5, 2), *, c=(0, 0)):
         Number of points in each circle.
     rs : array_like
         Radii of each circle (one for each value of `ns`).
-    c : array_like
-        Coordinates of the center ($x_c$, $y_c$).
 
     Returns
     -------
     %(returns)s
     """
-    c = np.asarray(c)
     x = []
     y = []
     for n, r in zip(ns, rs):
@@ -743,7 +812,7 @@ def points_circles(ns=(10, 20, 34, 50), rs=(0.5, 1, 1.5, 2), *, c=(0, 0)):
         x = np.append(x, r * np.cos(thetas))
         y = np.append(y, r * np.sin(thetas))
 
-    return np.column_stack((x, y)) + c
+    return np.column_stack((x, y))
 
 
 def rotmat_2d(ang_deg):  # TODO: could lru_cache?
@@ -802,15 +871,13 @@ def rotate_2d(x, *, ang_deg=None, rotmat=None):
     short="Create polygonal arrangement of `Vortons` using `vertices_regular_polygon`."
 )
 @_add_snippets(snippets=dict(returns=_points_returns))
-def vertices_regular_polygon(n, *, c=(0, 0), r_c=1):
+def vertices_regular_polygon(n, *, r_c=1):
     """Regular polygon vertices.
 
     Parameters
     ----------
     n : int
         Polygon order (number of sides/vertices).
-    c : array_like
-        Coordinates of the center of the inscribing circle ($x_c$, $y_c$).
     r_c : float, int
         Radius $r_c$ of the inscribing circle.
 
@@ -818,8 +885,6 @@ def vertices_regular_polygon(n, *, c=(0, 0), r_c=1):
     -------
     %(returns)s
     """
-    c = np.asarray(c)
-
     # initial vertex
     vert0 = np.r_[0, r_c]
 
@@ -831,7 +896,7 @@ def vertices_regular_polygon(n, *, c=(0, 0), r_c=1):
     for i in range(1, n):
         verts[i, :] = rotate_2d(verts[i - 1, :], rotmat=rotmat)
 
-    return verts + c
+    return verts
 
 
 @_add_to_vortons(

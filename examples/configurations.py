@@ -101,3 +101,26 @@ def plot_asterisk(n_limbs=5, n_per_limb=3):
 
 
 interact(plot_asterisk, n_limbs=(1, 12), n_per_limb=(0, 10))
+
+# %% [markdown]
+# ## Combining
+
+# %%
+(vorts.Tracers.circles() + vorts.Tracers.randn(50, sig_x=0.3, sig_y=0.3)).plot()
+
+# %% [markdown]
+# ## Transforms
+#
+# Note that these transforms also work for `Tracers`.
+
+# %%
+v0 = vorts.Vortons.regular_polygon(4)
+
+# %%
+(v0 + (1, 2)).plot()
+
+# %%
+(0.1*v0).plot()
+
+# %%
+v0.rotate(20).plot()
