@@ -13,9 +13,6 @@ on:
 jobs:
   docs:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}  # needed for the Conda activation to work
 
     steps:
       - name: Check out
