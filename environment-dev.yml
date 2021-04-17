@@ -26,8 +26,5 @@ dependencies:
   - pip
   - pip:
       #
-      # for docs
-      - pdoc3
-      #
       # the package as an editable install
-      - '-e .'
+      - '-e .[complete,docs]'
