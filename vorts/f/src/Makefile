@@ -26,11 +26,12 @@ vorts: $(OBJS)
 OBJS2 = \
 	m_params.o \
 	m_vorts.o \
+	m_io.o \
 	capi.o
 
-LIB = ./vorts.so
+LIB = ./libvorts.so
 capi: $(OBJS2)
-	$(FC) $(CFLAGS) -shared -o $(LIB) $(LFLAGS) $(OBJS2) 
+	$(FC) $(CFLAGS) -shared -o $(LIB) $(LFLAGS) $(OBJS2)
 
 # Rule to make objects
 %.o: %.f90

@@ -5,7 +5,7 @@ module m_io
   implicit none
 
   private
-  public :: simsettings_type, parse_input_txt, write_output_txt
+  public :: simsettings_type, parse_input_txt, write_output_txt, time_stepper_from_index
 
   type :: simsettings_type
     real(rk) :: dt  ! simulation time step
@@ -53,6 +53,22 @@ contains
         f_ptr => step_RK4
       case default
         stop 'invalid integration routine name'
+    end select
+  end
+
+  function time_stepper_from_index(i) result(f_ptr)
+    use m_vorts, only: step_FT, step_RK4
+
+    integer, intent(in) :: i
+    procedure(time_stepper_int), pointer :: f_ptr
+
+    select case (i)
+      case (1)
+        f_ptr => step_FT
+      case (2)
+        f_ptr => step_RK4
+      case default
+        stop 'invalid integration routine index'
     end select
   end
 

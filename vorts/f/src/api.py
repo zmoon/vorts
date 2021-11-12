@@ -1,7 +1,7 @@
 import ctypes as ct
 import numpy as np
 
-lib = ct.CDLL("./vorts.so")
+lib = np.ctypeslib.load_library("libvorts", ".")
 f = lib.asdf
 
 f.argtypes = [
@@ -17,17 +17,17 @@ f.argtypes = [
 ]
 
 nv = 3
-x = np.full((nv,), 1., order="F")
-y = np.full((nv,), 2., order="F")
-G = np.full((nv,), 3., order="F")
+x = np.array([-0.5, 0, 0.5], order="F")
+y = np.array([-0.3, 0.8, 0.3], order="F")
+G = np.full((nv,), 1., order="F")
 
 dt = 0.1
-nt = 3
-imethod = 0
+nt = 5
+imethod = 2
 
 nout = nt + 1
-xout = np.full((nout,), 0., order="F")
-yout = np.full((nout,), 0., order="F")
+xout = np.full((nv, nout,), 0., order="F")
+yout = np.full((nv, nout,), 0., order="F")
 
 
 f(
@@ -41,3 +41,8 @@ f(
     xout.ctypes.data_as(ct.POINTER(ct.c_double)), 
     yout.ctypes.data_as(ct.POINTER(ct.c_double)), 
 )
+
+print("From Python: output")
+print(xout)
+print(yout)
+
