@@ -1,7 +1,32 @@
 import ctypes as ct
+from pathlib import Path
+
 import numpy as np
 
-_lib = np.ctypeslib.load_library("libvortsf", "./_build")
+_here = Path(__file__).parent
+_builddir = _here / "_build"
+_libbasename = "libvortsf"
+
+
+try:
+    _lib = np.ctypeslib.load_library(_libbasename, _builddir)
+except OSError:
+    import platform
+
+    if platform.system() == "Windows" and platform.python_version() >= "3.8":
+        _lib = ct.CDLL((_builddir / f"{_libbasename}.dll").as_posix(), winmode=0)
+        # `winmode=0` is supposedly a default
+        #   https://docs.python.org/3/library/ctypes.html#ctypes.CDLL
+        # but it doesn't work without specifying it.
+        # Related issue: https://bugs.python.org/issue42114
+        # Looks like it really defaults to `nt._LOAD_LIBRARY_SEARCH_DEFAULT_DIRS`,
+        # which is nonzero on my Windows machine.
+        # From https://docs.python.org/3/library/ctypes.html#loading-shared-libraries
+        # `winmode` was added in Python 3.8.
+
+    else:
+        raise
+
 
 _run = _lib.asdf
 _run.argtypes = [
@@ -28,8 +53,8 @@ def run(G, x, y, *, dt, nt, method="RK4"):
     imethod = _methods.index(method) + 1
 
     # Allocate outputs
-    xout = np.full((nv, nt+1,), 0., order="F")
-    yout = np.full((nv, nt+1,), 0., order="F")
+    xout = np.full((nv, nt + 1), 0.0, order="F")
+    yout = np.full((nv, nt + 1), 0.0, order="F")
 
     _run(
         nv,
