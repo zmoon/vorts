@@ -21,7 +21,6 @@ dependencies:
   #
   # dev
   - pytest>=6  # pyproject.toml support
-  - rope
   #
   - pip
   - pip:
