@@ -9,6 +9,7 @@ Manifest.toml
 vorts/f/src/*.o
 vorts/f/src/*.mod
 vorts/f/src/hello_world.exe
+vorts/f/src/*.so
 
 # built docs
 html/

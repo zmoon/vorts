@@ -3,7 +3,7 @@
 
 # Settings for gfortran
 FC = gfortran
-CFLAGS = -O3 -std=f2008 -Wall
+CFLAGS = -O3 -std=f2008 -Wall -fPIC
 LFLAGS =
 
 # Settings for ifort
@@ -22,6 +22,15 @@ OBJS = \
 EXE = ../bin/vorts
 vorts: $(OBJS)
 	$(FC) $(CFLAGS) -o $(EXE) $(LFLAGS) $(OBJS)
+
+OBJS2 = \
+	m_params.o \
+	m_vorts.o \
+	capi.o
+
+LIB = ./vorts.so
+capi: $(OBJS2)
+	$(FC) $(CFLAGS) -shared -o $(LIB) $(LFLAGS) $(OBJS2) 
 
 # Rule to make objects
 %.o: %.f90
