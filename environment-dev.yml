@@ -27,3 +27,4 @@ dependencies:
       #
       # the package as an editable install
       - '-e .[complete,docs]'
+      - meson  # no ninja

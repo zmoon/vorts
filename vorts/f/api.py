@@ -1,7 +1,7 @@
 import ctypes as ct
 import numpy as np
 
-lib = np.ctypeslib.load_library("libvorts", ".")
+lib = np.ctypeslib.load_library("libvortsf", "./_build")
 f = lib.asdf
 
 f.argtypes = [
