@@ -12,8 +12,9 @@ try:
     _lib = np.ctypeslib.load_library(_libbasename, _builddir)
 except OSError:
     import platform
+    import sys
 
-    if platform.system() == "Windows" and platform.python_version() >= "3.8":
+    if platform.system() == "Windows" and sys.version_info >= (3, 8):
         _lib = ct.CDLL((_builddir / f"{_libbasename}.dll").as_posix(), winmode=0)
         # `winmode=0` is supposedly a default
         #   https://docs.python.org/3/library/ctypes.html#ctypes.CDLL
