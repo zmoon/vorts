@@ -103,7 +103,7 @@ contains
 
     !> Prepare arrays for input into `calc_tends` (could be a separate subroutine)
     do i = 1, n_total
-      G(i)  = vortons(i)%G
+      G(i)  = vortons(i)%G  ! TODO: just passing `vortons%G` (does work)
       x0(i) = vortons(i)%xhist(l-1)  ! TODO: just passing `vortons%xhist(l-1)`
       y0(i) = vortons(i)%yhist(l-1)
     end do

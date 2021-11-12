@@ -26,7 +26,7 @@ contains
     real(c_double), intent(inout) :: xout(nv, nt+1), yout(nv, nt+1)
     ! Local
     type(simsettings_type) :: settings
-    type(vorton_type), dimension(:), allocatable :: vortons
+    type(vorton_type) :: vortons(nv)
     integer :: i, l
 
     ! Initial settings
@@ -41,7 +41,6 @@ contains
     ! Form vortons array
     settings%n_vortons = 0
     settings%n_tracers = 0
-    allocate(vortons(settings%n_total))
     do i = 1, nv
       vortons(i) = vorton_type(G(i), x(i), y(i), settings%n_timesteps)
 
