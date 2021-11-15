@@ -5,6 +5,7 @@ The module name is "vortons" because most of the focus is on the vorton collecti
 
 `Vortons` and `Tracers` can combined using `+`.
 Currently the result has the class of the one on the left in the addition.
+>>> import vorts
 >>> ts = vorts.Tracers(0, 0)
 >>> ts + ts
 Tracers(
