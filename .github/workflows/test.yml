@@ -47,3 +47,12 @@ jobs:
         run: |
           python -m pytest
           pytest --doctest-modules --doctest-continue-on-failure vorts
+
+      - name: Run example nbs
+        run: |
+          cd examples
+          for f in *.py; do
+            jupytext --to ipynb $f
+            jupyter nbconvert --to notebook --execute ${f%.py}.ipynb
+          done
+          cd $HOME
