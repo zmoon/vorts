@@ -390,7 +390,7 @@ class Vortons(PointsBase):
 
         # r_hat_sqd =
 
-        return (G * (x ** 2 + y ** 2)).sum()
+        return (G * (x**2 + y**2)).sum()
 
     # TODO: P and Q (coordinates of the center-of-vorticity)
 
@@ -936,7 +936,7 @@ def vertices_isos_triangle(*, theta_deg=None, Lambda=None):
 
     if Lambda:
         assert Lambda > 0 and Lambda <= 1
-        theta_deg = 180 / (Lambda ** 2 + 2)
+        theta_deg = 180 / (Lambda**2 + 2)
 
     theta = np.deg2rad(theta_deg)
 
