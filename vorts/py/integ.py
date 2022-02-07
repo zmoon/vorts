@@ -210,7 +210,7 @@ def calc_lsqd_xy(x1, y1, x2, y2):
 
 def calc_lsqd_diff(dx, dy):
     """Calculate intervortical distance $l^2$, passing in already-computed `dx` and `dy`."""
-    return dx ** 2 + dy ** 2
+    return dx**2 + dy**2
 
 
 def calc_C(G, x, y):
@@ -307,7 +307,7 @@ def calc_tend(G, x, y):
             if i != j and Gj != 0:
                 dx = xi - xj
                 dy = yi - yj
-                lij_sqd = dx ** 2 + dy ** 2
+                lij_sqd = dx**2 + dy**2
                 # add the contributions of j to i's tends
                 dxdt[i] += -_TEND_PRE * Gj * dy / lij_sqd
                 dydt[i] += _TEND_PRE * Gj * dx / lij_sqd
@@ -324,7 +324,7 @@ def calc_tend_one(xi, yi, Gn, xn, yn):
         if Gj != 0:  # tracers don't contribute
             dx = xi - xj
             dy = yi - yj
-            lij_sqd = dx ** 2 + dy ** 2
+            lij_sqd = dx**2 + dy**2
             # add contribution of j to i's tends
             dxdt += -_TEND_PRE * Gj * dy / lij_sqd
             dydt += _TEND_PRE * Gj * dx / lij_sqd
