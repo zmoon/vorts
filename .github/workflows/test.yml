@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Cache Conda packages
         uses: actions/cache@v2.1.7
