@@ -12,11 +12,11 @@ Tracers(
   Tracer(x=0.0, y=0.0)
   Tracer(x=0.0, y=0.0)
 )
->>> vorts.Vortons.regular_polygon(3) + ts
+>>> vorts.Vortons.regular_polygon(3) + ts  # doctest: +ELLIPSIS
 Vortons(
   Vorton(G=1.0, x=0.0, y=1.0)
-  Vorton(G=1.0, x=-0.8660254037844387, y=-0.4999999999999998)
-  Vorton(G=1.0, x=0.8660254037844384, y=-0.5000000000000003)
+  Vorton(G=1.0, x=-0.86602540..., y=-0.49999999...)
+  Vorton(G=1.0, x=0.86602540..., y=-0.50000000...)
   Vorton(G=0.0, x=0.0, y=0.0)
 )
 
@@ -34,9 +34,9 @@ Tracers(
 Tracers(
   Tracer(x=4.0, y=2.0)
 )
->>> ts.rotate(90)  # rotate
+>>> ts.rotate(90)  # rotate  # doctest: +ELLIPSIS
 Tracers(
-  Tracer(x=-0.9999999999999999, y=2.0)
+  Tracer(x=-0.99999999..., y=2.0)
 )
 """
 import abc
