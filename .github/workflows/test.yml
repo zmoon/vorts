@@ -6,6 +6,9 @@ on:
       - '**.py'
       - '**.f*'
       - '.github/workflows/test.yml'
+  workflow_dispatch: # allow manual triggering
+  schedule:
+    - cron: '0 12 1 * *'
 
 jobs:
   test:
