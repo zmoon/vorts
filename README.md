@@ -3,6 +3,7 @@
 Integrate a system of *N* point vortices.
 
 [![Tests status](https://github.com/zmoon/vorts/workflows/Test/badge.svg)](https://github.com/zmoon/vorts/actions?query=workflow%3ATest)
+[![Project Status: Suspended – Initial development has started, but there has not yet been a stable, usable release; work has been stopped for the time being but the author(s) intend on resuming work.](https://www.repostatus.org/badges/latest/suspended.svg)](https://www.repostatus.org/#suspended)
 
 * [pdoc3](https://pdoc3.github.io/pdoc/) documentation:
   [zmoon.github.io/vorts](https://zmoon.github.io/vorts)
