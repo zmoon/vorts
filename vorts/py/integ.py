@@ -223,7 +223,6 @@ def calc_C(G, x, y):
 
     C = 0
     for i, j in zip(*np.triu_indices(nv, 1)):
-
         xi, yi = x[i], y[i]
         xj, yj = x[j], y[j]
 
