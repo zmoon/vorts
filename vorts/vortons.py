@@ -344,7 +344,6 @@ class Vortons(PointsBase):
         G = self.G
         C = 0
         for i, j in zip(*np.triu_indices(n_vortons, 1)):  # all combinations without repetition
-
             xi, yi = self.x[i], self.y[i]
             xj, yj = self.x[j], self.y[j]
 
