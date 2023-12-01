@@ -31,7 +31,7 @@ jobs:
 
       # TODO: This part takes multiple minutes (~3 without caching, bit less with)
       - name: Install dependencies in Miniconda env and activate it
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: 3.8
           activate-environment: vorts-dev
