@@ -42,7 +42,7 @@ SciPy RK routines (which are written in Python as well) are also available.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/fc3accec9cf4e2c2c0b9436db04d18c2d87e89b4/vorts/py/integ.py#L1-L481" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/7cb523474877370f0ffbc69a3a596bc37bb6c3a6/vorts/py/integ.py#L1-L481" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
 Integration routines and time steppers in Python.
@@ -550,7 +550,7 @@ SCIPY_METHODS = {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/fc3accec9cf4e2c2c0b9436db04d18c2d87e89b4/vorts/py/integ.py#L363-L374" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/7cb523474877370f0ffbc69a3a596bc37bb6c3a6/vorts/py/integ.py#L363-L374" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def FT_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
     &#34;&#34;&#34;Step using 1st-O forward-in-time.
@@ -576,7 +576,7 @@ This doesn't affect the result for FT, but for RK4 it does (since sub-steps are 
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/fc3accec9cf4e2c2c0b9436db04d18c2d87e89b4/vorts/py/integ.py#L334-L360" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/7cb523474877370f0ffbc69a3a596bc37bb6c3a6/vorts/py/integ.py#L334-L360" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def FT_step_1b1(G, x0, y0, dt: float):
     &#34;&#34;&#34;Step using 1st-O forward-in-time.
@@ -616,7 +616,7 @@ This doesn't affect the result for FT, but for RK4 it does (since sub-steps are 
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/fc3accec9cf4e2c2c0b9436db04d18c2d87e89b4/vorts/py/integ.py#L428-L455" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/7cb523474877370f0ffbc69a3a596bc37bb6c3a6/vorts/py/integ.py#L428-L455" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def RK4_step(G, x0, y0, dt: float, *, tend_fn=calc_tend):
     &#34;&#34;&#34;Step using RK4.
@@ -663,7 +663,7 @@ all other vortons need to be up to date or we introduce error.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/fc3accec9cf4e2c2c0b9436db04d18c2d87e89b4/vorts/py/integ.py#L377-L425" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/7cb523474877370f0ffbc69a3a596bc37bb6c3a6/vorts/py/integ.py#L377-L425" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def RK4_step_1b1(G, x0_all, y0_all, dt: float):
     &#34;&#34;&#34;Step using RK4.
@@ -726,7 +726,7 @@ to see if we need to go back and step with smaller $\delta t$.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/fc3accec9cf4e2c2c0b9436db04d18c2d87e89b4/vorts/py/integ.py#L216-L236" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/7cb523474877370f0ffbc69a3a596bc37bb6c3a6/vorts/py/integ.py#L216-L236" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def calc_C(G, x, y):
     r&#34;&#34;&#34;Calculate $C$ at time $l$ (see equation and info in `vorts.vortons.Vortons.C`).
@@ -759,7 +759,7 @@ to see if we need to go back and step with smaller $\delta t$.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/fc3accec9cf4e2c2c0b9436db04d18c2d87e89b4/vorts/py/integ.py#L211-L213" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/7cb523474877370f0ffbc69a3a596bc37bb6c3a6/vorts/py/integ.py#L211-L213" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def calc_lsqd_diff(dx, dy):
     &#34;&#34;&#34;Calculate intervortical distance $l^2$, passing in already-computed `dx` and `dy`.&#34;&#34;&#34;
@@ -774,7 +774,7 @@ to see if we need to go back and step with smaller $\delta t$.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/fc3accec9cf4e2c2c0b9436db04d18c2d87e89b4/vorts/py/integ.py#L206-L208" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/7cb523474877370f0ffbc69a3a596bc37bb6c3a6/vorts/py/integ.py#L206-L208" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def calc_lsqd_xy(x1, y1, x2, y2):
     &#34;&#34;&#34;Calculate intervortical distance $l^2$, using positions to compute `dx` and `dy`.&#34;&#34;&#34;
@@ -794,7 +794,7 @@ Using explicit loops intead of vector(ized) operations.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/fc3accec9cf4e2c2c0b9436db04d18c2d87e89b4/vorts/py/integ.py#L287-L314" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/7cb523474877370f0ffbc69a3a596bc37bb6c3a6/vorts/py/integ.py#L287-L314" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@numba.njit
 def calc_tend(G, x, y):
@@ -835,7 +835,7 @@ Using explicit loops intead of vector(ized) operations.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/fc3accec9cf4e2c2c0b9436db04d18c2d87e89b4/vorts/py/integ.py#L317-L331" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/7cb523474877370f0ffbc69a3a596bc37bb6c3a6/vorts/py/integ.py#L317-L331" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def calc_tend_one(xi, yi, Gn, xn, yn):
     &#34;&#34;&#34;Calculate tendencies for one position (`xi`, `yi`) based on others (`Gn`, `xn`, `yn`).
@@ -862,7 +862,7 @@ Using explicit loops intead of vector(ized) operations.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/fc3accec9cf4e2c2c0b9436db04d18c2d87e89b4/vorts/py/integ.py#L239-L260" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/7cb523474877370f0ffbc69a3a596bc37bb6c3a6/vorts/py/integ.py#L239-L260" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def calc_tend_vec(G, x, y):
     &#34;&#34;&#34;Calculate both $x$- and $y$-tend written in a vectorized way.&#34;&#34;&#34;
@@ -901,7 +901,7 @@ Using explicit loops intead of vector(ized) operations.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/fc3accec9cf4e2c2c0b9436db04d18c2d87e89b4/vorts/py/integ.py#L263-L284" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/7cb523474877370f0ffbc69a3a596bc37bb6c3a6/vorts/py/integ.py#L263-L284" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@numba.njit
 def calc_tend_vec_premesh(G, X, Y):
@@ -954,7 +954,7 @@ Pass <code>'notebook'</code> to activate the Jupyter widget version of tqdm.</dd
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/fc3accec9cf4e2c2c0b9436db04d18c2d87e89b4/vorts/py/integ.py#L87-L195" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/7cb523474877370f0ffbc69a3a596bc37bb6c3a6/vorts/py/integ.py#L87-L195" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def integrate_manual(
     G,
@@ -1083,7 +1083,7 @@ to which <code>**options</code> are passed, along with <code>t_eval</code>, <cod
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/zmoon/vorts/blob/fc3accec9cf4e2c2c0b9436db04d18c2d87e89b4/vorts/py/integ.py#L16-L84" class="git-link">Browse git</a>
+<a href="https://github.com/zmoon/vorts/blob/7cb523474877370f0ffbc69a3a596bc37bb6c3a6/vorts/py/integ.py#L16-L84" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def integrate_scipy(
     y0,
