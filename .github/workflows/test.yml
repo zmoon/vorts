@@ -22,7 +22,7 @@ jobs:
         uses: nschloe/action-cached-lfs-checkout@v1
 
       - name: Cache Conda packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           CACHE_NUMBER: 0  # increase to reset cache if the environment.yml has not changed
         with:
