@@ -1,6 +1,7 @@
 """
 Test that the models run for a short time without error
 """
+
 import pytest
 
 import vorts

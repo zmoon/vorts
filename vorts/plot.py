@@ -1,6 +1,7 @@
 """
 Plotting routines
 """
+
 import functools
 import inspect
 import operator
