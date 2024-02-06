@@ -39,6 +39,7 @@ Tracers(
   Tracer(x=-0.99999999..., y=2.0)
 )
 """
+
 import abc
 import functools
 import inspect
@@ -102,6 +103,7 @@ class Vorton(NamedTuple):
 
 class Tracer(NamedTuple):
     r"""Tracer -- a vorton with $\Gamma=0$ (no circulation/mass) that knows its current position."""
+
     x: float
     """$x$ position"""
     y: float

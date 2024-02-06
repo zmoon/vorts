@@ -1,6 +1,7 @@
 """
 Test that the plotting functions work without error
 """
+
 import pytest
 
 import vorts
